@@ -27,8 +27,7 @@ const createWindow = () => {
     // mainWindow.webContents.openDevTools({ mode: 'detach' });
   } else {
     // In production, load the built index.html
-    // Adjusted path since main.js is in electron/ folder
-    mainWindow.loadFile(path.join(__dirname, '..', 'dist', 'index.html'));
+    mainWindow.loadFile(path.join(__dirname, 'dist', 'index.html'));
   }
 };
 

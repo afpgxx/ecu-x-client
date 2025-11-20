@@ -2,7 +2,7 @@
   "name": "protuner-ecu-studio",
   "version": "1.0.0",
   "description": "High-fidelity ECU Tuning Software",
-  "main": "electron/main.js",
+  "main": "main.js",
   "scripts": {
     "dev": "concurrently -k \"vite\" \"wait-on tcp:5173 && electron .\"",
     "build": "tsc && vite build",
@@ -22,11 +22,5 @@
     "typescript": "^5.2.2",
     "vite": "^5.0.0",
     "wait-on": "^7.2.0"
-  },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "electron",
-      "esbuild"
-    ]
   }
 }
