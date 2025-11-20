@@ -1,0 +1,26 @@
+{
+  "name": "protuner-ecu-studio",
+  "version": "1.0.0",
+  "description": "High-fidelity ECU Tuning Software",
+  "main": "main.js",
+  "scripts": {
+    "dev": "concurrently -k \"vite\" \"wait-on tcp:5173 && electron .\"",
+    "build": "tsc && vite build",
+    "start": "electron ."
+  },
+  "dependencies": {
+    "lucide-react": "^0.294.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.37",
+    "@types/react-dom": "^18.2.15",
+    "@vitejs/plugin-react": "^4.2.0",
+    "concurrently": "^8.2.2",
+    "electron": "^28.0.0",
+    "typescript": "^5.2.2",
+    "vite": "^5.0.0",
+    "wait-on": "^7.2.0"
+  }
+}

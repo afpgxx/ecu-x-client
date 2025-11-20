@@ -1,0 +1,5 @@
+{
+  "name": " ProTuner ECU Studio Main",
+  "description": "A high-fidelity React frontend for automotive ECU tuning, featuring real-time data visualization, dynamic gauges, and 3D volumetric efficiency map editing.",
+  "requestFramePermissions": []
+}
