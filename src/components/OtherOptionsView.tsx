@@ -1,6 +1,13 @@
 import React, { useState } from 'react';
 
-const ParamRow = ({ label, value, unit, highlighted = true }: { label?: string, value: string | number, unit?: string, highlighted?: boolean }) => (
+interface ParamRowProps {
+  label?: string;
+  value: string | number;
+  unit?: string;
+  highlighted?: boolean;
+}
+
+const ParamRow: React.FC<ParamRowProps> = ({ label, value, unit, highlighted = true }) => (
   <div className="flex items-center border-b border-gray-700 last:border-0 h-8 text-xs">
     {label && <div className="flex-[2] px-2 text-gray-300 truncate border-r border-gray-700 h-full flex items-center bg-[#2d323a]">{label}</div>}
     <div className={`flex-1 px-2 font-mono font-bold h-full flex items-center justify-center ${highlighted ? 'bg-[#fef08a] text-red-600' : 'text-gray-300 bg-[#1f2329]'}`}>
