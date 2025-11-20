@@ -82,7 +82,7 @@ const App: React.FC = () => {
   });
 
   const [isSimulating, setIsSimulating] = useState(false);
-  const [ecuConnected, setEcuConnected] = useState(true);
+  const [ecuConnected] = useState(true);
   const [masterSwitch, setMasterSwitch] = useState(true);
   const [activeTab, setActiveTab] = useState('喷油量'); // Default tab
 
@@ -108,7 +108,7 @@ const App: React.FC = () => {
       let time = 0;
       simInterval.current = setInterval(() => {
         time += 0.05;
-        setEngineState(prev => {
+        setEngineState(() => {
           const baseRpm = 4000 + Math.sin(time) * 3500;
           const noise = Math.random() * 50;
           const rpm = Math.max(800, Math.min(8500, baseRpm + noise));
@@ -373,7 +373,7 @@ const App: React.FC = () => {
 
          {/* Middle Tab Bar (Updated) */}
          <div className="flex gap-1 px-1 shrink-0 overflow-x-auto">
-            {MAIN_TABS.map((tab, i) => (
+            {MAIN_TABS.map((tab) => (
                <button 
                   key={tab} 
                   onClick={() => setActiveTab(tab)}
