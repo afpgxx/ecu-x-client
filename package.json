@@ -1,7 +1,7 @@
 {
-  "name": "protuner-ecu-studio",
+  "name": "ecu-injection-management-system",
   "version": "1.0.0",
-  "description": "High-fidelity ECU Tuning Software",
+  "description": "ECU电喷管理系统",
   "main": "electron/main.js",
   "scripts": {
     "dev": "concurrently -k \"vite\" \"wait-on tcp:5173 && electron .\"",

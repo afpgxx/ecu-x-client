@@ -261,7 +261,7 @@ const App: React.FC = () => {
       <div className="h-8 bg-[#111316] flex items-center justify-between px-4 border-b border-gray-800 select-none shrink-0" style={{ WebkitAppRegion: 'drag' } as any}>
         <div className="flex items-center gap-3">
           <Activity size={14} className="text-orange-500" />
-          <span className="text-xs font-medium text-gray-400 tracking-wide">ProTuner ECU 工作室 v3.0 - Supra_基础图谱_v2.cal</span>
+          <span className="text-xs font-medium text-gray-400 tracking-wide">ECU电喷管理系统 v1.0</span>
         </div>
         <div className="flex items-center gap-6" style={{ WebkitAppRegion: 'no-drag' } as any}>
           <div className={`flex items-center gap-2 text-[10px] font-bold uppercase ${ecuConnected ? 'text-emerald-500' : 'text-red-500'}`}>
