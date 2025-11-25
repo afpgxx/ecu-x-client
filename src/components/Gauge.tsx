@@ -28,10 +28,10 @@ export const Gauge: React.FC<GaugeProps> = ({
   const strokeWidth = 10; 
   const innerRadius = radius - strokeWidth;
   
-  // Update angles to standard automotive gauge (270 degrees, opening at bottom)
-  // 225 degrees (Bottom Left) -> 495 degrees (Bottom Right)
-  const startAngle = 225;
-  const endAngle = 495;
+  // Update angles: Zero position at bottom (6 o'clock), sweep 270 degrees
+  // Start at 180 degrees (6 o'clock) -> End at 450 degrees (3 o'clock)
+  const startAngle = 180;
+  const endAngle = 450;
   const totalAngle = endAngle - startAngle;
   
   const valueClamped = Math.min(max, Math.max(min, value));
@@ -101,8 +101,8 @@ export const Gauge: React.FC<GaugeProps> = ({
     return ticks;
   };
 
-  // Construct needle pointing straight UP (0 degrees)
-  // This simplifies rotation logic using CSS transform
+  // Construct needle pointing straight UP (12 o'clock)
+  // So that when rotated by startAngle (180), it points DOWN (6 o'clock)
   const needleLength = innerRadius - 10;
   const needleBaseWidth = 4;
   
@@ -175,15 +175,15 @@ export const Gauge: React.FC<GaugeProps> = ({
             <circle cx={center} cy={center} r={5} fill="#374151" stroke="#f97316" strokeWidth="2" />
             <circle cx={center} cy={center} r={2} fill="#111827" />
 
-            {/* Unit Label moved to the bottom gap inside SVG */}
+            {/* Unit Label moved upward inside SVG */}
             <text
               x={center}
-              y={center + 50} 
+              y={center - 30} 
               textAnchor="middle"
-              fill="#6b7280"
-              fontSize="12"
-              fontWeight="bold"
-              className="font-mono opacity-80"
+              fill="#9ca3af"
+              fontSize="10"
+              fontWeight="600"
+              className="font-mono"
             >
               {unit}
             </text>

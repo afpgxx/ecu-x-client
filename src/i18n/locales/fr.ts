@@ -1,0 +1,199 @@
+export default {
+  // 通用
+  common_save: 'Enregistrer',
+  common_open: 'Ouvrir',
+  common_download: 'Télécharger',
+  common_upload: 'Charger',
+  common_refresh: 'Actualiser les données',
+  common_close: 'Fermer',
+  common_cancel: 'Annuler',
+  common_confirm: 'Confirmer',
+  common_delete: 'Supprimer',
+  common_edit: 'Modifier',
+  common_add: 'Ajouter',
+  common_search: 'Rechercher',
+  common_reset: 'Réinitialiser',
+  common_settings: 'Paramètres',
+
+  // 標題欄
+  titleBar_appName: 'Système de gestion d\'injection ECU',
+  titleBar_version: 'v1.0',
+  titleBar_connected: 'Connecté',
+  titleBar_disconnected: 'Déconnecté',
+
+  // 選單欄
+  menu_file: 'Fichier',
+  menu_edit: 'Édition',
+  menu_view: 'Affichage',
+  menu_ecu: 'ECU',
+  menu_dataLog: 'Journal de données',
+  menu_tools: 'Outils',
+  menu_window: 'Fenêtre',
+  menu_help: 'Aide',
+
+  // 工具列
+  toolbar_burn: 'Écrire',
+  toolbar_startSimulation: 'Démarrer la simulation',
+  toolbar_stopSimulation: 'Arrêter la simulation',
+
+  // 感測器
+  sensors_title: 'Capteurs',
+  sensors_realtime: 'Temps réel',
+  sensors_ect: 'Température du liquide de refroidissement',
+  sensors_iat: 'Température de l\'air d\'admission',
+  sensors_map: 'Pression',
+  sensors_ign: 'Angle d\'allumage',
+  sensors_inj: 'Injection',
+  sensors_battery: 'Tension',
+  sensors_tps: 'Papillon',
+  sensors_rpm: 'Régime moteur',
+  sensors_afr: 'Rapport air-carburant',
+
+  // 控制器
+  controllers_title: 'Contrôle en temps réel',
+  controllers_enabled: 'Activé',
+  controllers_disabled: 'Désactivé',
+  controllers_idleControl: 'Contrôle du ralenti',
+  controllers_ignitionControl: 'Contrôle de l\'angle d\'allumage',
+  controllers_fuelControl: 'Contrôle de la quantité de carburant',
+  controllers_modeSelect: 'Sélection du mode',
+
+  // 標籤頁
+  tabs_fuelMap: 'Quantité de carburant',
+  tabs_fuelAdvance: 'Avance à l\'injection',
+  tabs_ignitionAngle: 'Angle d\'allumage',
+  tabs_dwellTime: 'Temps de charge',
+  tabs_afr: 'Rapport air-carburant',
+  tabs_ectCompFuel: 'Compensation température cylindre (carburant)',
+  tabs_ectCompIgn: 'Compensation température cylindre (allumage)',
+  tabs_mapComp: 'Compensation de pression d\'admission',
+  tabs_idleLimit: 'Ralenti et limitation de vitesse',
+  tabs_otherOptions: 'Autres options',
+  tabs_parameters: 'Paramètres',
+  tabs_settingsInfo: 'Paramètres et informations',
+
+  // 狀態列
+  statusBar_ecuSync: 'Synchronisation ECU',
+  statusBar_throttle: 'Papillon',
+  statusBar_pressure: 'Pression',
+  statusBar_coolantTemp: 'Température du liquide de refroidissement',
+  statusBar_usbDriver: 'Pilote FTDI USB',
+  statusBar_baudRate: '115200 bauds',
+
+  // 設定頁面
+  settings_title: 'Paramètres système',
+  settings_language: 'Paramètres de langue',
+  settings_connection: 'Paramètres de connexion',
+  settings_display: 'Paramètres d\'affichage',
+  settings_about: 'À propos',
+  settings_languageHint: 'Sélectionner la langue de l\'interface',
+
+  // 參數頁面
+  parameters_title: 'Configuration des paramètres',
+  parameters_engineParams: 'Paramètres du moteur',
+  parameters_sensorParams: 'Paramètres des capteurs',
+  parameters_calibration: 'Paramètres de calibration',
+
+  // Parameters Page - Basic Engine
+  params_basicEngine: 'Basic Engine',
+  params_displacement: 'Displacement',
+  params_cylinders: 'Cylinders',
+  params_stroke: 'Stroke',
+  params_revLimit: 'Rev Limit',
+  params_targetIdle: 'Target Idle',
+  
+  // Parameters Page - Trigger
+  params_trigger: 'Trigger',
+  params_triggerMode: 'Trigger Mode',
+  params_offset: 'Offset',
+  params_noiseFilter: 'Noise Filter',
+  params_syncCycle: 'Sync Cycle',
+  
+  // Parameters Page - Injection
+  params_injection: 'Injection',
+  params_flowRate: 'Flow Rate',
+  params_deadTime: 'Dead Time',
+  params_fuelPres: 'Fuel Pres',
+  params_loadSource: 'Load Source',
+  
+  // Parameters Page - Calibration
+  params_calibration: 'Calibration',
+  params_mapSensor: 'MAP Sensor',
+  params_tpsMinAdc: 'Min ADC',
+  params_tpsMaxAdc: 'Max ADC',
+  params_iatBiasRes: 'Bias Res',
+  params_autoCalibTps: 'Auto Calibrate TPS',
+  
+  // Parameters Page - Units
+  params_unit_cc: 'cc',
+  params_unit_rpm: 'RPM',
+  params_unit_stroke: 'Stroke',
+  params_unit_degree: '°',
+  params_unit_level: 'Level',
+  params_unit_cycle: 'Cycle',
+  params_unit_ccmin: 'cc/min',
+  params_unit_ms: 'ms',
+  params_unit_kpa: 'kPa',
+  params_unit_v: 'V',
+  params_unit_ohm: 'Ω',
+
+  // 其它選項
+  otherOptions_title: 'Autres options',
+  otherOptions_advanced: 'Paramètres avancés',
+  otherOptions_diagnostic: 'Options de diagnostic',
+
+  // 地圖表格
+  mapTable_table1Active: 'Table 1 (Active)',
+  mapTable_table2: 'Table 2',
+  mapTable_unit: 'Unité',
+  mapTable_percentage: 'Pourcentage (%)',
+  mapTable_rawValue: 'Valeur brute',
+  mapTable_lambda: 'Lambda',
+
+  // 語言名稱
+  lang_zh_CN: '简体中文',
+  lang_zh_TW: '繁體中文',
+  lang_en: 'English',
+  lang_ja: '日本語',
+  lang_th: 'ไทย',
+  lang_ko: '한국어',
+  lang_ru: 'Русский',
+  lang_de: 'Deutsch',
+  lang_fr: 'Français',
+
+  // Other Options Page
+  otherOptions_throttleMin: 'Throttle Voltage (Min)',
+  otherOptions_throttleMax: 'Throttle Voltage (Max)',
+  otherOptions_idleMinInjCold: 'Idle Min Inj (Cold)',
+  otherOptions_idleMinInjHot: 'Idle Min Inj (Hot)',
+  otherOptions_idleAutoAngle: 'Idle Auto Angle (±°)',
+  otherOptions_idleAutoInj: 'Idle Auto Inj (±ms)',
+  
+  otherOptions_idleSteps: 'Idle Motor Steps',
+  otherOptions_fanTemp: 'Fan On Temp',
+  otherOptions_o2Work: 'O2 Work (ECT Volt)',
+  otherOptions_o2Delay: 'O2 Delay',
+  otherOptions_o2Rpm: 'O2 Work RPM',
+  otherOptions_o2Inj: 'O2 Adjust Inj',
+  
+  otherOptions_startEnrichRpm: 'Start Enrich RPM',
+  otherOptions_idleHoleMax: 'Idle Hole Max',
+  otherOptions_idleHoleMin: 'Idle Hole Min',
+  otherOptions_idleHoleMaxAdj: 'Idle Hole Max Adj',
+
+  otherOptions_tab_tempIdle: 'Temp-Idle Motor',
+  otherOptions_tab_startEnrich: 'Start Enrichment',
+  otherOptions_tab_iatComp: 'IAT Comp Inj',
+  otherOptions_tab_mapComp: 'MAP Comp Idle',
+  otherOptions_tab_extAdj: 'External Adjust',
+
+  // Other Options Grid Rows
+  otherOptions_row_stepTime: 'Step/Time',
+  otherOptions_row_injVe: 'INJ VE(ms)',
+  otherOptions_row_delayed: 'Delayed(Second)',
+  otherOptions_row_injVeAdd: 'INJ VE Add(ms)',
+  otherOptions_row_notStartedAdd: 'Not Started Add(ms)',
+  otherOptions_row_injVeComp: 'INJ VE(±ms)',
+  otherOptions_row_iat: 'IAT',
+  otherOptions_row_ect: 'ECT',
+};

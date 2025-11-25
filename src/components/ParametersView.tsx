@@ -1,6 +1,9 @@
 import React from 'react';
+import { useI18n } from '../i18n/I18nContext';
 
 export const ParametersView: React.FC = () => {
+  const { t } = useI18n();
+  
   return (
     <div className="flex flex-col h-full bg-[#1f2329] p-6 overflow-y-auto text-xs select-none">
         {/* Grid Layout for Parameters */}
@@ -13,15 +16,15 @@ export const ParametersView: React.FC = () => {
                 <div className="flex flex-col gap-2">
                     <h3 className="text-gray-400 font-bold pl-1 flex items-center gap-2">
                         <div className="w-1 h-3 bg-blue-500 rounded-full"></div>
-                        基础参数 (Basic Engine)
+                        {t.params_basicEngine}
                     </h3>
                     <div className="bg-[#262a30] p-5 rounded border border-gray-700 shadow-lg flex flex-col gap-4 transition-all hover:border-gray-600">
                          {[
-                            { label: '发动机排量 (Displacement)', value: '155', unit: 'cc' },
-                            { label: '气缸数量 (Cylinders)', value: '1', unit: '' },
-                            { label: '冲程类型 (Stroke)', value: '4', unit: 'Stroke' },
-                            { label: '最高转速限制 (Rev Limit)', value: '12500', unit: 'RPM' },
-                            { label: '怠速目标 (Target Idle)', value: '1600', unit: 'RPM' },
+                            { label: t.params_displacement, value: '155', unit: t.params_unit_cc },
+                            { label: t.params_cylinders, value: '1', unit: '' },
+                            { label: t.params_stroke, value: '4', unit: t.params_unit_stroke },
+                            { label: t.params_revLimit, value: '12500', unit: t.params_unit_rpm },
+                            { label: t.params_targetIdle, value: '1600', unit: t.params_unit_rpm },
                          ].map((item, i) => (
                              <div key={i} className="flex items-center justify-between group border-b border-gray-700/50 pb-2 last:border-0 last:pb-0">
                                  <label className="text-gray-300 group-hover:text-white transition-colors font-medium">{item.label}</label>
@@ -41,11 +44,11 @@ export const ParametersView: React.FC = () => {
                 <div className="flex flex-col gap-2">
                     <h3 className="text-gray-400 font-bold pl-1 flex items-center gap-2">
                         <div className="w-1 h-3 bg-orange-500 rounded-full"></div>
-                        触发信号 (Trigger)
+                        {t.params_trigger}
                     </h3>
                     <div className="bg-[#262a30] p-5 rounded border border-gray-700 shadow-lg flex flex-col gap-4 transition-all hover:border-gray-600">
                          <div className="flex items-center justify-between group border-b border-gray-700/50 pb-2">
-                             <label className="text-gray-300 group-hover:text-white transition-colors font-medium">触发模式 (Trigger Mode)</label>
+                             <label className="text-gray-300 group-hover:text-white transition-colors font-medium">{t.params_triggerMode}</label>
                              <div className="flex items-center gap-2">
                                 <select className="w-24 bg-white text-gray-900 px-2 py-1 rounded border border-gray-400 font-bold focus:outline-none focus:ring-2 focus:ring-orange-500 shadow-sm">
                                     <option>12-1</option>
@@ -57,9 +60,9 @@ export const ParametersView: React.FC = () => {
                              </div>
                          </div>
                          {[
-                            { label: '触发角度偏置 (Offset)', value: '15.0', unit: '°' },
-                            { label: '信号滤波 (Noise Filter)', value: '2', unit: 'Level' },
-                            { label: '启动同步圈数 (Sync Cycle)', value: '1', unit: 'Cycle' },
+                            { label: t.params_offset, value: '15.0', unit: t.params_unit_degree },
+                            { label: t.params_noiseFilter, value: '2', unit: t.params_unit_level },
+                            { label: t.params_syncCycle, value: '1', unit: t.params_unit_cycle },
                          ].map((item, i) => (
                              <div key={i} className="flex items-center justify-between group border-b border-gray-700/50 pb-2 last:border-0 last:pb-0">
                                  <label className="text-gray-300 group-hover:text-white transition-colors font-medium">{item.label}</label>
@@ -84,13 +87,13 @@ export const ParametersView: React.FC = () => {
                 <div className="flex flex-col gap-2">
                     <h3 className="text-gray-400 font-bold pl-1 flex items-center gap-2">
                         <div className="w-1 h-3 bg-green-500 rounded-full"></div>
-                        喷油系统 (Injection)
+                        {t.params_injection}
                     </h3>
                     <div className="bg-[#262a30] p-5 rounded border border-gray-700 shadow-lg flex flex-col gap-4 transition-all hover:border-gray-600">
                          {[
-                            { label: '喷油嘴流量 (Flow Rate)', value: '180', unit: 'cc/min' },
-                            { label: '死区时间 (Dead Time)', value: '0.820', unit: 'ms' },
-                            { label: '燃油压力 (Fuel Pres)', value: '300', unit: 'kPa' },
+                            { label: t.params_flowRate, value: '180', unit: t.params_unit_ccmin },
+                            { label: t.params_deadTime, value: '0.820', unit: t.params_unit_ms },
+                            { label: t.params_fuelPres, value: '300', unit: t.params_unit_kpa },
                          ].map((item, i) => (
                              <div key={i} className="flex items-center justify-between group border-b border-gray-700/50 pb-2">
                                  <label className="text-gray-300 group-hover:text-white transition-colors font-medium">{item.label}</label>
@@ -105,7 +108,7 @@ export const ParametersView: React.FC = () => {
                          ))}
                          
                          <div className="flex items-center justify-between group pt-2">
-                             <label className="text-gray-300 group-hover:text-white transition-colors font-medium">主负载信号 (Load Source)</label>
+                             <label className="text-gray-300 group-hover:text-white transition-colors font-medium">{t.params_loadSource}</label>
                              <div className="flex items-center gap-2">
                                 <select className="w-36 bg-white text-gray-900 px-2 py-1 rounded border border-gray-400 font-bold focus:outline-none focus:ring-2 focus:ring-green-500 shadow-sm">
                                     <option>MAP (Speed Density)</option>
@@ -121,11 +124,11 @@ export const ParametersView: React.FC = () => {
                 <div className="flex flex-col gap-2">
                     <h3 className="text-gray-400 font-bold pl-1 flex items-center gap-2">
                         <div className="w-1 h-3 bg-purple-500 rounded-full"></div>
-                        传感器校准 (Calibration)
+                        {t.params_calibration}
                     </h3>
                     <div className="bg-[#262a30] p-5 rounded border border-gray-700 shadow-lg flex flex-col gap-4 transition-all hover:border-gray-600">
                          <div className="flex items-center justify-between group border-b border-gray-700/50 pb-2">
-                             <label className="text-gray-300 group-hover:text-white transition-colors font-medium">MAP 传感器 (MAP Sensor)</label>
+                             <label className="text-gray-300 group-hover:text-white transition-colors font-medium">{t.params_mapSensor}</label>
                              <div className="flex items-center gap-2">
                                 <select className="w-36 bg-white text-gray-900 px-2 py-1 rounded border border-gray-400 font-bold focus:outline-none focus:ring-2 focus:ring-purple-500 shadow-sm">
                                     <option>Internal 2.5 Bar</option>
@@ -135,9 +138,9 @@ export const ParametersView: React.FC = () => {
                              </div>
                          </div>
                          {[
-                            { label: 'TPS 关闭电压 (Min ADC)', value: '0.65', unit: 'V' },
-                            { label: 'TPS 全开电压 (Max ADC)', value: '4.25', unit: 'V' },
-                            { label: 'IAT 偏置电阻 (Bias Res)', value: '2490', unit: 'Ω' },
+                            { label: t.params_tpsMinAdc, value: '0.65', unit: t.params_unit_v },
+                            { label: t.params_tpsMaxAdc, value: '4.25', unit: t.params_unit_v },
+                            { label: t.params_iatBiasRes, value: '2490', unit: t.params_unit_ohm },
                          ].map((item, i) => (
                              <div key={i} className="flex items-center justify-between group border-b border-gray-700/50 pb-2 last:border-0 last:pb-0">
                                  <label className="text-gray-300 group-hover:text-white transition-colors font-medium">{item.label}</label>
@@ -152,7 +155,7 @@ export const ParametersView: React.FC = () => {
                          ))}
                          <div className="flex justify-end mt-2 pt-2 border-t border-gray-700/50">
                             <button className="px-4 py-1.5 bg-[#383c44] border border-gray-500 text-gray-300 rounded text-xs font-bold hover:bg-blue-600 hover:text-white hover:border-blue-500 transition-all shadow-sm">
-                                自动校准 TPS
+                                {t.params_autoCalibTps}
                             </button>
                          </div>
                     </div>

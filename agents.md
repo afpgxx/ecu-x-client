@@ -38,3 +38,17 @@ This is a high-fidelity desktop application for tuning and monitoring Engine Con
 2.  **Plan:** Identify necessary components and state changes.
 3.  **Implement:** Write clean, typed React code (TypeScript).
 4.  **Verify:** Ensure the result matches the design intent.
+
+## Coding Guidelines
+- **Comments:** All code comments must be written in **Simplified Chinese**.
+
+## Internationalization (i18n)
+The application supports 9 languages: Simplified Chinese, Traditional Chinese, English, Japanese, Thai, Korean, Russian, German, and French.
+
+- **Translation Files:** Located in `src/i18n/locales/` (zh-CN.ts, zh-TW.ts, en.ts, ja.ts, th.ts, ko.ts, ru.ts, de.ts, fr.ts)
+- **Context Provider:** `src/i18n/I18nContext.tsx` provides the `useI18n()` hook
+- **Usage:** Import `useI18n()` in components, use `t.category.key` to access translations
+- **Language Selector:** Available in the title bar (Globe icon with dropdown menu)
+- **Storage:** Language preference is saved to localStorage as 'ecu-language'
+
+When adding new UI text, **always add it to all 9 translation files** to maintain consistency.
