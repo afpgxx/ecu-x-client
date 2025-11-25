@@ -65,7 +65,8 @@ export const MapTable: React.FC<MapTableProps> = ({
   // Auto-scroll logic
   useEffect(() => {
     if (activeRef.current) {
-      activeRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+      // Changed to 'auto' and 'nearest' to prevent jittering/shaking during rapid updates
+      activeRef.current.scrollIntoView({ behavior: 'auto', block: 'nearest', inline: 'nearest' });
     }
   }, [activeRowIndex, activeColIndex]);
 

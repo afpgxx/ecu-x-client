@@ -28,14 +28,17 @@ export const Gauge: React.FC<GaugeProps> = ({
   const strokeWidth = 10; 
   const innerRadius = radius - strokeWidth;
   
-  const startAngle = 135;
-  const endAngle = 405;
+  // Update angles to standard automotive gauge (270 degrees, opening at bottom)
+  // 225 degrees (Bottom Left) -> 495 degrees (Bottom Right)
+  const startAngle = 225;
+  const endAngle = 495;
   const totalAngle = endAngle - startAngle;
   
   const valueClamped = Math.min(max, Math.max(min, value));
   const valueRatio = (valueClamped - min) / (max - min);
   const currentAngle = startAngle + (valueRatio * totalAngle);
 
+  // Helper for static ticks
   const polarToCartesian = (cx: number, cy: number, r: number, angleInDegrees: number) => {
     const angleInRadians = (angleInDegrees - 90) * Math.PI / 180.0;
     return {
@@ -98,12 +101,20 @@ export const Gauge: React.FC<GaugeProps> = ({
     return ticks;
   };
 
-  // Needle Calculations
+  // Construct needle pointing straight UP (0 degrees)
+  // This simplifies rotation logic using CSS transform
   const needleLength = innerRadius - 10;
-  const needleTip = polarToCartesian(center, center, needleLength, currentAngle);
   const needleBaseWidth = 4;
-  const baseLeft = polarToCartesian(center, center, needleBaseWidth, currentAngle - 90);
-  const baseRight = polarToCartesian(center, center, needleBaseWidth, currentAngle + 90);
+  
+  // Pointing UP: Tip is at (cx, cy - length)
+  const tipX = center;
+  const tipY = center - needleLength;
+  
+  // Base is at center, width spans horizontally
+  const baseLeftX = center - needleBaseWidth;
+  const baseLeftY = center;
+  const baseRightX = center + needleBaseWidth;
+  const baseRightY = center;
 
   return (
     <div className="flex flex-col items-center justify-between w-full h-full select-none py-1">
@@ -148,17 +159,35 @@ export const Gauge: React.FC<GaugeProps> = ({
 
             {renderTicks()}
 
-            <path
-              d={`M ${baseLeft.x} ${baseLeft.y} L ${needleTip.x} ${needleTip.y} L ${baseRight.x} ${baseRight.y} Z`}
-              fill="#f97316"
-              filter="url(#dropShadow)"
-            />
+            {/* Rotatable Needle Group */}
+            <g style={{ 
+                transform: `rotate(${currentAngle}deg)`, 
+                transformOrigin: `${center}px ${center}px`,
+                transition: 'transform 300ms cubic-bezier(0.25, 0.46, 0.45, 0.94)' 
+            }}>
+                <path
+                  d={`M ${baseLeftX} ${baseLeftY} L ${tipX} ${tipY} L ${baseRightX} ${baseRightY} Z`}
+                  fill="#f97316"
+                  filter="url(#dropShadow)"
+                />
+            </g>
+
             <circle cx={center} cy={center} r={5} fill="#374151" stroke="#f97316" strokeWidth="2" />
             <circle cx={center} cy={center} r={2} fill="#111827" />
+
+            {/* Unit Label moved to the bottom gap inside SVG */}
+            <text
+              x={center}
+              y={center + 50} 
+              textAnchor="middle"
+              fill="#6b7280"
+              fontSize="12"
+              fontWeight="bold"
+              className="font-mono opacity-80"
+            >
+              {unit}
+            </text>
          </svg>
-         
-         {/* Small Unit Label Inside Gauge - Non-obstructive */}
-         <div className="absolute bottom-[20%] text-[9px] text-gray-600 font-medium pointer-events-none opacity-75">{unit}</div>
       </div>
       
       {/* Digital Readout Section - Separated below */}
