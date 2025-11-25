@@ -37,7 +37,8 @@ export const MapTable1D: React.FC<MapTable1DProps> = ({
   // Auto-scroll to active cell
   useEffect(() => {
     if (activeRef.current) {
-      activeRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+      // Changed to 'auto' and 'nearest' to prevent jittering
+      activeRef.current.scrollIntoView({ behavior: 'auto', block: 'nearest', inline: 'nearest' });
     }
   }, [activeColIndex]);
 

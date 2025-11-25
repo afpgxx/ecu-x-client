@@ -81,6 +81,7 @@ const App: React.FC = () => {
     battery: 12.2
   });
 
+  const [mapData, setMapData] = useState<number[][]>(INITIAL_MAP_DATA);
   const [isSimulating, setIsSimulating] = useState(false);
   const [ecuConnected, setEcuConnected] = useState(true);
   const [masterSwitch, setMasterSwitch] = useState(true);
@@ -108,6 +109,8 @@ const App: React.FC = () => {
       let time = 0;
       simInterval.current = setInterval(() => {
         time += 0.05;
+        
+        // 1. Update Engine State
         setEngineState(prev => {
           const baseRpm = 4000 + Math.sin(time) * 3500;
           const noise = Math.random() * 50;
@@ -129,10 +132,26 @@ const App: React.FC = () => {
             battery: 13.8 + Math.random() * 0.1
           };
         });
+
+        // 2. Simulate Map Data Fluctuation (Every cell updates slightly)
+        setMapData(prevData => {
+           return prevData.map((row, rIdx) => 
+              row.map((val, cIdx) => {
+                 // Create a wave effect based on position and time + random noise
+                 const wave = Math.sin(time * 2 + rIdx + cIdx) * 0.05;
+                 const noise = (Math.random() - 0.5) * 0.1;
+                 // Anchor it loosely to the initial data so it doesn't drift away
+                 const baseVal = INITIAL_MAP_DATA[rIdx][cIdx];
+                 return baseVal + wave + noise;
+              })
+           );
+        });
+
       }, 50);
     } else {
       if (simInterval.current) clearInterval(simInterval.current);
       setEngineState(prev => ({...prev, rpm: 850, tps: 0, map: 30, inj: 1.2, ign: 15}));
+      setMapData(INITIAL_MAP_DATA); // Reset map
     }
     return () => { if (simInterval.current) clearInterval(simInterval.current); };
   }, [isSimulating]);
@@ -245,7 +264,7 @@ const App: React.FC = () => {
             <MapTable 
               rpmPoints={RPM_POINTS}
               loadPoints={LOAD_POINTS}
-              data={INITIAL_MAP_DATA}
+              data={mapData}
               activeRpm={engineState.rpm}
               activeLoad={engineState.tps}
             />
@@ -398,7 +417,7 @@ const App: React.FC = () => {
                 <span className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-green-500"></div> ECU 同步</span>
                 <span>节气门: <span className="text-gray-300">{engineState.tps.toFixed(1)}%</span></span>
                 <span>压力: <span className="text-gray-300">{engineState.map.toFixed(0)}kPa</span></span>
-                <span>水温: <span className="text-gray-300">{engineState.ect}°C</span></span>
+                <span>水温: <span className="text-gray-300">{engineState.ect.toFixed(2)}°C</span></span>
              </div>
              <div className="flex gap-4">
                 <span>FTDI USB 驱动</span>
