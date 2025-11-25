@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   Save, FolderOpen, Settings, Activity, 
-  Cpu, Play, Pause, 
+  Cpu, Play, Pause, RefreshCw,
   Download, X, Minus, Square, Plus
 } from 'lucide-react';
 import { VerticalBar } from './components/VerticalBar';
@@ -46,7 +46,7 @@ const MAIN_TABS = [
 ];
 
 // Generate a realistic-looking VE (Volumetric Efficiency) Map
-const generateMapData = () => {
+const generateMapData = (randomize = false) => {
   const data: number[][] = [];
   for (let i = 0; i < LOAD_POINTS.length; i++) {
     const row: number[] = [];
@@ -59,6 +59,11 @@ const generateMapData = () => {
       const rpmCurve = Math.sin(rpmFactor * Math.PI);
       ve += rpmCurve * 2.5;
       ve += (j * 0.05) - (i * 0.02);
+      
+      if (randomize) {
+         ve += (Math.random() * 2) - 1; // Add random noise
+      }
+      
       row.push(Math.max(2, Number(ve.toFixed(2))));
     }
     data.push(row);
@@ -83,6 +88,7 @@ const App: React.FC = () => {
 
   const [mapData, setMapData] = useState<number[][]>(INITIAL_MAP_DATA);
   const [isSimulating, setIsSimulating] = useState(false);
+  const [isSweeping, setIsSweeping] = useState(false);
   const [ecuConnected, setEcuConnected] = useState(true);
   const [masterSwitch, setMasterSwitch] = useState(true);
   const [activeTab, setActiveTab] = useState('喷油量'); // Default tab
@@ -103,55 +109,109 @@ const App: React.FC = () => {
     }
   };
 
-  // Sim loop
+  // Function to refresh data with Sweep animation
+  const handleRefresh = () => {
+    // Prevent spamming
+    if (isSweeping) return;
+    setIsSweeping(true);
+    // Stop simulation if running
+    if (isSimulating) setIsSimulating(false);
+
+    // 1. Reset to Zero first (归零)
+    setEngineState({
+      rpm: 0,
+      tps: 0,
+      map: 0,
+      iat: 0,
+      ect: 0,
+      ign: 0,
+      inj: 0,
+      afr: 10, // AFR min is usually 10
+      battery: 8
+    });
+
+    // 2. Sweep Max (Pointer goes to full scale) (扫描到整个量程)
+    setTimeout(() => {
+      setEngineState({
+        rpm: 9000,
+        tps: 100,
+        map: 250,
+        iat: 80,
+        ect: 120,
+        ign: 60,
+        inj: 20,
+        afr: 20,
+        battery: 16
+      });
+    }, 400);
+
+    // 3. Fall back to target Value (倒回具体值)
+    setTimeout(() => {
+      setEngineState({
+        rpm: Math.floor(Math.random() * 8000) + 800,
+        tps: Math.floor(Math.random() * 100),
+        map: Math.floor(Math.random() * 200) + 20,
+        iat: Math.floor(Math.random() * 50) + 20,
+        ect: Math.floor(Math.random() * 60) + 60,
+        ign: Math.floor(Math.random() * 30) + 5,
+        inj: Number((Math.random() * 15).toFixed(1)),
+        afr: Number((12 + Math.random() * 3).toFixed(1)),
+        battery: Number((12 + Math.random() * 2).toFixed(1))
+      });
+      
+      setMapData(generateMapData(true)); // Randomize map data
+      setIsSweeping(false);
+    }, 1000);
+  };
+
+  // Sim loop with Jitter
   useEffect(() => {
     if (isSimulating) {
       let time = 0;
       simInterval.current = setInterval(() => {
         time += 0.05;
         
-        // 1. Update Engine State
+        // 1. Update Engine State with realistic jitter
         setEngineState(prev => {
+          // Base sine wave movement
           const baseRpm = 4000 + Math.sin(time) * 3500;
-          const noise = Math.random() * 50;
-          const rpm = Math.max(800, Math.min(8500, baseRpm + noise));
-          const tps = Math.max(0, Math.min(100, (Math.sin(time) + 0.8) * 50));
-          const map = 20 + (tps * 0.8) + (Math.random() * 2);
+          // Add significant random noise (jitter)
+          const jitter = (Math.random() - 0.5) * 150; 
+          
+          const rpm = Math.max(800, Math.min(8500, baseRpm + jitter));
+          const tps = Math.max(0, Math.min(100, (Math.sin(time) + 0.8) * 50 + (Math.random() - 0.5) * 5));
+          const map = 20 + (tps * 0.8) + (Math.random() * 5); // Noisy MAP
           const targetAfr = tps > 80 ? 11.5 : tps > 40 ? 13.2 : 14.7;
-          const afr = targetAfr + (Math.random() * 0.2 - 0.1);
+          const afr = targetAfr + (Math.random() * 0.4 - 0.2); // Noisy AFR
 
           return {
             rpm,
             tps,
             map,
-            iat: 30 + Math.sin(time * 0.1) * 5,
-            ect: 88 + Math.sin(time * 0.05) * 3,
-            ign: 40 - (map * 0.2) + (rpm / 1000), 
-            inj: (map * rpm) / 50000,
+            iat: 30 + Math.sin(time * 0.1) * 2 + Math.random(),
+            ect: 88 + Math.sin(time * 0.05) * 1 + Math.random() * 0.5,
+            ign: 40 - (map * 0.2) + (rpm / 1000) + (Math.random() * 2 - 1), 
+            inj: (map * rpm) / 50000 + (Math.random() * 0.5),
             afr,
-            battery: 13.8 + Math.random() * 0.1
+            battery: 13.8 + (Math.random() * 0.4 - 0.2)
           };
         });
 
-        // 2. Simulate Map Data Fluctuation (Every cell updates slightly)
+        // 2. Simulate Map Data Fluctuation
         setMapData(prevData => {
            return prevData.map((row, rIdx) => 
               row.map((val, cIdx) => {
-                 // Create a wave effect based on position and time + random noise
                  const wave = Math.sin(time * 2 + rIdx + cIdx) * 0.05;
-                 const noise = (Math.random() - 0.5) * 0.1;
-                 // Anchor it loosely to the initial data so it doesn't drift away
+                 const noise = (Math.random() - 0.5) * 0.2; // Increased noise
                  const baseVal = INITIAL_MAP_DATA[rIdx][cIdx];
                  return baseVal + wave + noise;
               })
            );
         });
 
-      }, 50);
+      }, 50); // 20Hz update
     } else {
       if (simInterval.current) clearInterval(simInterval.current);
-      setEngineState(prev => ({...prev, rpm: 850, tps: 0, map: 30, inj: 1.2, ign: 15}));
-      setMapData(INITIAL_MAP_DATA); // Reset map
     }
     return () => { if (simInterval.current) clearInterval(simInterval.current); };
   }, [isSimulating]);
@@ -216,9 +276,6 @@ const App: React.FC = () => {
                  <option>Unit</option>
               </select>
             </div>
-            <div className="flex gap-2">
-               {/* Placeholder for additional tools */}
-            </div>
           </div>
           <div className="flex-1 overflow-hidden relative p-1">
             <MapTable 
@@ -280,7 +337,7 @@ const App: React.FC = () => {
       <div className="h-8 bg-[#111316] flex items-center justify-between px-4 border-b border-gray-800 select-none shrink-0" style={{ WebkitAppRegion: 'drag' } as any}>
         <div className="flex items-center gap-3">
           <Activity size={14} className="text-orange-500" />
-          <span className="text-xs font-medium text-gray-400 tracking-wide">ProTuner ECU 工作室 v3.0 - Supra_基础图谱_v2.cal</span>
+          <span className="text-xs font-medium text-gray-400 tracking-wide">ECU电喷管理系统 v1.0</span>
         </div>
         <div className="flex items-center gap-6" style={{ WebkitAppRegion: 'no-drag' } as any}>
           <div className={`flex items-center gap-2 text-[10px] font-bold uppercase ${ecuConnected ? 'text-emerald-500' : 'text-red-500'}`}>
@@ -317,6 +374,13 @@ const App: React.FC = () => {
          </div>
          <div className="flex items-center gap-2">
             <button 
+               onClick={handleRefresh}
+               className="flex items-center gap-2 px-4 py-1.5 rounded text-xs font-bold uppercase tracking-wider transition-all border bg-gray-700 border-gray-600 hover:bg-gray-600 hover:text-white text-gray-300"
+            >
+               <RefreshCw size={14} className={isSweeping ? 'animate-spin' : ''} />
+               刷新数据
+            </button>
+            <button 
                onClick={() => setIsSimulating(!isSimulating)}
                className={`flex items-center gap-2 px-4 py-1.5 rounded text-xs font-bold uppercase tracking-wider transition-all border
                ${isSimulating ? 'bg-orange-600 border-orange-500 text-white shadow-lg shadow-orange-900/50' : 'bg-gray-700 border-gray-600 hover:bg-gray-600'}`}
@@ -331,10 +395,10 @@ const App: React.FC = () => {
       <div className="flex-1 p-2 flex flex-col gap-2 overflow-hidden">
          
          {/* Top Dashboard Row (40% Height) */}
-         <div className="flex-[0.45] min-h-[220px] flex gap-2 shrink-0">
+         <div className="min-h-[220px] flex gap-2 shrink-0" style={{ flex: '0.45 1 0%' }}>
             
             {/* 1. Sensor Bars Panel */}
-            <div className="flex-[0.25] min-w-[200px] bg-[#16181c] rounded-lg border border-gray-700/50 p-3 shadow-xl flex flex-col">
+            <div className="min-w-[200px] bg-[#16181c] rounded-lg border border-gray-700/50 p-3 shadow-xl flex flex-col" style={{ flex: '0.25 1 0%' }}>
                <div className="text-[10px] text-gray-500 font-bold mb-2 uppercase flex justify-between">
                   <span>传感器</span>
                   <span className="text-blue-500">实时</span>
@@ -350,7 +414,7 @@ const App: React.FC = () => {
             </div>
 
             {/* 2. Digital Controllers (Center) */}
-            <div className="flex-[0.35] bg-[#16181c] rounded-lg border border-gray-700/50 p-2 shadow-xl flex flex-col gap-2 overflow-hidden">
+            <div className="bg-[#16181c] rounded-lg border border-gray-700/50 p-2 shadow-xl flex flex-col gap-2 overflow-hidden" style={{ flex: '0.35 1 0%' }}>
                <div className="flex items-center justify-between bg-[#111316] p-2 rounded border border-gray-800 shrink-0">
                   <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">实时调节控制</span>
                   <div 
@@ -375,7 +439,7 @@ const App: React.FC = () => {
             </div>
 
             {/* 3. Analog Gauges (Right) */}
-            <div className="flex-[0.4] bg-[#16181c] rounded-lg border border-gray-700/50 p-2 shadow-xl flex items-center justify-evenly relative overflow-hidden">
+            <div className="bg-[#16181c] rounded-lg border border-gray-700/50 p-2 shadow-xl flex items-center justify-evenly relative overflow-hidden" style={{ flex: '0.4 1 0%' }}>
                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/40 pointer-events-none"></div>
                <div className="w-[32%] h-full max-h-[220px]">
                   <Gauge label="转速" value={engineState.rpm} min={0} max={9000} unit="RPM x1000" dangerStart={7500} majorTicks={9} />
