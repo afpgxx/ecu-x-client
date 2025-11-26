@@ -196,4 +196,19 @@ export default {
   otherOptions_row_injVeComp: 'INJ VE(±ms)',
   otherOptions_row_iat: 'IAT',
   otherOptions_row_ect: 'ECT',
+  otherOptions_row_motorStep: 'Motor(±STEP)',
+  otherOptions_row_injAdjPct: 'Inj Adj[±PCT]',
+  otherOptions_row_ignAdjDeg: 'Ign Adj[±°]',
+
+  // 新增参数类别
+  params_limiters: '限速保护',
+  params_outputs: '输出设置',
+  
+  // 参数页面 - 子标签
+  params_tab_afrVoltage: '空燃比-电压关系',
+  params_tab_iatVoltage: '空气温度-电压关系',
+  params_tab_ectVoltage: '冷却液温度-电压关系',
+  params_tab_pressureVoltage: '进气压力-电压关系',
+  params_tab_tpsSettings: 'TPS设置',
+  params_tab_rpmSettings: 'RPM设置',
 };

@@ -196,4 +196,19 @@ export default {
   otherOptions_row_injVeComp: 'INJ VE(±ms)',
   otherOptions_row_iat: 'IAT',
   otherOptions_row_ect: 'ECT',
+  otherOptions_row_motorStep: 'Motor(±STEP)',
+  otherOptions_row_injAdjPct: 'Inj Adj[±PCT]',
+  otherOptions_row_ignAdjDeg: 'Ign Adj[±°]',
+
+  // 新増的參數類別
+  params_limiters: 'リミッター',
+  params_outputs: '出力設定',
+  
+  // パラメータページ - サブタブ
+  params_tab_afrVoltage: '空燃比-電圧関係',
+  params_tab_iatVoltage: '吸気温度-電圧関係',
+  params_tab_ectVoltage: '冷却水温度-電圧関係',
+  params_tab_pressureVoltage: '吸気圧力-電圧関係',
+  params_tab_tpsSettings: 'TPS設定',
+  params_tab_rpmSettings: 'RPM設定',
 };

@@ -196,4 +196,19 @@ export default {
   otherOptions_row_injVeComp: 'INJ VE(±ms)',
   otherOptions_row_iat: 'IAT',
   otherOptions_row_ect: 'ECT',
+  otherOptions_row_motorStep: 'Motor(±STEP)',
+  otherOptions_row_injAdjPct: 'Inj Adj[±PCT]',
+  otherOptions_row_ignAdjDeg: 'Ign Adj[±°]',
+
+  // 新增參數類別
+  params_limiters: '限速保護',
+  params_outputs: '輸出設定',
+  
+  // 參數頁面 - 子標籤
+  params_tab_afrVoltage: '空燃比-電壓關係',
+  params_tab_iatVoltage: '空氣溫度-電壓關係',
+  params_tab_ectVoltage: '冷卻液溫度-電壓關係',
+  params_tab_pressureVoltage: '進氣壓力-電壓關係',
+  params_tab_tpsSettings: 'TPS設定',
+  params_tab_rpmSettings: 'RPM設定',
 };

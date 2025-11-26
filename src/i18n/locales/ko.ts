@@ -1,5 +1,5 @@
 export default {
-  // 通用
+  // 통용
   common_save: '저장',
   common_open: '열기',
   common_download: '다운로드',
@@ -196,4 +196,19 @@ export default {
   otherOptions_row_injVeComp: 'INJ VE(±ms)',
   otherOptions_row_iat: 'IAT',
   otherOptions_row_ect: 'ECT',
+  otherOptions_row_motorStep: 'Motor(±STEP)',
+  otherOptions_row_injAdjPct: 'Inj Adj[±PCT]',
+  otherOptions_row_ignAdjDeg: 'Ign Adj[±°]',
+
+  // 추가된 매개변수 카테고리
+  params_limiters: '리미터',
+  params_outputs: '출력',
+  
+  // 매개변수 페이지 - 하위 탭
+  params_tab_afrVoltage: 'AFR-전압 관계',
+  params_tab_iatVoltage: 'IAT-전압 관계',
+  params_tab_ectVoltage: 'ECT-전압 관계',
+  params_tab_pressureVoltage: 'MAP-전압 관계',
+  params_tab_tpsSettings: 'TPS 설정',
+  params_tab_rpmSettings: 'RPM 설정',
 };

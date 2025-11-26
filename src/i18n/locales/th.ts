@@ -196,4 +196,19 @@ export default {
   otherOptions_row_injVeComp: 'INJ VE(±ms)',
   otherOptions_row_iat: 'IAT',
   otherOptions_row_ect: 'ECT',
+  otherOptions_row_motorStep: 'Motor(±STEP)',
+  otherOptions_row_injAdjPct: 'Inj Adj[±PCT]',
+  otherOptions_row_ignAdjDeg: 'Ign Adj[±°]',
+
+  // Parameters Page - Limiters
+  params_limiters: 'ตัวจำกัด',
+  params_outputs: 'เอาต์พุต',
+  
+  // Parameters Page - Sub Tabs
+  params_tab_afrVoltage: 'ความสัมพันธ์ AFR-แรงดัน',
+  params_tab_iatVoltage: 'ความสัมพันธ์ IAT-แรงดัน',
+  params_tab_ectVoltage: 'ความสัมพันธ์ ECT-แรงดัน',
+  params_tab_pressureVoltage: 'ความสัมพันธ์ MAP-แรงดัน',
+  params_tab_tpsSettings: 'การตั้งค่า TPS',
+  params_tab_rpmSettings: 'การตั้งค่า RPM',
 };

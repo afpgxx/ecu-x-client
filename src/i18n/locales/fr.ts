@@ -196,4 +196,19 @@ export default {
   otherOptions_row_injVeComp: 'INJ VE(±ms)',
   otherOptions_row_iat: 'IAT',
   otherOptions_row_ect: 'ECT',
+  otherOptions_row_motorStep: 'Motor(±STEP)',
+  otherOptions_row_injAdjPct: 'Inj Adj[±PCT]',
+  otherOptions_row_ignAdjDeg: 'Ign Adj[±°]',
+
+  // 新增的參數類別
+  params_limiters: 'Limiteurs',
+  params_outputs: 'Sorties',
+  
+  // Page Paramètres - Sous-onglets
+  params_tab_afrVoltage: 'Relation AFR-Tension',
+  params_tab_iatVoltage: 'Relation IAT-Tension',
+  params_tab_ectVoltage: 'Relation ECT-Tension',
+  params_tab_pressureVoltage: 'Relation MAP-Tension',
+  params_tab_tpsSettings: 'Paramètres TPS',
+  params_tab_rpmSettings: 'Paramètres RPM',
 };

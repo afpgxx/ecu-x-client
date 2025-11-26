@@ -52,3 +52,22 @@ The application supports 9 languages: Simplified Chinese, Traditional Chinese, E
 - **Storage:** Language preference is saved to localStorage as 'ecu-language'
 
 When adding new UI text, **always add it to all 9 translation files** to maintain consistency.
+
+## Todo Workflow
+- The user may provide a `todo.md` file in the `todo/` directory with multiple tasks (images and text).
+- You should process tasks from `todo/todo.md` one by one or in small batches.
+- If a task is large, break it down into smaller, manageable sub-tasks.
+- After completing a task (or sub-task), remove ONLY that specific part from `todo/todo.md`. Do NOT delete the entire file unless all tasks are completed.
+- Update `todo/finished.md` with the completed tasks and a timestamp.
+- You can automatically request to continue if appropriate.
+- If the request limit is reached or you cannot continue, ask the user to re-initiate with "Please complete TODO".
+- Always check `agents.md` for these rules.
+
+### Image Handling Protocol
+- **When encountering image tasks in todo.md**:
+  1. First, attempt to view/analyze the image files directly
+  2. If you cannot see or interpret the images properly, PAUSE the task
+  3. List the image file paths required (max 4 images per request)
+  4. Ask the user to send/paste the images in the chat
+  5. Wait for user to provide the images before continuing
+- **Example Output when images are not visible**: "我无法查看以下图片，请将它们发送给我：\n- `d:\OurWork\ecu-x-client\todo\image-4.png`\n- `d:\OurWork\ecu-x-client\todo\image-5.png`\n\n请将这些图片粘贴到对话中，我再继续执行任务。"

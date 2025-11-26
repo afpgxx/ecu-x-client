@@ -1,11 +1,12 @@
 import React, { useEffect, useRef } from 'react';
 
 interface MapTable1DProps {
-  headers: number[]; // The X-axis values (e.g., RPM)
-  data: number[];    // The row data values
-  activeValue: number; // The current live value to highlight (e.g., current RPM)
-  xLabel: string;    // Label for the X-axis (e.g. "RPM")
-  yLabel: string;    // Label for the row header (e.g. "TIME")
+  headers: number[]; // X轴值（例如 RPM）
+  data: number[];    // 行数据值
+  activeValue: number; // 当前高亮值（例如当前 RPM）
+  xLabel: string;    // X轴标签
+  yLabel: string;    // 行头标签
+  colorMode?: 'heatmap' | 'dark'; // 颜色模式：热力图 或 深色统一样式
 }
 
 // Helper to map value to Heatmap Color (Blue -> Green -> Yellow -> Red)
@@ -22,7 +23,8 @@ export const MapTable1D: React.FC<MapTable1DProps> = ({
   data,
   activeValue,
   xLabel,
-  yLabel
+  yLabel,
+  colorMode = 'heatmap'
 }) => {
   const activeRef = useRef<HTMLDivElement>(null);
 
@@ -67,26 +69,30 @@ export const MapTable1D: React.FC<MapTable1DProps> = ({
 
       {/* Data Row */}
       <div className="flex-1 flex overflow-y-auto scrollbar-thin">
-        <div className="flex w-full h-12"> {/* Fixed height for the single row */}
+        <div className="flex w-full h-12">
            
            {/* Row Label */}
            <div className="w-24 flex-shrink-0 flex items-center justify-center border-r border-gray-700 bg-gray-800 text-gray-300 font-bold border-b border-gray-700">
               {yLabel}
            </div>
 
-           {/* Data Cells */}
+             {/* 数据单元格 */}
            <div className="flex-1 flex">
                 {data.map((cellValue, i) => {
                     const isActive = i === activeColIndex;
-                    const bg = getHeatmapColor(cellValue, minVal, maxVal);
+                const bg = colorMode === 'heatmap' 
+                  ? getHeatmapColor(cellValue, minVal, maxVal) 
+                  : '#111316';
                     
                     return (
                         <div
                             key={i}
                             ref={isActive ? activeRef : null}
-                            className={`flex-1 min-w-[48px] flex items-center justify-center text-black font-bold border-r border-b border-black/10 cursor-pointer text-sm
-                                ${isActive ? 'ring-2 ring-white z-10 scale-105 shadow-lg' : 'opacity-90 hover:opacity-100'}`}
-                            style={{ backgroundColor: bg }}
+                    className={`flex-1 min-w-[48px] flex items-center justify-center font-bold border-r border-b cursor-pointer text-sm
+                      ${isActive ? 'ring-2 ring-white z-10 scale-105 shadow-lg' : ''}
+                      ${colorMode === 'heatmap' ? 'text-black border-black/10' : 'text-white border-gray-700 hover:bg-[#1a1d24]'}
+                    `}
+                    style={{ backgroundColor: bg }}
                         >
                             {cellValue.toFixed(2)}
                         </div>
@@ -95,8 +101,8 @@ export const MapTable1D: React.FC<MapTable1DProps> = ({
            </div>
         </div>
         
-        {/* Empty space filler below the row */}
-        <div className="flex-1 bg-[#16181c]"></div>
+          {/* 空白填充区 */}
+          <div className="flex-1 bg-[#16181c]"></div>
       </div>
     </div>
   );

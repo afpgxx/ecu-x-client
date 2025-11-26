@@ -1,53 +1,6 @@
 import React, { useState } from 'react';
 import { useI18n } from '../i18n/I18nContext';
-
-interface ParamRowProps {
-  label?: string;
-  value: string | number;
-  unit?: string;
-  highlighted?: boolean;
-  onChange?: (val: string) => void;
-}
-
-const ParamRow: React.FC<ParamRowProps> = ({ label, value, unit, highlighted = true, onChange }) => {
-  const [isEditing, setIsEditing] = useState(false);
-  const [inputValue, setInputValue] = useState(value.toString());
-
-  const handleBlur = () => {
-    setIsEditing(false);
-    if (onChange) onChange(inputValue);
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      handleBlur();
-    }
-  };
-
-  return (
-    <div className="flex items-center border-b border-gray-700 last:border-0 h-8 text-xs">
-      {label && <div className="flex-[2] px-2 text-gray-400 font-medium truncate border-r border-gray-700 h-full flex items-center justify-end bg-[#2d323a]">{label}</div>}
-      <div 
-        className={`flex-1 px-2 font-mono font-bold h-full flex items-center justify-center cursor-pointer ${highlighted ? 'bg-[#111316] text-white' : 'text-gray-300 bg-[#1f2329]'}`}
-        onClick={() => highlighted && setIsEditing(true)}
-      >
-         {isEditing && highlighted ? (
-           <input 
-             autoFocus
-             className="w-full h-full bg-transparent text-center outline-none text-white"
-             value={inputValue}
-             onChange={(e) => setInputValue(e.target.value)}
-             onBlur={handleBlur}
-             onKeyDown={handleKeyDown}
-           />
-         ) : (
-           value
-         )}
-      </div>
-      {unit !== undefined && <div className="w-16 text-center text-gray-500 font-medium border-l border-gray-700 h-full flex items-center justify-center bg-[#2d323a]">{unit}</div>}
-    </div>
-  );
-};
+import { ParamRow } from './ParamRow';
 
 export const OtherOptionsView: React.FC = () => {
    const { t } = useI18n();
@@ -60,6 +13,7 @@ export const OtherOptionsView: React.FC = () => {
       t.otherOptions_tab_extAdj
    ];
    const [activeSubTab, setActiveSubTab] = useState(subTabs[0]);
+   const [extAdjMode, setExtAdjMode] = useState<'TPS' | 'RPM'>('TPS');
 
    // State for parameters (simplified for demo)
    const [params, setParams] = useState({
@@ -92,6 +46,26 @@ export const OtherOptionsView: React.FC = () => {
          ]
        };
      }
+     if (activeSubTab === t.otherOptions_tab_mapComp) {
+       const cols = [];
+       for(let i=0; i<=120; i+=12) cols.push(`${i} KPa`);
+       return {
+         cols,
+         rows: [
+           { label: t.otherOptions_row_motorStep, values: Array(cols.length).fill('0') }
+         ]
+       };
+     }
+     if (activeSubTab === t.otherOptions_tab_extAdj) {
+       const cols = ['0%', '0.5%', '3%', '6%', '12%', '20%', '30%', '40%', '50%', '60%', '70%', '80%', '90%', '100%', 'ALL'];
+       return {
+         cols,
+         rows: [
+           { label: t.otherOptions_row_injAdjPct, values: Array(cols.length).fill('0') },
+           { label: t.otherOptions_row_ignAdjDeg, values: Array(cols.length).fill('0') },
+         ]
+       };
+     }
      // Default: Temp-Idle Motor
      return {
        cols: ['-14°C', '0°C', '14°C', '28°C', '42°C', '56°C', '70°C', '84°C', '98°C', '112°C', '126°C'],
@@ -103,6 +77,12 @@ export const OtherOptionsView: React.FC = () => {
    };
 
    const { cols, rows } = getGridData();
+
+   // Determine the top-left header label based on active tab
+   let topLeftHeader = t.otherOptions_row_ect;
+   if (activeSubTab === t.otherOptions_tab_iatComp) topLeftHeader = t.otherOptions_row_iat;
+   if (activeSubTab === t.otherOptions_tab_mapComp) topLeftHeader = 'MAP';
+   if (activeSubTab === t.otherOptions_tab_extAdj) topLeftHeader = extAdjMode;
 
    return (
       <div className="flex flex-col h-full bg-[#16181c] p-1 gap-1 overflow-y-auto">
@@ -144,19 +124,45 @@ export const OtherOptionsView: React.FC = () => {
          </div>
 
          {/* Middle Section: Sub Tabs */}
-         <div className="flex gap-1 py-1 shrink-0 overflow-x-auto bg-[#16181c] mt-1">
-            {subTabs.map(tab => (
-               <button
-                  key={tab}
-                  onClick={() => setActiveSubTab(tab)}
-                  className={`px-2 py-1 text-[11px] font-bold border border-gray-700 whitespace-nowrap transition-colors
-                     ${activeSubTab === tab 
-                        ? 'bg-blue-600 text-white border-blue-500' 
-                        : 'bg-[#23272e] text-gray-400 hover:bg-[#2d323a]'}`}
-               >
-                  {tab}
-               </button>
-            ))}
+         <div className="flex items-center justify-between bg-[#16181c] mt-1 shrink-0">
+            <div className="flex gap-1 overflow-x-auto">
+               {subTabs.map(tab => (
+                  <button
+                     key={tab}
+                     onClick={() => setActiveSubTab(tab)}
+                     className={`px-2 py-1 text-[11px] font-bold border border-gray-700 whitespace-nowrap transition-colors
+                        ${activeSubTab === tab 
+                           ? 'bg-blue-600 text-white border-blue-500' 
+                           : 'bg-[#23272e] text-gray-400 hover:bg-[#2d323a]'}`}
+                  >
+                     {tab}
+                  </button>
+               ))}
+            </div>
+            
+            {/* Checkboxes for External Adjust */}
+            {activeSubTab === t.otherOptions_tab_extAdj && (
+               <div className="flex items-center gap-4 px-2 text-xs text-gray-300">
+                  <label className="flex items-center gap-1 cursor-pointer select-none">
+                     <input 
+                        type="checkbox" 
+                        checked={extAdjMode === 'TPS'} 
+                        onChange={() => setExtAdjMode('TPS')}
+                        className="accent-blue-600"
+                     />
+                     TPS
+                  </label>
+                  <label className="flex items-center gap-1 cursor-pointer select-none">
+                     <input 
+                        type="checkbox" 
+                        checked={extAdjMode === 'RPM'} 
+                        onChange={() => setExtAdjMode('RPM')}
+                        className="accent-blue-600"
+                     />
+                     RPM
+                  </label>
+               </div>
+            )}
          </div>
 
          {/* Bottom Section: Data Grid */}
@@ -164,7 +170,7 @@ export const OtherOptionsView: React.FC = () => {
             <div className="min-w-max">
                <div className="flex h-8 text-xs border-b border-gray-700">
                   <div className="w-28 bg-[#2d323a] border-r border-gray-700 text-gray-400 flex items-center justify-center font-bold sticky left-0 z-10">
-                     {activeSubTab === t.otherOptions_tab_iatComp ? t.otherOptions_row_iat : t.otherOptions_row_ect}
+                     {topLeftHeader}
                   </div>
                   {cols.map((col, i) => (
                      <div key={i} className="flex-1 min-w-[60px] bg-[#2d323a] border-r border-gray-700 text-gray-400 flex items-center justify-center">

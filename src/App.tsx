@@ -385,6 +385,7 @@ const App: React.FC = () => {
           activeValue={engineState.rpm} 
           xLabel="RPM"
           yLabel="TIME"
+          colorMode="dark" /* 使用深色统一样式，保持与其它表格一致 */
         />
       );
     }

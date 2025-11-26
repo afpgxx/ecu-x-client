@@ -196,4 +196,19 @@ export default {
   otherOptions_row_injVeComp: 'INJ VE(±ms)',
   otherOptions_row_iat: 'IAT',
   otherOptions_row_ect: 'ECT',
+  otherOptions_row_motorStep: 'Motor(±STEP)',
+  otherOptions_row_injAdjPct: 'Inj Adj[±PCT]',
+  otherOptions_row_ignAdjDeg: 'Ign Adj[±°]',
+
+  // 新增的參數類別
+  params_limiters: 'Ограничители',
+  params_outputs: 'Выходы',
+  
+  // Страница параметров - Подвкладки
+  params_tab_afrVoltage: 'Отношение AFR-Напряжение',
+  params_tab_iatVoltage: 'Отношение IAT-Напряжение',
+  params_tab_ectVoltage: 'Отношение ECT-Напряжение',
+  params_tab_pressureVoltage: 'Отношение MAP-Напряжение',
+  params_tab_tpsSettings: 'Настройки TPS',
+  params_tab_rpmSettings: 'Настройки RPM',
 };

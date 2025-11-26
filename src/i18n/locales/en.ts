@@ -196,4 +196,19 @@ export default {
   otherOptions_row_injVeComp: 'INJ VE(±ms)',
   otherOptions_row_iat: 'IAT',
   otherOptions_row_ect: 'ECT',
+  otherOptions_row_motorStep: 'Motor(±STEP)',
+  otherOptions_row_injAdjPct: 'Inj Adj[±PCT]',
+  otherOptions_row_ignAdjDeg: 'Ign Adj[±°]',
+
+  // Additional parameter categories
+  params_limiters: 'Limiters',
+  params_outputs: 'Outputs',
+  
+  // Parameters Page - Sub Tabs
+  params_tab_afrVoltage: 'AFR-Voltage Relationship',
+  params_tab_iatVoltage: 'IAT-Voltage Relationship',
+  params_tab_ectVoltage: 'ECT-Voltage Relationship',
+  params_tab_pressureVoltage: 'MAP-Voltage Relationship',
+  params_tab_tpsSettings: 'TPS Settings',
+  params_tab_rpmSettings: 'RPM Settings',
 };
