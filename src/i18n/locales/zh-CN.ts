@@ -14,10 +14,12 @@ export default {
   common_search: '搜索',
   common_reset: '重置',
   common_settings: '设置',
+  
+  // 关于
+  about_description: '专业的ECU电喷管理系统，用于发动机调校和实时监控。支持多种调校地图、传感器校准和数据可视化。',
 
   // 标题栏
   titleBar_appName: 'ECU电喷管理系统',
-  titleBar_version: 'v1.0',
   titleBar_connected: '已连接',
   titleBar_disconnected: '未连接',
 

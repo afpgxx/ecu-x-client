@@ -15,6 +15,7 @@ import { ToggleSwitch } from './components/common/ToggleSwitch';
 import { EngineState } from './types';
 import { useI18n } from './i18n/I18nContext';
 import { Language } from './i18n';
+import { APP_VERSION } from './version';
 
 // --- Data Generation Constants ---
 const RPM_POINTS = [800, 1200, 1600, 2000, 2400, 2800, 3200, 3600, 4000, 4400, 4800, 5200, 5600, 6000, 6400, 6800, 7200, 7600, 8000];
@@ -113,6 +114,7 @@ const App: React.FC = () => {
   const [masterSwitch, setMasterSwitch] = useState(true);
   const [activeTab, setActiveTab] = useState(MAIN_TABS[0]); // 使用数组第一项而不是直接访问 t
   const [showLanguageMenu, setShowLanguageMenu] = useState(false);
+  const [showAbout, setShowAbout] = useState(false);
   
   // Controller values
   const [idleValue, setIdleValue] = useState(850);
@@ -467,7 +469,7 @@ const App: React.FC = () => {
       <div className="h-8 bg-[#111316] flex items-center justify-between px-4 border-b border-gray-800 select-none shrink-0" style={{ WebkitAppRegion: 'drag' } as any}>
         <div className="flex items-center gap-3">
           <Activity size={14} className="text-orange-500" />
-          <span className="text-xs font-medium text-gray-400 tracking-wide">{t.titleBar_appName} {t.titleBar_version}</span>
+          <span className="text-xs font-medium text-gray-400 tracking-wide">{t.titleBar_appName} {APP_VERSION}</span>
         </div>
         <div className="flex items-center gap-6" style={{ WebkitAppRegion: 'no-drag' } as any}>
           <div className={`flex items-center gap-2 text-[10px] font-bold uppercase ${ecuConnected ? 'text-emerald-500' : 'text-red-500'}`}>
@@ -511,7 +513,11 @@ const App: React.FC = () => {
       {/* --- Menu Bar --- */}
       <div className="h-8 bg-[#1e2126] flex items-center px-2 gap-1 shrink-0 border-b border-black">
          {[t.menu_file, t.menu_edit, t.menu_view, t.menu_ecu, t.menu_dataLog, t.menu_tools, t.menu_window, t.menu_help].map(item => (
-           <button key={item} className="px-3 py-1 text-[11px] hover:bg-[#2d323a] text-gray-400 hover:text-white rounded-sm transition-colors">
+           <button 
+             key={item} 
+             className="px-3 py-1 text-[11px] hover:bg-[#2d323a] text-gray-400 hover:text-white rounded-sm transition-colors"
+             onClick={() => item === t.menu_help && setShowAbout(true)}
+           >
              {item}
            </button>
          ))}
@@ -677,6 +683,34 @@ const App: React.FC = () => {
          </div>
 
       </div>
+
+      {/* 关于弹窗 */}
+      {showAbout && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50" onClick={() => setShowAbout(false)}>
+          <div className="bg-[#2d323a] rounded-lg border border-gray-600 shadow-2xl p-8 max-w-md w-full mx-4" onClick={(e) => e.stopPropagation()}>
+            <div className="flex flex-col items-center gap-6">
+              <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-700 rounded-full flex items-center justify-center">
+                <Activity size={32} className="text-white" />
+              </div>
+              <div className="text-center">
+                <h2 className="text-2xl font-bold text-white mb-2">{t.titleBar_appName}</h2>
+                <p className="text-gray-400 text-sm">{APP_VERSION}</p>
+              </div>
+              <div className="w-full border-t border-gray-700 pt-4">
+                <p className="text-gray-400 text-xs text-center leading-relaxed">
+                  {t.about_description}
+                </p>
+              </div>
+              <button 
+                onClick={() => setShowAbout(false)}
+                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-medium transition-colors"
+              >
+                {t.common_close}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

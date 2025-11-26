@@ -14,10 +14,12 @@ export default {
   common_search: '検索',
   common_reset: 'リセット',
   common_settings: '設定',
+  
+  // について
+  about_description: 'エンジンチューニングとリアルタイム監視のためのプロフェッショナルECU噴射管理システム。複数のチューニングマップ、センサー校正、データ可視化をサポート。',
 
   // 標題欄
   titleBar_appName: 'ECU燃料噴射管理システム',
-  titleBar_version: 'v1.0',
   titleBar_connected: '接続済み',
   titleBar_disconnected: '未接続',
 

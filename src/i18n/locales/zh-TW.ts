@@ -14,10 +14,12 @@ export default {
   common_search: '搜尋',
   common_reset: '重設',
   common_settings: '設定',
+  
+  // 關於
+  about_description: '專業的ECU電噴管理系統，用於引擎調校和即時監控。支援多種調校地圖、感測器校準和資料視覺化。',
 
   // 標題欄
   titleBar_appName: 'ECU電噴管理系統',
-  titleBar_version: 'v1.0',
   titleBar_connected: '已連線',
   titleBar_disconnected: '未連線',
 

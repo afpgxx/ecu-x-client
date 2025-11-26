@@ -14,6 +14,9 @@ export default {
   common_search: '검색',
   common_reset: '재설정',
   common_settings: '설정',
+  
+  // 정보
+  about_description: '엔진 튜닝 및 실시간 모니터링을 위한 전문 ECU 분사 관리 시스템. 다양한 튜닝 맵, 센서 보정 및 데이터 시각화를 지원합니다.',
 
   // 標題欄
   titleBar_appName: 'ECU 연료분사 관리 시스템',

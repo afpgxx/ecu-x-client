@@ -3,7 +3,7 @@ export default {
   common_save: 'Enregistrer',
   common_open: 'Ouvrir',
   common_download: 'Télécharger',
-  common_upload: 'Charger',
+  common_upload: 'Téléverser',
   common_refresh: 'Actualiser les données',
   common_close: 'Fermer',
   common_cancel: 'Annuler',
@@ -14,6 +14,9 @@ export default {
   common_search: 'Rechercher',
   common_reset: 'Réinitialiser',
   common_settings: 'Paramètres',
+  
+  // À propos
+  about_description: 'Système professionnel de gestion d\'injection ECU pour le réglage moteur et la surveillance en temps réel. Prend en charge plusieurs cartes de réglage, l\'étalonnage des capteurs et la visualisation des données.',
 
   // 標題欄
   titleBar_appName: 'Système de gestion d\'injection ECU',

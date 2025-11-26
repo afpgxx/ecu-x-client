@@ -14,10 +14,12 @@ export default {
   common_search: 'Search',
   common_reset: 'Reset',
   common_settings: 'Settings',
+  
+  // About
+  about_description: 'Professional ECU Injection Management System for engine tuning and real-time monitoring. Supports multiple tuning maps, sensor calibration, and data visualization.',
 
   // Title Bar
   titleBar_appName: 'ECU Injection Management System',
-  titleBar_version: 'v1.0',
   titleBar_connected: 'Connected',
   titleBar_disconnected: 'Disconnected',
 
