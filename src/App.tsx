@@ -11,6 +11,7 @@ import { MapTable1D } from './components/MapTable1D';
 import { OtherOptionsView } from './components/OtherOptionsView';
 import { SettingsView } from './components/SettingsView';
 import { ParametersView } from './components/ParametersView';
+import { ToggleSwitch } from './components/common/ToggleSwitch';
 import { EngineState } from './types';
 import { useI18n } from './i18n/I18nContext';
 import { Language } from './i18n';
@@ -571,17 +572,14 @@ const App: React.FC = () => {
             <div className="bg-[#16181c] rounded-lg border border-gray-700/50 p-2 shadow-xl flex flex-col gap-2 overflow-hidden" style={{ flex: '0.35 1 0%' }}>
                <div className="flex items-center justify-between bg-[#111316] p-2 rounded border border-gray-800 shrink-0">
                   <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">{t.controllers_title}</span>
-                  <div 
-                    className="flex items-center gap-2 cursor-pointer" 
-                    onClick={() => setMasterSwitch(!masterSwitch)}
-                  >
-                    <span className={`text-[10px] font-bold ${masterSwitch ? 'text-white' : 'text-gray-600'}`}>
-                      {masterSwitch ? t.controllers_enabled : t.controllers_disabled}
-                    </span>
-                    <div className={`w-8 h-4 rounded-full p-0.5 transition-colors duration-300 ${masterSwitch ? 'bg-green-600' : 'bg-gray-700'}`}>
-                      <div className={`w-3 h-3 bg-white rounded-full shadow-md transform transition-transform duration-300 ${masterSwitch ? 'translate-x-4' : 'translate-x-0'}`}></div>
-                    </div>
-                  </div>
+                  <ToggleSwitch
+                    checked={masterSwitch}
+                    onChange={setMasterSwitch}
+                    size="sm"
+                  />
+                  <span className={`text-[10px] font-bold ${masterSwitch ? 'text-white' : 'text-gray-600'}`}>
+                    {masterSwitch ? t.controllers_enabled : t.controllers_disabled}
+                  </span>
                </div>
 
                <div className="flex-1 grid grid-cols-2 grid-rows-2 gap-2 min-h-0">

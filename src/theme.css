@@ -1,0 +1,161 @@
+/* 
+ * ECU 主题样式表
+ * 定义统一的颜色、字体、间距等基础样式
+ * 所有注释使用简体中文
+ */
+
+/* === CSS 变量定义 === */
+:root {
+  /* 背景色 */
+  --bg-root: #1a1d21;
+  --bg-panel: #1e2126;
+  --bg-panel-alt: #16181c;
+  --bg-header: #2d323a;
+  --bg-cell: #111316;
+  --bg-cell-hover: #1a1d21;
+  
+  /* 文字颜色 */
+  --text-primary: #ffffff;
+  --text-secondary: #c0c4cc;
+  --text-muted: #8b8f98;
+  --text-dim: #6b7280;
+  
+  /* 主题色 */
+  --accent-blue: #2563eb;
+  --accent-green: #16a34a;
+  --accent-orange: #ea580c;
+  --accent-red: #dc2626;
+  
+  /* 边框颜色 */
+  --border-default: #374151;
+  --border-light: #4b5563;
+  --border-dark: #1f2937;
+  
+  /* 字体 */
+  --font-base: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: ui-monospace, 'SFMono-Regular', Menlo, Monaco, Consolas, monospace;
+  
+  /* 字号 */
+  --text-xs: 11px;
+  --text-sm: 12px;
+  --text-base: 14px;
+  --text-lg: 16px;
+  
+  /* 间距 */
+  --spacing-xs: 4px;
+  --spacing-sm: 6px;
+  --spacing-md: 8px;
+  --spacing-lg: 12px;
+  --spacing-xl: 16px;
+}
+
+/* === 通用主题类 === */
+
+/* 背景类 */
+.theme-bg-root { background-color: var(--bg-root); }
+.theme-bg-panel { background-color: var(--bg-panel); }
+.theme-bg-panel-alt { background-color: var(--bg-panel-alt); }
+.theme-bg-header { background-color: var(--bg-header); }
+.theme-bg-cell { background-color: var(--bg-cell); }
+.theme-bg-cell-hover { background-color: var(--bg-cell-hover); }
+
+/* 文字颜色类 */
+.theme-text-primary { color: var(--text-primary); }
+.theme-text-secondary { color: var(--text-secondary); }
+.theme-text-muted { color: var(--text-muted); }
+.theme-text-dim { color: var(--text-dim); }
+
+/* 主题色类 */
+.theme-accent-blue { color: var(--accent-blue); }
+.theme-accent-green { color: var(--accent-green); }
+.theme-accent-orange { color: var(--accent-orange); }
+.theme-accent-red { color: var(--accent-red); }
+
+.theme-bg-accent-blue { background-color: var(--accent-blue); }
+.theme-bg-accent-green { background-color: var(--accent-green); }
+.theme-bg-accent-orange { background-color: var(--accent-orange); }
+.theme-bg-accent-red { background-color: var(--accent-red); }
+
+/* 边框颜色类 */
+.theme-border { border-color: var(--border-default); }
+.theme-border-light { border-color: var(--border-light); }
+.theme-border-dark { border-color: var(--border-dark); }
+
+/* === 表格专用样式 === */
+.theme-table-container {
+  background-color: var(--bg-panel-alt);
+  border: 1px solid var(--border-default);
+  border-radius: 0.5rem;
+}
+
+.theme-table-header {
+  background-color: var(--bg-header);
+  color: var(--text-dim);
+  font-weight: 600;
+  font-size: var(--text-xs);
+}
+
+.theme-table-cell {
+  background-color: var(--bg-cell);
+  color: var(--text-primary);
+  font-weight: 700;
+  font-size: var(--text-sm);
+  border: 1px solid var(--border-default);
+}
+
+.theme-table-cell-hover:hover {
+  background-color: var(--bg-cell-hover);
+  border-color: var(--accent-blue);
+}
+
+.theme-table-cell-active {
+  background-color: var(--accent-blue);
+  color: var(--text-primary);
+  box-shadow: 0 0 10px rgba(37, 99, 235, 0.5);
+}
+
+/* === 面板专用样式 === */
+.theme-panel {
+  background-color: var(--bg-panel-alt);
+  border: 1px solid var(--border-default);
+  border-radius: 0.5rem;
+  padding: 1rem;
+}
+
+.theme-panel-header {
+  background-color: var(--bg-panel);
+  border-bottom: 1px solid var(--border-default);
+  padding: 0.5rem 1rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+/* === 按钮专用样式 === */
+.theme-btn-primary {
+  background-color: var(--accent-blue);
+  color: var(--text-primary);
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.theme-btn-primary:hover {
+  background-color: #1d4ed8;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+}
+
+.theme-btn-secondary {
+  background-color: var(--bg-header);
+  color: var(--text-secondary);
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  border: 1px solid var(--border-default);
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.theme-btn-secondary:hover {
+  background-color: #374151;
+  color: var(--text-primary);
+}

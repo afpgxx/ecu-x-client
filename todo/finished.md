@@ -1,5 +1,8 @@
 - [x] 创建统一主题配置文件 `src/theme.ts`，包含颜色、字体、间距等设定。(2025-11-26)
 - [x] 调整储能时间表格（Dwell Time）的单元格样式，使用统一深色样式（白色文字、#111316背景、蓝色激活态标签），与其它选项页面一致。(2025-11-26)
+- [x] **抽离ToggleSwitch组件**：创建 `src/components/common/ToggleSwitch.tsx`，统一管理开关组件，支持两种尺寸（sm/md），带ON/OFF标签和平滑动画。已在 App.tsx 和 SettingsView.tsx 中使用。(2025-11-26)
+- [x] **主题系统重构**：将 theme.ts 改为 `src/theme.css`，使用 CSS 变量（--bg-panel等）和工具类（theme-bg-panel等），方便直接使用类名而非内联样式。MapTable1D 已迁移到新主题系统。(2025-11-26)
+- [x] **更新 agents.md**：新增主题使用指南，说明 CSS 变量、主题类和通用组件库（ToggleSwitch），要求新功能优先使用主题样式以保持一致性。(2025-11-26)
 # Finished Tasks
 
 - [x] Updated agents.md with Todo Workflow rules. (2025-11-26)

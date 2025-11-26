@@ -30,8 +30,58 @@ This is a high-fidelity desktop application for tuning and monitoring Engine Con
     - `UI/`: Design assets and reference images.
 - **Source (`src/`):**
     - `components/`: Reusable UI components (Gauges, MapTables, VerticalBars).
+    - `components/common/`: Common reusable components (ToggleSwitch, etc.).
     - `App.tsx`: Main application layout and state management.
     - `types.ts`: TypeScript interfaces for Engine State and Maps.
+    - `theme.css`: Centralized theme stylesheet with CSS variables and utility classes.
+    - `theme.ts`: (Legacy) TypeScript theme configuration - prefer using theme.css.
+
+## Theming & Styling
+**IMPORTANT:** The project uses a centralized theme system defined in `src/theme.css`.
+
+### Theme Structure
+- **CSS Variables:** Defined in `:root` selector with `--` prefix (e.g., `--bg-panel`, `--text-primary`)
+- **Utility Classes:** Pre-defined classes starting with `theme-` prefix for common patterns
+
+### Using the Theme
+1. **Prefer CSS Classes:** Use `theme-*` classes instead of inline styles or hardcoded colors
+   ```tsx
+   // ✅ Good
+   <div className="theme-bg-panel theme-text-primary">Content</div>
+   
+   // ❌ Avoid
+   <div style={{ backgroundColor: '#1e2126', color: '#ffffff' }}>Content</div>
+   ```
+
+2. **Available Theme Classes:**
+   - **Backgrounds:** `theme-bg-root`, `theme-bg-panel`, `theme-bg-panel-alt`, `theme-bg-header`, `theme-bg-cell`
+   - **Text Colors:** `theme-text-primary`, `theme-text-secondary`, `theme-text-muted`, `theme-text-dim`
+   - **Accent Colors:** `theme-accent-blue`, `theme-bg-accent-blue`, `theme-accent-green`, etc.
+   - **Borders:** `theme-border`, `theme-border-light`, `theme-border-dark`
+   - **Components:** `theme-table-container`, `theme-table-header`, `theme-table-cell`, `theme-panel`, `theme-btn-primary`
+
+3. **Using CSS Variables Directly:**
+   ```tsx
+   <div style={{ backgroundColor: 'var(--bg-panel)', fontSize: 'var(--text-sm)' }}>
+   ```
+
+4. **Custom Components:** When creating new components, use theme classes for consistency
+
+### Common Components Library
+Reusable components are located in `src/components/common/`:
+- **ToggleSwitch:** Animated on/off switch with size options (`sm`, `md`)
+  ```tsx
+  import { ToggleSwitch } from './components/common/ToggleSwitch';
+  
+  <ToggleSwitch 
+    checked={isEnabled} 
+    onChange={setIsEnabled}
+    size="sm"
+    showLabel={true}
+  />
+  ```
+
+**When implementing new features:** Always use theme classes and common components for visual consistency.
 
 ## Workflow
 1.  **Check Designs:** Look in `UI/` for context.

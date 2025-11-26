@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { ToggleSwitch } from './common/ToggleSwitch';
 
 // 注释：设置与信息页面实现（修复版），与截图一致的布局与风格
 export const SettingsView: React.FC = () => {
@@ -49,17 +50,11 @@ export const SettingsView: React.FC = () => {
             <div className="bg-[#383c44] p-4 rounded border border-gray-600 flex items-center justify-between h-20 shadow-lg">
               <div className="flex items-center gap-3 bg-[#262a30] px-4 py-2 rounded border border-gray-700">
                 <span className="text-gray-300 font-medium text-sm">空燃比控制</span>
-                <div 
-                  className="flex items-center gap-2 cursor-pointer" 
-                  onClick={() => setAfrEnabled(!afrEnabled)}
-                >
-                  <span className={`text-[10px] font-bold ${afrEnabled ? 'text-white' : 'text-gray-600'}`}>
-                    {afrEnabled ? 'ON' : 'OFF'}
-                  </span>
-                  <div className={`w-8 h-4 rounded-full p-0.5 transition-colors duration-300 ${afrEnabled ? 'bg-green-600' : 'bg-gray-700'}`}>
-                    <div className={`w-3 h-3 bg-white rounded-full shadow-md transform transition-transform duration-300 ${afrEnabled ? 'translate-x-4' : 'translate-x-0'}`}></div>
-                  </div>
-                </div>
+                <ToggleSwitch
+                  checked={afrEnabled}
+                  onChange={setAfrEnabled}
+                  size="sm"
+                />
               </div>
               <div className="flex items-center gap-6 pr-4">
                 <label className="flex items-center gap-2 text-gray-300 hover:text-white cursor-pointer" onClick={() => setOemSensor(true)}>
