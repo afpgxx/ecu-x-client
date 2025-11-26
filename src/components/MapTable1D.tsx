@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import { theme } from '../theme';
 
 interface MapTable1DProps {
   headers: number[]; // X轴值（例如 RPM）
@@ -45,20 +46,24 @@ export const MapTable1D: React.FC<MapTable1DProps> = ({
   }, [activeColIndex]);
 
   return (
-    <div className="flex flex-col w-full h-full bg-gray-900 text-[11px] select-none overflow-hidden">
+    <div className="flex flex-col w-full h-full select-none overflow-hidden" style={{ backgroundColor: theme.colors.bgPanelAlt, fontSize: theme.fonts.sizeXs }}>
       
       {/* Header Row (X-Axis Labels) */}
-      <div className="flex w-full border-b border-gray-700 bg-gray-800">
-        <div className="w-24 flex-shrink-0 p-1 flex items-center justify-center border-r border-gray-700 bg-gray-900 text-gray-400 font-bold">
+      <div className="flex w-full" style={{ borderBottom: `1px solid ${theme.colors.border}`, backgroundColor: theme.colors.bgHeader }}>
+        <div className="w-24 flex-shrink-0 p-1 flex items-center justify-center font-bold" style={{ borderRight: `1px solid ${theme.colors.border}`, backgroundColor: theme.colors.bgPanelAlt, color: theme.colors.textMuted }}>
           {xLabel}
         </div>
         <div className="flex-1 overflow-hidden">
             <div className="flex w-full h-full">
                 {headers.map((val, i) => (
                 <div 
-                    key={i} 
-                    className={`flex-1 min-w-[48px] flex items-center justify-center font-bold transition-colors duration-150 border-r border-gray-700 last:border-0
-                    ${i === activeColIndex ? 'bg-red-600 text-white' : 'bg-gray-800 text-gray-400'}`}
+                    key={i}
+                    className={`flex-1 min-w-[48px] flex items-center justify-center font-bold transition-colors duration-150 last:border-0`}
+                    style={{
+                      borderRight: `1px solid ${theme.colors.border}`,
+                      backgroundColor: i === activeColIndex ? theme.colors.accentBlue : theme.colors.bgHeader,
+                      color: theme.colors.textPrimary
+                    }}
                 >
                     {val}
                 </div>
@@ -72,7 +77,7 @@ export const MapTable1D: React.FC<MapTable1DProps> = ({
         <div className="flex w-full h-12">
            
            {/* Row Label */}
-           <div className="w-24 flex-shrink-0 flex items-center justify-center border-r border-gray-700 bg-gray-800 text-gray-300 font-bold border-b border-gray-700">
+            <div className="w-24 flex-shrink-0 flex items-center justify-center font-bold" style={{ borderRight: `1px solid ${theme.colors.border}`, borderBottom: `1px solid ${theme.colors.border}`, backgroundColor: theme.colors.bgHeader, color: theme.colors.textSecondary }}>
               {yLabel}
            </div>
 
@@ -82,17 +87,14 @@ export const MapTable1D: React.FC<MapTable1DProps> = ({
                     const isActive = i === activeColIndex;
                 const bg = colorMode === 'heatmap' 
                   ? getHeatmapColor(cellValue, minVal, maxVal) 
-                  : '#111316';
+                  : theme.colors.bgCell;
                     
                     return (
                         <div
                             key={i}
                             ref={isActive ? activeRef : null}
-                    className={`flex-1 min-w-[48px] flex items-center justify-center font-bold border-r border-b cursor-pointer text-sm
-                      ${isActive ? 'ring-2 ring-white z-10 scale-105 shadow-lg' : ''}
-                      ${colorMode === 'heatmap' ? 'text-black border-black/10' : 'text-white border-gray-700 hover:bg-[#1a1d24]'}
-                    `}
-                    style={{ backgroundColor: bg }}
+                    className={`flex-1 min-w-[48px] flex items-center justify-center font-bold cursor-pointer ${isActive ? 'ring-2 ring-white z-10 scale-105 shadow-lg' : ''}`}
+                    style={{ backgroundColor: bg, color: colorMode === 'heatmap' ? '#000' : theme.colors.textPrimary, borderRight: colorMode === 'heatmap' ? '1px solid rgba(0,0,0,0.1)' : `1px solid ${theme.colors.border}`, borderBottom: colorMode === 'heatmap' ? '1px solid rgba(0,0,0,0.1)' : `1px solid ${theme.colors.border}`, fontSize: theme.fonts.sizeXs }}
                         >
                             {cellValue.toFixed(2)}
                         </div>
@@ -102,7 +104,7 @@ export const MapTable1D: React.FC<MapTable1DProps> = ({
         </div>
         
           {/* 空白填充区 */}
-          <div className="flex-1 bg-[#16181c]"></div>
+          <div className="flex-1" style={{ backgroundColor: theme.colors.bgPanelAlt }}></div>
       </div>
     </div>
   );
