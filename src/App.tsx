@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
-  Save, FolderOpen, Settings, Activity, 
+  Save, FolderOpen, Settings,
   Cpu, Play, Pause, RefreshCw,
   Download, X, Minus, Square, Plus, Globe
 } from 'lucide-react';
@@ -12,6 +12,7 @@ import { OtherOptionsView } from './components/OtherOptionsView';
 import { SettingsView } from './components/SettingsView';
 import { ParametersView } from './components/ParametersView';
 import { ToggleSwitch } from './components/common/ToggleSwitch';
+import { Logo } from './components/Logo';
 import { EngineState } from './types';
 import { useI18n } from './i18n/I18nContext';
 import { Language } from './i18n';
@@ -468,7 +469,7 @@ const App: React.FC = () => {
       {/* --- Title Bar --- */}
       <div className="h-8 bg-[#111316] flex items-center justify-between px-4 border-b border-gray-800 select-none shrink-0" style={{ WebkitAppRegion: 'drag' } as any}>
         <div className="flex items-center gap-3">
-          <Activity size={14} className="text-orange-500" />
+          <Logo size={16} className="text-orange-500" />
           <span className="text-xs font-medium text-gray-400 tracking-wide">{t.titleBar_appName} {APP_VERSION}</span>
         </div>
         <div className="flex items-center gap-6" style={{ WebkitAppRegion: 'no-drag' } as any}>
@@ -689,8 +690,8 @@ const App: React.FC = () => {
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50" onClick={() => setShowAbout(false)}>
           <div className="bg-[#2d323a] rounded-lg border border-gray-600 shadow-2xl p-8 max-w-md w-full mx-4" onClick={(e) => e.stopPropagation()}>
             <div className="flex flex-col items-center gap-6">
-              <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-700 rounded-full flex items-center justify-center">
-                <Activity size={32} className="text-white" />
+              <div className="w-20 h-20 bg-gradient-to-br from-orange-500 to-orange-700 rounded-2xl flex items-center justify-center shadow-lg">
+                <Logo size={48} className="text-white" />
               </div>
               <div className="text-center">
                 <h2 className="text-2xl font-bold text-white mb-2">{t.titleBar_appName}</h2>

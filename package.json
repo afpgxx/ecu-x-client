@@ -3,10 +3,18 @@
   "version": "1.0.0",
   "description": "ECU电喷管理系统",
   "main": "electron/main.js",
+  "author": "ECU Team",
+  "license": "MIT",
   "scripts": {
     "dev": "concurrently -k \"vite\" \"wait-on tcp:5173 && electron .\"",
     "build": "tsc && vite build",
-    "start": "electron ."
+    "start": "electron .",
+    "pack": "npm run build && electron-builder --dir",
+    "dist": "npm run build && electron-builder",
+    "dist:win": "npm run build && electron-builder --win",
+    "dist:mac": "npm run build && electron-builder --mac",
+    "dist:linux": "npm run build && electron-builder --linux",
+    "dist:all": "npm run build && electron-builder -mwl"
   },
   "dependencies": {
     "lucide-react": "^0.294.0",
@@ -19,9 +27,63 @@
     "@vitejs/plugin-react": "^4.2.0",
     "concurrently": "^8.2.2",
     "electron": "^28.0.0",
+    "electron-builder": "^24.9.1",
     "typescript": "^5.2.2",
     "vite": "^5.0.0",
     "wait-on": "^7.2.0"
+  },
+  "build": {
+    "appId": "com.ecu.injection.management",
+    "productName": "ECU电喷管理系统",
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64", "ia32"]
+        }
+      ],
+      "icon": "build/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "ECU电喷管理系统"
+    },
+    "mac": {
+      "target": ["dmg", "zip"],
+      "icon": "build/icon.icns",
+      "category": "public.app-category.developer-tools"
+    },
+    "linux": {
+      "target": ["AppImage", "deb", "rpm"],
+      "icon": "build/icon.png",
+      "category": "Development"
+    },
+    "dmg": {
+      "contents": [
+        {
+          "x": 130,
+          "y": 220
+        },
+        {
+          "x": 410,
+          "y": 220,
+          "type": "link",
+          "path": "/Applications"
+        }
+      ]
+    }
   },
   "pnpm": {
     "onlyBuiltDependencies": [
