@@ -20,7 +20,6 @@ export default {
 
   // 標題欄
   titleBar_appName: 'Система управления ECU впрыском топлива',
-  titleBar_version: 'v1.0',
   titleBar_connected: 'Подключено',
   titleBar_disconnected: 'Не подключено',
 

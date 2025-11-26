@@ -20,7 +20,6 @@ export default {
 
   // 標題欄
   titleBar_appName: 'Système de gestion d\'injection ECU',
-  titleBar_version: 'v1.0',
   titleBar_connected: 'Connecté',
   titleBar_disconnected: 'Déconnecté',
 

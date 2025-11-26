@@ -20,7 +20,6 @@ export default {
 
   // 標題欄
   titleBar_appName: 'ECU Einspritzverwaltungssystem',
-  titleBar_version: 'v1.0',
   titleBar_connected: 'Verbunden',
   titleBar_disconnected: 'Getrennt',
 

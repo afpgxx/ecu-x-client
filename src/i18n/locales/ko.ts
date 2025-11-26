@@ -20,7 +20,6 @@ export default {
 
   // 標題欄
   titleBar_appName: 'ECU 연료분사 관리 시스템',
-  titleBar_version: 'v1.0',
   titleBar_connected: '연결됨',
   titleBar_disconnected: '연결 안 됨',
 

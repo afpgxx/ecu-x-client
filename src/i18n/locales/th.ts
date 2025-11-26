@@ -20,7 +20,6 @@ export default {
 
   // 標題欄
   titleBar_appName: 'ระบบจัดการ ECU ฉีดเชื้อเพลิง',
-  titleBar_version: 'v1.0',
   titleBar_connected: 'เชื่อมต่อแล้ว',
   titleBar_disconnected: 'ไม่ได้เชื่อมต่อ',
 
