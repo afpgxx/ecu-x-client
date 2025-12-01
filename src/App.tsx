@@ -53,7 +53,7 @@ const generateMapData = (randomize = false) => {
     
     for (let j = 0; j < RPM_POINTS.length; j++) {
       const rpmFactor = RPM_POINTS[j] / 8000; // 0.1 to 1.0
-      let ve = 5.0; 
+      let ve = 5.0;
       ve += loadFactor * 4.0;
       const rpmCurve = Math.sin(rpmFactor * Math.PI);
       ve += rpmCurve * 2.5;
@@ -70,7 +70,7 @@ const generateMapData = (randomize = false) => {
   return data;
 };
 
-const INITIAL_MAP_DATA = generateMapData();
+const MAP_DATA = generateMapData();
 
 const App: React.FC = () => {
   const { language, setLanguage, t } = useI18n();
@@ -108,7 +108,7 @@ const App: React.FC = () => {
     battery: 12.2
   });
 
-  const [mapData, setMapData] = useState<number[][]>(INITIAL_MAP_DATA);
+  const [mapData, setMapData] = useState<number[][]>(MAP_DATA);
   const [isSimulating, setIsSimulating] = useState(false);
   const [isSweeping, setIsSweeping] = useState(false);
   const [ecuConnected] = useState(true);
@@ -124,6 +124,14 @@ const App: React.FC = () => {
   const [modeValue, setModeValue] = useState(0);
 
   const simInterval = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const handleCellChange = (row: number, col: number, newValue: number) => {
+    setMapData(prev => {
+      const newData = prev.map(r => r.slice());
+      newData[row][col] = newValue;
+      return newData;
+    });
+  };
 
   // Helper to handle Electron window controls
   const handleWindowControl = (action: string) => {
@@ -233,7 +241,7 @@ const App: React.FC = () => {
               row.map((_, cIdx) => {
                  const wave = Math.sin(time * 2 + rIdx + cIdx) * 0.05;
                  const noise = (Math.random() - 0.5) * 0.2; // Increased noise
-                 const baseVal = INITIAL_MAP_DATA[rIdx][cIdx];
+                 const baseVal = MAP_DATA[rIdx][cIdx];
                  return baseVal + wave + noise;
               })
            );
@@ -356,8 +364,8 @@ const App: React.FC = () => {
               />
             ) : (
               <span 
-                className="font-digital text-gray-200 tracking-tighter drop-shadow-[0_0_5px_rgba(255,255,255,0.1)] text-3xl cursor-pointer"
-                onClick={() => setIsEditing(true)}
+                  className="font-digital text-gray-200 tracking-tighter drop-shadow-[0_0_5px_rgba(255,255,255,0.1)] text-3xl cursor-pointer"
+                  onClick={() => setIsEditing(true)}
               >
                 {unit === '%' ? (value >= 0 ? '+' : '') : ''}{value.toFixed(decimals)}
               </span>
@@ -411,15 +419,17 @@ const App: React.FC = () => {
             </div>
           </div>
           <div className="flex-1 overflow-hidden relative p-1">
-            <MapTable 
+            <MapTable
               rpmPoints={ECT_COMP_RPM_POINTS}
               loadPoints={ECT_COMP_TEMP_POINTS}
-              data={ECT_COMP_2D_DATA}
+              data={mapData}
               activeRpm={engineState.rpm}
               activeLoad={engineState.ect}
               yAxisUnit="°C"
               cornerLabel="± 2°"
-            />
+              value={0}
+              onCellChange={handleCellChange}
+         />
           </div>
         </>
       );
@@ -452,12 +462,14 @@ const App: React.FC = () => {
         {/* The Grid */}
         <div className="flex-1 overflow-hidden relative p-1">
             <MapTable 
-              rpmPoints={RPM_POINTS}
-              loadPoints={LOAD_POINTS}
-              data={mapData}
-              activeRpm={engineState.rpm}
-              activeLoad={engineState.tps}
-            />
+            rpmPoints={RPM_POINTS}
+            loadPoints={LOAD_POINTS}
+            data={mapData}
+            activeRpm={engineState.rpm}
+            activeLoad={engineState.tps}
+            value={0}
+            onCellChange={handleCellChange}
+          />
         </div>
       </>
     );

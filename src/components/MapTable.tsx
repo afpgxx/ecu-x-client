@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 interface MapTableProps {
   rpmPoints: number[];
@@ -8,6 +8,11 @@ interface MapTableProps {
   activeLoad: number; // This represents the Y-axis active value
   yAxisUnit?: string; // e.g., "%", "kPa", "°C"
   cornerLabel?: string; // e.g., "负荷/转速"
+  decimals?: number; // 小数点位数，默认为1
+  value: number; // 默认为0
+  min?: number;
+  max?: number;
+  onCellChange: (row: number, col: number, newValue: number) => void;
 }
 
 // Helper to map value to Heatmap Color (Blue -> Green -> Yellow -> Red)
@@ -29,10 +34,49 @@ export const MapTable: React.FC<MapTableProps> = ({
   activeRpm,
   activeLoad,
   yAxisUnit = '%',
-  cornerLabel = '负荷/转速'
+  cornerLabel = '负荷/转速',
+  decimals = 1,
+  value = 0,
+  min = 0,
+  max = 16,
+  onCellChange,
 }) => {
   const activeRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [inputValue, setInputValue] = useState('');
+  const [editingCell, setEditingCell] = useState<{row: number, col: number} | null>(null);
 
+  useEffect(() => {
+    setInputValue((value ?? 0).toFixed(decimals));
+  }, [value, decimals]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setInputValue(e.target.value);
+  };
+
+  const handleInputBlur = () => {
+    const parsed = parseFloat(inputValue);
+    if (!isNaN(parsed)) {
+      let newVal = parsed;
+      if (min !== undefined) newVal = Math.max(min, newVal);
+      if (max !== undefined) newVal = Math.min(max, newVal);
+      setInputValue(newVal.toFixed(decimals));
+    } else {
+      setInputValue(value.toFixed(decimals));
+    }
+    onCellChange(editingCell!.row, editingCell!.col, parseFloat(inputValue));
+    setEditingCell(null);
+  };
+
+  const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleInputBlur();
+    } else if (e.key === 'Escape') {
+      setInputValue(value.toFixed(decimals));
+      onCellChange(editingCell!.row, editingCell!.col, parseFloat(inputValue));
+      setEditingCell(null);
+    }
+  };
   // Find closest indices for highlighting
   // For RPM (X-axis)
   const activeColIndex = rpmPoints.reduce((prev, curr, i) => 
@@ -69,6 +113,14 @@ export const MapTable: React.FC<MapTableProps> = ({
       activeRef.current.scrollIntoView({ behavior: 'auto', block: 'nearest', inline: 'nearest' });
     }
   }, [activeRowIndex, activeColIndex]);
+
+  // Focus input when editingCell changes
+  useEffect(() => {
+    if (editingCell && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [editingCell]);
 
   return (
     <div className="flex flex-col w-full h-full bg-gray-900 text-[11px] select-none overflow-hidden font-mono">
@@ -125,15 +177,36 @@ export const MapTable: React.FC<MapTableProps> = ({
                             key={cIdx}
                             ref={isActive ? activeRef : null}
                             className={`flex-1 min-w-[42px] flex items-center justify-center text-gray-900 font-bold border-r border-b border-black/10 cursor-pointer relative
-                                ${isActive ? 'z-10' : 'opacity-90 hover:opacity-100'}`}
-                            style={{ 
-                                backgroundColor: bg,
-                            }}
+                            ${isActive ? 'z-10' : 'opacity-90 hover:opacity-100'}`}
+                            style={{ backgroundColor: bg }}
                         >
                             {/* Active Selection Highlight Border */}
                             {isActive && <div className="absolute inset-0 border-2 border-white pointer-events-none shadow-lg"></div>}
-                            
-                            {cellValue.toFixed(1)}
+                            {editingCell && editingCell.row === rIdx && editingCell.col === cIdx ? (
+                              <input
+                                ref={inputRef}
+                                type="text"
+                                value={inputValue}
+                                onChange={handleInputChange}
+                                onBlur={handleInputBlur}
+                                onKeyDown={handleInputKeyDown}
+                                autoFocus
+                                className="w-full h-full px-2 py-0.5 rounded-md border-2 border-blue-500 focus:border-orange-500 text-right text-base font-mono text-blue-200 shadow-inner outline-none transition-all duration-150 select-all ring-0 focus:bg-[#23272e] focus:text-orange-300"
+                                style={{ fontSize: 12, color: 'black', minWidth: 42, textAlign: 'right', fontVariantNumeric: 'tabular-nums', backgroundColor: bg }}
+                              />
+                          ) : (
+                            <span 
+                              className={`flex-1 min-w-[42px] flex items-center justify-center text-gray-900 font-bold border-r border-black/10 cursor-pointer relative
+                                ${isActive ? 'z-10' : 'opacity-90 hover:opacity-100'}`}
+                              style={{ fontSize: 12 }}
+                              onClick={() => {
+                                setEditingCell({ row: rIdx, col: cIdx });
+                                setInputValue(cellValue.toFixed(decimals));
+                              }}
+                            >
+                              {cellValue.toFixed(decimals)}
+                            </span>
+                          )}
                         </div>
                     );
                 })}
