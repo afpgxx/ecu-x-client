@@ -192,7 +192,7 @@ export const MapTable: React.FC<MapTableProps> = ({
                                 onKeyDown={handleInputKeyDown}
                                 autoFocus
                                 className="w-full h-full px-2 py-0.5 rounded-md border-2 border-blue-500 focus:border-orange-500 text-right text-base font-mono text-blue-200 shadow-inner outline-none transition-all duration-150 select-all ring-0 focus:bg-[#23272e] focus:text-orange-300"
-                                style={{ fontSize: 12, color: 'black', minWidth: 42, textAlign: 'right', fontVariantNumeric: 'tabular-nums', backgroundColor: bg }}
+                                style={{ fontSize: 12, color: 'black', minWidth: 42, textAlign: 'center', fontVariantNumeric: 'tabular-nums', backgroundColor: bg }}
                               />
                           ) : (
                             <span 

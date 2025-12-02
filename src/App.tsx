@@ -17,6 +17,10 @@ import { EngineState } from './types';
 import { useI18n } from './i18n/I18nContext';
 import { Language } from './i18n';
 import { APP_VERSION } from './version';
+import CryptoJS from 'crypto-js';
+
+// --- Encryption Key for Data Protection ---
+const SECRET_KEY = "MySuperSecretKey123!"; // Change this to a strong key in production
 
 // --- Data Generation Constants ---
 const RPM_POINTS = [800, 1200, 1600, 2000, 2400, 2800, 3200, 3600, 4000, 4400, 4800, 5200, 5600, 6000, 6400, 6800, 7200, 7600, 8000];
@@ -122,6 +126,7 @@ const App: React.FC = () => {
   const [ignitionValue, setIgnitionValue] = useState(15.5);
   const [fuelValue, setFuelValue] = useState(2.5);
   const [modeValue, setModeValue] = useState(0);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const simInterval = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -131,6 +136,44 @@ const App: React.FC = () => {
       newData[row][col] = newValue;
       return newData;
     });
+  };
+
+  const handleSaveMapData = () => {
+    const json = JSON.stringify(mapData);
+    const encrypted = CryptoJS.AES.encrypt(json, SECRET_KEY).toString();
+    const blob = new Blob([encrypted], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "myMapData.ECUDATA";
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleImportButtonClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleImportMapData = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const encrypted = event.target?.result as string;
+        const bytes = CryptoJS.AES.decrypt(encrypted, SECRET_KEY);
+        const decrypted = bytes.toString(CryptoJS.enc.Utf8);
+        const data = JSON.parse(decrypted);
+        if (Array.isArray(data)) {
+          setMapData(data);
+        } else {
+          alert("文件格式不正确");
+        }
+      } catch {
+        alert("解密或解析失败");
+      }
+    };
+    reader.readAsText(file);
   };
 
   // Helper to handle Electron window controls
@@ -529,7 +572,9 @@ const App: React.FC = () => {
            <button 
              key={item} 
              className="px-3 py-1 text-[11px] hover:bg-[#2d323a] text-gray-400 hover:text-white rounded-sm transition-colors"
-             onClick={() => item === t.menu_help && setShowAbout(true)}
+             onClick={() => {
+               if (item === t.menu_help) setShowAbout(true);
+             }}
            >
              {item}
            </button>
@@ -539,8 +584,19 @@ const App: React.FC = () => {
       {/* --- Toolbar --- */}
       <div className="h-12 bg-[#23272e] flex items-center px-4 gap-3 shrink-0 border-b border-gray-800 shadow-md">
          <div className="flex items-center gap-1 pr-3 border-r border-gray-700">
-            <button className="p-1.5 hover:bg-gray-700 rounded text-gray-400 hover:text-blue-400" title={t.common_open}><FolderOpen size={18} /></button>
-            <button className="p-1.5 hover:bg-gray-700 rounded text-gray-400 hover:text-blue-400" title={t.common_save}><Save size={18} /></button>
+          <button className="p-1.5 hover:bg-gray-700 rounded text-gray-400 hover:text-blue-400" title={t.common_open}
+            onClick={handleImportButtonClick}
+          ><FolderOpen size={18} /></button>
+          <button className="p-1.5 hover:bg-gray-700 rounded text-gray-400 hover:text-blue-400" title={t.common_save}
+            onClick={handleSaveMapData}
+          ><Save size={18} /></button>
+          <input
+            type="file"
+            accept=".ECUDATA"
+            ref={fileInputRef}
+            style={{ display: 'none' }}
+            onChange={handleImportMapData}
+          />
          </div>
          <div className="flex items-center gap-1 pr-3 border-r border-gray-700">
             <button className="p-1.5 hover:bg-gray-700 rounded text-gray-400 hover:text-green-400" title={t.common_download}><Download size={18} /></button>
