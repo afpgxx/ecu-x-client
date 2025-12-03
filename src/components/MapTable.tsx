@@ -45,6 +45,7 @@ export const MapTable: React.FC<MapTableProps> = ({
   const inputRef = useRef<HTMLInputElement>(null);
   const [inputValue, setInputValue] = useState('');
   const [editingCell, setEditingCell] = useState<{row: number, col: number} | null>(null);
+  const [originalValue, setOriginalValue] = useState<number>(0);
 
   useEffect(() => {
     setInputValue((value ?? 0).toFixed(decimals));
@@ -56,15 +57,17 @@ export const MapTable: React.FC<MapTableProps> = ({
 
   const handleInputBlur = () => {
     const parsed = parseFloat(inputValue);
+    let newVal = parsed;
     if (!isNaN(parsed)) {
-      let newVal = parsed;
       if (min !== undefined) newVal = Math.max(min, newVal);
       if (max !== undefined) newVal = Math.min(max, newVal);
       setInputValue(newVal.toFixed(decimals));
+      onCellChange(editingCell!.row, editingCell!.col, newVal);
     } else {
       setInputValue(value.toFixed(decimals));
+      onCellChange(editingCell!.row, editingCell!.col, value);
     }
-    onCellChange(editingCell!.row, editingCell!.col, parseFloat(inputValue));
+    // 只将限定后的newVal传递给onCellChange
     setEditingCell(null);
   };
 
@@ -72,8 +75,6 @@ export const MapTable: React.FC<MapTableProps> = ({
     if (e.key === 'Enter') {
       handleInputBlur();
     } else if (e.key === 'Escape') {
-      setInputValue(value.toFixed(decimals));
-      onCellChange(editingCell!.row, editingCell!.col, parseFloat(inputValue));
       setEditingCell(null);
     }
   };
@@ -87,24 +88,6 @@ export const MapTable: React.FC<MapTableProps> = ({
   const activeRowIndex = loadPoints.reduce((prev, curr, i) => 
     Math.abs(curr - activeLoad) < Math.abs(loadPoints[prev] - activeLoad) ? i : prev, 0
   );
-
-  // Calculate Min/Max for color scaling across the entire dataset
-  let minVal = Number.MAX_VALUE;
-  let maxVal = Number.MIN_VALUE;
-  
-  for(let r=0; r<data.length; r++) {
-    for(let c=0; c<data[r].length; c++) {
-        const v = data[r][c];
-        if(v < minVal) minVal = v;
-        if(v > maxVal) maxVal = v;
-    }
-  }
-  
-  // If grid is empty or invalid
-  if (minVal === Number.MAX_VALUE) {
-     minVal = 0; 
-     maxVal = 0;
-  }
 
   // Auto-scroll logic
   useEffect(() => {
@@ -170,7 +153,7 @@ export const MapTable: React.FC<MapTableProps> = ({
              <div key={rIdx} className="flex-1 flex min-h-[24px]">
                 {row.map((cellValue, cIdx) => {
                     const isActive = rIdx === activeRowIndex && cIdx === activeColIndex;
-                    const bg = getHeatmapColor(cellValue, minVal, maxVal);
+                    const bg = getHeatmapColor(cellValue, min, max);
                     
                     return (
                         <div
@@ -202,6 +185,7 @@ export const MapTable: React.FC<MapTableProps> = ({
                               onClick={() => {
                                 setEditingCell({ row: rIdx, col: cIdx });
                                 setInputValue(cellValue.toFixed(decimals));
+                                setOriginalValue(cellValue);
                               }}
                             >
                               {cellValue.toFixed(decimals)}

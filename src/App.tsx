@@ -6,11 +6,6 @@ import {
 } from 'lucide-react';
 import { VerticalBar } from './components/VerticalBar';
 import { Gauge } from './components/Gauge';
-import { MapTable } from './components/MapTable';
-import { MapTable1D } from './components/MapTable1D';
-import { OtherOptionsView } from './components/OtherOptionsView';
-import { SettingsView } from './components/SettingsView';
-import { ParametersView } from './components/ParametersView';
 import { ToggleSwitch } from './components/common/ToggleSwitch';
 import { Logo } from './components/Logo';
 import { EngineState } from './types';
@@ -18,6 +13,7 @@ import { useI18n } from './i18n/I18nContext';
 import { Language } from './i18n';
 import { APP_VERSION } from './version';
 import CryptoJS from 'crypto-js';
+import TabContentView from './components/TabContentView';
 
 // --- Encryption Key for Data Protection ---
 const SECRET_KEY = "MySuperSecretKey123!"; // Change this to a strong key in production
@@ -76,6 +72,80 @@ const generateMapData = (randomize = false) => {
 
 const MAP_DATA = generateMapData();
 
+// 生成点火角度表数据（示例值）
+const generateIgnitionData = () => {
+  const data: number[][] = [];
+  for (let i = 0; i < LOAD_POINTS.length; i++) {
+    const row: number[] = [];
+    for (let j = 0; j < RPM_POINTS.length; j++) {
+      const baseAngle = 10 + (j * 0.5) - (i * 0.3);
+      row.push(Number(Math.max(5, Math.min(40, baseAngle)).toFixed(1)));
+    }
+    data.push(row);
+  }
+  return data;
+};
+
+// 生成燃油前馈数据（示例值）
+const generateFuelAdvanceData = () => {
+  const data: number[][] = [];
+  for (let i = 0; i < LOAD_POINTS.length; i++) {
+    const row: number[] = [];
+    for (let j = 0; j < RPM_POINTS.length; j++) {
+      row.push(Number((1.0 + Math.random() * 0.5).toFixed(2)));
+    }
+    data.push(row);
+  }
+  return data;
+};
+
+// 生成AFR目标表数据
+const generateAfrData = () => {
+  const data: number[][] = [];
+  for (let i = 0; i < LOAD_POINTS.length; i++) {
+    const row: number[] = [];
+    const loadFactor = LOAD_POINTS[i] / 100;
+    for (let j = 0; j < RPM_POINTS.length; j++) {
+      const afr = loadFactor > 0.7 ? 12.5 : loadFactor > 0.4 ? 13.8 : 14.7;
+      row.push(Number((afr + (Math.random() - 0.5) * 0.3).toFixed(1)));
+    }
+    data.push(row);
+  }
+  return data;
+};
+
+// 生成ECT点火补偿数据
+const generateEctIgnData = () => {
+  const data: number[][] = [];
+  for (let i = 0; i < ECT_COMP_TEMP_POINTS.length; i++) {
+    const row = new Array(ECT_COMP_RPM_POINTS.length).fill(0);
+    for (let j = 0; j < row.length; j++) {
+      row[j] = Number((5 - i * 0.5 + (Math.random() - 0.5)).toFixed(1));
+    }
+    data.push(row);
+  }
+  return data;
+};
+
+// 生成MAP补偿数据
+const generateMapCompData = () => {
+  const data: number[][] = [];
+  for (let i = 0; i < LOAD_POINTS.length; i++) {
+    const row: number[] = [];
+    for (let j = 0; j < RPM_POINTS.length; j++) {
+      row.push(Number((1.0 + (Math.random() - 0.5) * 0.2).toFixed(2)));
+    }
+    data.push(row);
+  }
+  return data;
+};
+
+// 生成怠速/限转数据（1D表格）
+const IDLE_LIMIT_RPM_POINTS = [0, 500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000];
+const generateIdleLimitData = () => {
+  return IDLE_LIMIT_RPM_POINTS.map((_, i) => Number((850 + i * 50).toFixed(0)));
+};
+
 const App: React.FC = () => {
   const { language, setLanguage, t } = useI18n();
   
@@ -112,7 +182,17 @@ const App: React.FC = () => {
     battery: 12.2
   });
 
-  const [mapData, setMapData] = useState<number[][]>(MAP_DATA);
+  // 各个tab的独立数据状态
+  const [fuelMapData, setFuelMapData] = useState<number[][]>(MAP_DATA); // 燃油MAP
+  const [fuelAdvanceData, setFuelAdvanceData] = useState<number[][]>(generateFuelAdvanceData()); // 燃油前馈
+  const [ignitionAngleData, setIgnitionAngleData] = useState<number[][]>(generateIgnitionData()); // 点火提前角
+  const [dwellTimeData, setDwellTimeData] = useState<number[]>(DWELL_DATA_POINTS); // 驻留时间
+  const [afrTargetData, setAfrTargetData] = useState<number[][]>(generateAfrData()); // AFR目标
+  const [ectCompFuelData, setEctCompFuelData] = useState<number[][]>(ECT_COMP_2D_DATA); // ECT燃油补偿
+  const [ectCompIgnData, setEctCompIgnData] = useState<number[][]>(generateEctIgnData()); // ECT点火补偿
+  const [mapCompData, setMapCompData] = useState<number[][]>(generateMapCompData()); // MAP补偿
+  const [idleLimitData, setIdleLimitData] = useState<number[]>(generateIdleLimitData()); // 怠速/限转
+  
   const [isSimulating, setIsSimulating] = useState(false);
   const [isSweeping, setIsSweeping] = useState(false);
   const [ecuConnected] = useState(true);
@@ -120,6 +200,7 @@ const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState(MAIN_TABS[0]); // 使用数组第一项而不是直接访问 t
   const [showLanguageMenu, setShowLanguageMenu] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
+  const [showFileMenu, setShowFileMenu] = useState(false);
   
   // Controller values
   const [idleValue, setIdleValue] = useState(850);
@@ -130,22 +211,38 @@ const App: React.FC = () => {
 
   const simInterval = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const handleCellChange = (row: number, col: number, newValue: number) => {
-    setMapData(prev => {
-      const newData = prev.map(r => r.slice());
-      newData[row][col] = newValue;
-      return newData;
-    });
-  };
-
   const handleSaveMapData = () => {
-    const json = JSON.stringify(mapData);
+    // 整合所有数据表
+    const allData = {
+      version: APP_VERSION,
+      timestamp: new Date().toISOString(),
+      maps: {
+        fuelMap: fuelMapData,
+        fuelAdvance: fuelAdvanceData,
+        ignitionAngle: ignitionAngleData,
+        dwellTime: dwellTimeData,
+        afrTarget: afrTargetData,
+        ectCompFuel: ectCompFuelData,
+        ectCompIgn: ectCompIgnData,
+        mapComp: mapCompData,
+        idleLimit: idleLimitData,
+      },
+      controllers: {
+        idleValue,
+        ignitionValue,
+        fuelValue,
+        modeValue,
+      },
+    };
+    
+    const json = JSON.stringify(allData);
     const encrypted = CryptoJS.AES.encrypt(json, SECRET_KEY).toString();
     const blob = new Blob([encrypted], { type: "text/plain" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "myMapData.ECUDATA";
+    const filename = `ECU_Tuning_${new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5)}.ECUDATA`;
+    a.download = filename;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -164,13 +261,39 @@ const App: React.FC = () => {
         const bytes = CryptoJS.AES.decrypt(encrypted, SECRET_KEY);
         const decrypted = bytes.toString(CryptoJS.enc.Utf8);
         const data = JSON.parse(decrypted);
-        if (Array.isArray(data)) {
-          setMapData(data);
+        
+        // 检查是否为新格式（包含所有数据）
+        if (data.maps && typeof data.maps === 'object') {
+          // 新格式：导入所有数据
+          if (data.maps.fuelMap) setFuelMapData(data.maps.fuelMap);
+          if (data.maps.fuelAdvance) setFuelAdvanceData(data.maps.fuelAdvance);
+          if (data.maps.ignitionAngle) setIgnitionAngleData(data.maps.ignitionAngle);
+          if (data.maps.dwellTime) setDwellTimeData(data.maps.dwellTime);
+          if (data.maps.afrTarget) setAfrTargetData(data.maps.afrTarget);
+          if (data.maps.ectCompFuel) setEctCompFuelData(data.maps.ectCompFuel);
+          if (data.maps.ectCompIgn) setEctCompIgnData(data.maps.ectCompIgn);
+          if (data.maps.mapComp) setMapCompData(data.maps.mapComp);
+          if (data.maps.idleLimit) setIdleLimitData(data.maps.idleLimit);
+          
+          // 导入控制器参数
+          if (data.controllers) {
+            if (data.controllers.idleValue !== undefined) setIdleValue(data.controllers.idleValue);
+            if (data.controllers.ignitionValue !== undefined) setIgnitionValue(data.controllers.ignitionValue);
+            if (data.controllers.fuelValue !== undefined) setFuelValue(data.controllers.fuelValue);
+            if (data.controllers.modeValue !== undefined) setModeValue(data.controllers.modeValue);
+          }
+          
+          alert(`成功导入数据\n版本: ${data.version || '未知'}\n时间: ${data.timestamp ? new Date(data.timestamp).toLocaleString('zh-CN') : '未知'}`);
+        } else if (Array.isArray(data)) {
+          // 旧格式：只导入燃油MAP
+          setFuelMapData(data);
+          alert("成功导入燃油MAP数据（旧格式）");
         } else {
           alert("文件格式不正确");
         }
-      } catch {
-        alert("解密或解析失败");
+      } catch (error) {
+        console.error(error);
+        alert("解密或解析失败，请检查文件是否正确");
       }
     };
     reader.readAsText(file);
@@ -240,7 +363,7 @@ const App: React.FC = () => {
         battery: Number((12 + Math.random() * 2).toFixed(1))
       });
       
-      setMapData(generateMapData(true)); // Randomize map data
+      setFuelMapData(generateMapData(true)); // Randomize map data
       setIsSweeping(false);
     }, 1000);
   };
@@ -279,7 +402,7 @@ const App: React.FC = () => {
         });
 
         // 2. Simulate Map Data Fluctuation
-        setMapData(prevData => {
+        setFuelMapData(prevData => {
            return prevData.map((row, rIdx) => 
               row.map((_, cIdx) => {
                  const wave = Math.sin(time * 2 + rIdx + cIdx) * 0.05;
@@ -402,12 +525,14 @@ const App: React.FC = () => {
                 onChange={handleInputChange}
                 onBlur={handleInputBlur}
                 onKeyDown={handleInputKeyDown}
-                className="font-digital text-gray-200 text-3xl tracking-tighter bg-transparent border-none outline-none text-center w-24"
+                className="font-digital text-gray-200 tracking-tighter bg-transparent border-none outline-none text-center"
+                style={{ fontSize: 'clamp(1.5rem, 3vw, 1.875rem)', width: 'clamp(6rem, 12vw, 8rem)' }}
                 autoFocus
               />
             ) : (
               <span 
-                  className="font-digital text-gray-200 tracking-tighter drop-shadow-[0_0_5px_rgba(255,255,255,0.1)] text-3xl cursor-pointer"
+                  className="font-digital text-gray-200 tracking-tighter drop-shadow-[0_0_5px_rgba(255,255,255,0.1)] cursor-pointer"
+                  style={{ fontSize: 'clamp(1.5rem, 3vw, 1.875rem)' }}
                   onClick={() => setIsEditing(true)}
               >
                 {unit === '%' ? (value >= 0 ? '+' : '') : ''}{value.toFixed(decimals)}
@@ -423,98 +548,30 @@ const App: React.FC = () => {
 
   // --- View Renderer ---
   const renderContent = () => {
-    if (activeTab === t.tabs_otherOptions) {
-      return <OtherOptionsView />;
-    }
-    if (activeTab === t.tabs_settingsInfo) {
-      return <SettingsView />;
-    }
-    if (activeTab === t.tabs_parameters) {
-      return <ParametersView />;
-    }
-    if (activeTab === t.tabs_dwellTime) {
-      return (
-        <MapTable1D 
-          headers={DWELL_RPM_POINTS}
-          data={DWELL_DATA_POINTS}
-          activeValue={engineState.rpm} 
-          xLabel="RPM"
-          yLabel="TIME"
-          colorMode="dark" /* 使用深色统一样式，保持与其它表格一致 */
-        />
-      );
-    }
-    if (activeTab === t.tabs_ectCompFuel) {
-      return (
-        <>
-          {/* Standard Map Toolbar */}
-          <div className="h-9 bg-[#1e2126] border-b border-gray-700 flex items-center px-3 justify-between shrink-0">
-            <div className="flex items-center gap-3">
-              <div className="flex items-center bg-black/30 rounded p-0.5 border border-gray-700">
-                  <button className="w-6 h-5 flex items-center justify-center hover:bg-gray-700 text-gray-400 rounded-sm text-xs"><Minus size={12}/></button>
-                  <input className="w-12 bg-transparent text-center text-xs font-mono text-white border-none focus:ring-0" defaultValue="0.1" />
-                  <button className="w-6 h-5 flex items-center justify-center hover:bg-gray-700 text-gray-400 rounded-sm text-xs"><Plus size={12}/></button>
-              </div>
-              <div className="h-4 w-[1px] bg-gray-700"></div>
-              <select className="bg-[#2d323a] text-xs text-gray-300 border border-gray-600 rounded px-2 py-0.5 outline-none">
-                 <option>{t.mapTable_unit}</option>
-              </select>
-            </div>
-          </div>
-          <div className="flex-1 overflow-hidden relative p-1">
-            <MapTable
-              rpmPoints={ECT_COMP_RPM_POINTS}
-              loadPoints={ECT_COMP_TEMP_POINTS}
-              data={mapData}
-              activeRpm={engineState.rpm}
-              activeLoad={engineState.ect}
-              yAxisUnit="°C"
-              cornerLabel="± 2°"
-              value={0}
-              onCellChange={handleCellChange}
-         />
-          </div>
-        </>
-      );
-    }
-    
-    // Default: Map View
     return (
-      <>
-        {/* Standard Map Toolbar */}
-        <div className="h-9 bg-[#1e2126] border-b border-gray-700 flex items-center px-3 justify-between shrink-0">
-            <div className="flex items-center gap-3">
-              <div className="flex items-center bg-black/30 rounded p-0.5 border border-gray-700">
-                  <button className="w-6 h-5 flex items-center justify-center hover:bg-gray-700 text-gray-400 rounded-sm text-xs"><Minus size={12}/></button>
-                  <input className="w-12 bg-transparent text-center text-xs font-mono text-white border-none focus:ring-0" defaultValue="1.0" />
-                  <button className="w-6 h-5 flex items-center justify-center hover:bg-gray-700 text-gray-400 rounded-sm text-xs"><Plus size={12}/></button>
-              </div>
-              <div className="h-4 w-[1px] bg-gray-700"></div>
-              <select className="bg-[#2d323a] text-xs text-gray-300 border border-gray-600 rounded px-2 py-0.5 outline-none">
-                  <option>{t.mapTable_percentage}</option>
-                  <option>{t.mapTable_rawValue}</option>
-                  <option>{t.mapTable_lambda}</option>
-              </select>
-            </div>
-            <div className="flex gap-2">
-              <button className="px-3 py-0.5 bg-red-600 text-white text-[10px] font-bold rounded-full">{t.mapTable_table1Active}</button>
-              <button className="px-3 py-0.5 bg-gray-800 text-gray-500 border border-gray-600 text-[10px] font-bold rounded-full">{t.mapTable_table2}</button>
-            </div>
-        </div>
-
-        {/* The Grid */}
-        <div className="flex-1 overflow-hidden relative p-1">
-            <MapTable 
-            rpmPoints={RPM_POINTS}
-            loadPoints={LOAD_POINTS}
-            data={mapData}
-            activeRpm={engineState.rpm}
-            activeLoad={engineState.tps}
-            value={0}
-            onCellChange={handleCellChange}
-          />
-        </div>
-      </>
+      <TabContentView
+        activeTab={activeTab}
+        t={t}
+        engineState={engineState}
+        fuelMapData={fuelMapData}
+        setFuelMapData={setFuelMapData}
+        fuelAdvanceData={fuelAdvanceData}
+        setFuelAdvanceData={setFuelAdvanceData}
+        ignitionAngleData={ignitionAngleData}
+        setIgnitionAngleData={setIgnitionAngleData}
+        dwellTimeData={dwellTimeData}
+        setDwellTimeData={setDwellTimeData}
+        afrTargetData={afrTargetData}
+        setAfrTargetData={setAfrTargetData}
+        ectCompFuelData={ectCompFuelData}
+        setEctCompFuelData={setEctCompFuelData}
+        ectCompIgnData={ectCompIgnData}
+        setEctCompIgnData={setEctCompIgnData}
+        mapCompData={mapCompData}
+        setMapCompData={setMapCompData}
+        idleLimitData={idleLimitData}
+        setIdleLimitData={setIdleLimitData}
+      />
     );
   };
 
@@ -568,17 +625,33 @@ const App: React.FC = () => {
 
       {/* --- Menu Bar --- */}
       <div className="h-8 bg-[#1e2126] flex items-center px-2 gap-1 shrink-0 border-b border-black">
-         {[t.menu_file, t.menu_edit, t.menu_view, t.menu_ecu, t.menu_dataLog, t.menu_tools, t.menu_window, t.menu_help].map(item => (
-           <button 
-             key={item} 
-             className="px-3 py-1 text-[11px] hover:bg-[#2d323a] text-gray-400 hover:text-white rounded-sm transition-colors"
-             onClick={() => {
-               if (item === t.menu_help) setShowAbout(true);
-             }}
-           >
-             {item}
-           </button>
-         ))}
+        {/* 文件菜单，带下拉 */}
+        <div
+          className="relative"
+          onMouseEnter={() => setShowFileMenu(true)}
+          onMouseLeave={() => setShowFileMenu(false)}
+        >
+          <button
+            className="px-3 py-1 text-[11px] hover:bg-[#2d323a] text-gray-400 hover:text-white rounded-sm transition-colors"
+            onClick={() => setShowFileMenu(v => !v)}
+          >
+            {t.menu_file}
+          </button>
+          {showFileMenu && (
+            <div className="absolute mt-1 bg-[#2d323a] border border-gray-600 rounded shadow-lg z-50 min-w-[140px]">
+              <button className="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-700 transition-colors" onClick={handleImportButtonClick}>{t.common_open}</button>
+              <button className="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-700 transition-colors" onClick={handleSaveMapData}>{t.common_save}</button>
+            </div>
+          )}
+        </div>
+        {/* 其它菜单按钮 */}
+        <button className="px-3 py-1 text-[11px] hover:bg-[#2d323a] text-gray-400 hover:text-white rounded-sm transition-colors" onClick={() => setShowAbout(true)}>{t.menu_edit}</button>
+        <button className="px-3 py-1 text-[11px] hover:bg-[#2d323a] text-gray-400 hover:text-white rounded-sm transition-colors">{t.menu_view}</button>
+        <button className="px-3 py-1 text-[11px] hover:bg-[#2d323a] text-gray-400 hover:text-white rounded-sm transition-colors">{t.menu_ecu}</button>
+        <button className="px-3 py-1 text-[11px] hover:bg-[#2d323a] text-gray-400 hover:text-white rounded-sm transition-colors">{t.menu_dataLog}</button>
+        <button className="px-3 py-1 text-[11px] hover:bg-[#2d323a] text-gray-400 hover:text-white rounded-sm transition-colors">{t.menu_tools}</button>
+        <button className="px-3 py-1 text-[11px] hover:bg-[#2d323a] text-gray-400 hover:text-white rounded-sm transition-colors">{t.menu_window}</button>
+        <button className="px-3 py-1 text-[11px] hover:bg-[#2d323a] text-gray-400 hover:text-white rounded-sm transition-colors" onClick={() => setShowAbout(true)}>{t.menu_help}</button>
       </div>
 
       {/* --- Toolbar --- */}
@@ -625,7 +698,7 @@ const App: React.FC = () => {
       <div className="flex-1 p-2 flex flex-col gap-2 overflow-hidden">
          
          {/* Top Dashboard Row (40% Height) */}
-         <div className="min-h-[220px] flex gap-2 shrink-0" style={{ flex: '0.45 1 0%' }}>
+         <div className="flex gap-2 shrink-0" style={{ minHeight: '180px', maxHeight: '25vh' }}>
             
             {/* 1. Sensor Bars Panel */}
             <div className="min-w-[200px] bg-[#16181c] rounded-lg border border-gray-700/50 p-3 shadow-xl flex flex-col" style={{ flex: '0.25 1 0%' }}>
@@ -633,7 +706,7 @@ const App: React.FC = () => {
                   <span>{t.sensors_title}</span>
                   <span className="text-blue-500">{t.sensors_realtime}</span>
                </div>
-               <div className="flex-1 grid grid-cols-6 gap-2">
+               <div className="flex-1 grid grid-cols-6 gap-1 sm:gap-2">
                   <VerticalBar label={t.sensors_ect} value={engineState.ect} unit="°C" min={0} max={120} warningThreshold={110} color="bg-yellow-500" />
                   <VerticalBar label={t.sensors_iat} value={engineState.iat} unit="°C" min={0} max={80} warningThreshold={60} color="bg-sky-400" />
                   <VerticalBar label={t.sensors_map} value={engineState.map} unit="kPa" min={0} max={250} color="bg-emerald-500" />
@@ -703,13 +776,13 @@ const App: React.FC = () => {
             {/* 3. Analog Gauges (Right) */}
             <div className="bg-[#16181c] rounded-lg border border-gray-700/50 p-2 shadow-xl flex items-center justify-evenly relative overflow-hidden" style={{ flex: '0.4 1 0%' }}>
                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/40 pointer-events-none"></div>
-               <div className="w-[32%] h-full max-h-[220px]">
+               <div className="w-[32%] h-full" style={{ maxHeight: 'min(220px, 25vh)' }}>
                   <Gauge label={t.sensors_rpm} value={engineState.rpm} min={0} max={9000} unit="RPM x1000" dangerStart={7500} majorTicks={9} />
                </div>
-               <div className="w-[32%] h-full max-h-[220px]">
+               <div className="w-[32%] h-full" style={{ maxHeight: 'min(220px, 25vh)' }}>
                   <Gauge label={t.sensors_tps} value={engineState.tps} min={0} max={100} unit="%" majorTicks={5} />
                </div>
-               <div className="w-[32%] h-full max-h-[220px]">
+               <div className="w-[32%] h-full" style={{ maxHeight: 'min(220px, 25vh)' }}>
                   <Gauge label={t.sensors_afr} value={engineState.afr} min={10} max={20} unit="AFR" majorTicks={5} />
                </div>
             </div>

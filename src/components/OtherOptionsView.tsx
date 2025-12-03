@@ -17,12 +17,12 @@ export const OtherOptionsView: React.FC = () => {
 
    // State for parameters (simplified for demo)
    const [params, setParams] = useState({
-     throttleMin: '0', throttleMax: '0', idleMinInjCold: '0', idleMinInjHot: '0', idleAutoAngle: '0', idleAutoInj: '0',
-     idleSteps: '0', fanTemp: '0', o2Work: '0', o2Delay: '0', o2Rpm: '0', o2Inj: '0',
-     startEnrichRpm: '0', idleHoleMax: '0', idleHoleMin: '0', idleHoleMaxAdj: '0'
+     throttleMin: 0, throttleMax: 0, idleMinInjCold: 0, idleMinInjHot: 0, idleAutoAngle: 0, idleAutoInj: 0,
+     idleSteps: 0, fanTemp: 0, o2Work: 0, o2Delay: 0, o2Rpm: 0, o2Inj: 0,
+     startEnrichRpm: 0, idleHoleMax: 0, idleHoleMin: 0, idleHoleMaxAdj: 0
    });
 
-   const updateParam = (key: keyof typeof params, val: string) => {
+   const updateParam = (key: keyof typeof params, val: number) => {
      setParams(prev => ({ ...prev, [key]: val }));
    };
 
@@ -91,34 +91,34 @@ export const OtherOptionsView: React.FC = () => {
             {/* Block 1 */}
             <div className="flex-1 border border-gray-700 flex flex-col bg-[#1e2126]">
                <div className="flex-1 flex flex-col">
-                  <ParamRow label={t.otherOptions_throttleMin} value={params.throttleMin} unit="V" onChange={(v) => updateParam('throttleMin', v)} />
-                  <ParamRow label={t.otherOptions_throttleMax} value={params.throttleMax} unit="V" onChange={(v) => updateParam('throttleMax', v)} />
-                  <ParamRow label={t.otherOptions_idleMinInjCold} value={params.idleMinInjCold} unit="ms" onChange={(v) => updateParam('idleMinInjCold', v)} />
-                  <ParamRow label={t.otherOptions_idleMinInjHot} value={params.idleMinInjHot} unit="ms" onChange={(v) => updateParam('idleMinInjHot', v)} />
-                  <ParamRow label={t.otherOptions_idleAutoAngle} value={params.idleAutoAngle} unit="∠°" onChange={(v) => updateParam('idleAutoAngle', v)} />
-                  <ParamRow label={t.otherOptions_idleAutoInj} value={params.idleAutoInj} unit="ms" onChange={(v) => updateParam('idleAutoInj', v)} />
+                  <ParamRow label={t.otherOptions_throttleMin} value={params.throttleMin} unit="V" onChange={(v) => updateParam('throttleMin', v)} min={0} max={99999} decimals={0} />
+                  <ParamRow label={t.otherOptions_throttleMax} value={params.throttleMax} unit="V" onChange={(v) => updateParam('throttleMax', v)} min={0} max={99999} decimals={0} />
+                  <ParamRow label={t.otherOptions_idleMinInjCold} value={params.idleMinInjCold} unit="ms" onChange={(v) => updateParam('idleMinInjCold', v)} min={0} max={99999} decimals={0} />
+                  <ParamRow label={t.otherOptions_idleMinInjHot} value={params.idleMinInjHot} unit="ms" onChange={(v) => updateParam('idleMinInjHot', v)} min={0} max={99999} decimals={0} />
+                  <ParamRow label={t.otherOptions_idleAutoAngle} value={params.idleAutoAngle} unit="∠°" onChange={(v) => updateParam('idleAutoAngle', v)} min={-30} max={99999} decimals={0} />
+                  <ParamRow label={t.otherOptions_idleAutoInj} value={params.idleAutoInj} unit="ms" onChange={(v) => updateParam('idleAutoInj', v)} min={0} max={99999} decimals={0} />
                </div>
             </div>
             {/* Block 2 */}
             <div className="flex-1 border border-gray-700 flex flex-col bg-[#1e2126]">
                <div className="flex-1 flex flex-col">
-                  <ParamRow label={t.otherOptions_idleSteps} value={params.idleSteps} unit="STEP" onChange={(v) => updateParam('idleSteps', v)} />
-                  <ParamRow label={t.otherOptions_fanTemp} value={params.fanTemp} unit="°C" onChange={(v) => updateParam('fanTemp', v)} />
-                  <ParamRow label={t.otherOptions_o2Work} value={params.o2Work} unit="V" onChange={(v) => updateParam('o2Work', v)} />
-                  <ParamRow label={t.otherOptions_o2Delay} value={params.o2Delay} unit="Second" onChange={(v) => updateParam('o2Delay', v)} />
-                  <ParamRow label={t.otherOptions_o2Rpm} value={params.o2Rpm} unit="RPM" onChange={(v) => updateParam('o2Rpm', v)} />
-                  <ParamRow label={t.otherOptions_o2Inj} value={params.o2Inj} unit="%" onChange={(v) => updateParam('o2Inj', v)} />
+                  <ParamRow label={t.otherOptions_idleSteps} value={params.idleSteps} unit="STEP" onChange={(v) => updateParam('idleSteps', v)} min={0} max={99999} decimals={0} />
+                  <ParamRow label={t.otherOptions_fanTemp} value={params.fanTemp} unit="°C" onChange={(v) => updateParam('fanTemp', v)} min={-273.15} max={99999} decimals={0} />
+                  <ParamRow label={t.otherOptions_o2Work} value={params.o2Work} unit="V" onChange={(v) => updateParam('o2Work', v)} min={0} max={99999} decimals={0} />
+                  <ParamRow label={t.otherOptions_o2Delay} value={params.o2Delay} unit="Second" onChange={(v) => updateParam('o2Delay', v)} min={0} max={99999} decimals={0} />
+                  <ParamRow label={t.otherOptions_o2Rpm} value={params.o2Rpm} unit="RPM" onChange={(v) => updateParam('o2Rpm', v)} min={0} max={99999} decimals={0} />
+                  <ParamRow label={t.otherOptions_o2Inj} value={params.o2Inj} unit="%" onChange={(v) => updateParam('o2Inj', v)} min={0} max={99999} decimals={0} />
                </div>
             </div>
             {/* Block 3 */}
             <div className="flex-1 border border-gray-700 flex flex-col bg-[#1e2126]">
                <div className="flex-1 flex flex-col">
-                  <ParamRow label={t.otherOptions_startEnrichRpm} value={params.startEnrichRpm} unit="RPM" onChange={(v) => updateParam('startEnrichRpm', v)} />
-                  <ParamRow label={t.otherOptions_idleHoleMax} value={params.idleHoleMax} unit="STEP" onChange={(v) => updateParam('idleHoleMax', v)} />
-                  <ParamRow label={t.otherOptions_idleHoleMin} value={params.idleHoleMin} unit="STEP" onChange={(v) => updateParam('idleHoleMin', v)} />
-                  <ParamRow label={t.otherOptions_idleHoleMaxAdj} value={params.idleHoleMaxAdj} unit="STEP" onChange={(v) => updateParam('idleHoleMaxAdj', v)} />
-                  <ParamRow label="0" value="0" unit="0" highlighted={false} />
-                  <ParamRow label="0" value="0" unit="0" highlighted={false} />
+                  <ParamRow label={t.otherOptions_startEnrichRpm} value={params.startEnrichRpm} unit="RPM" onChange={(v) => updateParam('startEnrichRpm', v)} min={0} max={99999} decimals={0} />
+                  <ParamRow label={t.otherOptions_idleHoleMax} value={params.idleHoleMax} unit="STEP" onChange={(v) => updateParam('idleHoleMax', v)} min={0} max={99999} decimals={0} />
+                  <ParamRow label={t.otherOptions_idleHoleMin} value={params.idleHoleMin} unit="STEP" onChange={(v) => updateParam('idleHoleMin', v)} min={0} max={99999} decimals={0} />
+                  <ParamRow label={t.otherOptions_idleHoleMaxAdj} value={params.idleHoleMaxAdj} unit="STEP" onChange={(v) => updateParam('idleHoleMaxAdj', v)} min={0} max={99999} decimals={0} />
+                  <ParamRow label="0" value={0} unit="0" highlighted={false} decimals={0} />
+                  <ParamRow label="0" value={0} unit="0" highlighted={false} decimals={0} />
                </div>
             </div>
          </div>
