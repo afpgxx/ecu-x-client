@@ -13,10 +13,18 @@ interface MapTableProps {
   min?: number;
   max?: number;
   onCellChange: (row: number, col: number, newValue: number) => void;
+  onBulkChange?: (changes: {row: number, col: number, value: number}[]) => void;
 }
+
+type SelectionState = 
+  | { type: 'row'; index: number }
+  | { type: 'col'; index: number }
+  | { type: 'range'; startRow: number; startCol: number; endRow: number; endCol: number }
+  | null;
 
 // Helper to map value to Heatmap Color (Blue -> Green -> Yellow -> Red)
 const getHeatmapColor = (value: number, min: number, max: number) => {
+  if (isNaN(value)) return 'hsl(0, 0%, 85%)'; // Light gray for NaN
   // Handle flat data (min === max) to avoid division by zero or weird colors
   if (min === max) return 'hsl(220, 70%, 85%)'; // A pleasant light blue/purple for uniform data
 
@@ -40,12 +48,28 @@ export const MapTable: React.FC<MapTableProps> = ({
   min = 0,
   max = 16,
   onCellChange,
+  onBulkChange,
 }) => {
   const activeRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const [inputValue, setInputValue] = useState('');
   const [editingCell, setEditingCell] = useState<{row: number, col: number} | null>(null);
-  const [originalValue, setOriginalValue] = useState<number>(0);
+  const [selection, setSelection] = useState<SelectionState>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const justFinishedDrag = useRef(false);
+  const dragStart = useRef<{row: number, col: number} | null>(null);
+  const isTypingRef = useRef(false);
+
+  useEffect(() => {
+    const handleGlobalMouseUp = () => {
+      setIsDragging(false);
+      dragStart.current = null;
+      // Delay resetting justFinishedDrag to allow click event to fire first
+      setTimeout(() => { justFinishedDrag.current = false; }, 50);
+    };
+    window.addEventListener('mouseup', handleGlobalMouseUp);
+    return () => window.removeEventListener('mouseup', handleGlobalMouseUp);
+  }, []);
 
   useEffect(() => {
     setInputValue((value ?? 0).toFixed(decimals));
@@ -55,19 +79,90 @@ export const MapTable: React.FC<MapTableProps> = ({
     setInputValue(e.target.value);
   };
 
+  const handleCellMouseDown = (rIdx: number, cIdx: number, e: React.MouseEvent) => {
+    // Only left click
+    if (e.button !== 0) return;
+    // If clicking inside the input of the currently editing cell, ignore
+    if (editingCell?.row === rIdx && editingCell?.col === cIdx) return;
+
+    e.stopPropagation(); // Prevent container click from clearing selection
+    setIsDragging(true);
+    justFinishedDrag.current = false;
+    dragStart.current = { row: rIdx, col: cIdx };
+    // Do NOT set selection here immediately to allow simple click to edit without selection
+    setEditingCell(null);
+  };
+
+  const handleCellMouseEnter = (rIdx: number, cIdx: number) => {
+    if (isDragging && dragStart.current) {
+      justFinishedDrag.current = true;
+      setSelection({ 
+        type: 'range', 
+        startRow: dragStart.current.row, 
+        startCol: dragStart.current.col, 
+        endRow: rIdx, 
+        endCol: cIdx 
+      });
+    }
+  };
+
   const handleInputBlur = () => {
     const parsed = parseFloat(inputValue);
     let newVal = parsed;
     if (!isNaN(parsed)) {
       if (min !== undefined) newVal = Math.max(min, newVal);
       if (max !== undefined) newVal = Math.min(max, newVal);
+      
+      // Check for bulk update
+      if (selection && onBulkChange && editingCell) {
+        const changes: {row: number, col: number, value: number}[] = [];
+        
+        if (selection.type === 'row' && selection.index === editingCell.row) {
+          // Update entire row
+          for (let c = 0; c < rpmPoints.length; c++) {
+            changes.push({ row: selection.index, col: c, value: newVal });
+          }
+        } else if (selection.type === 'col' && selection.index === editingCell.col) {
+          // Update entire column
+          for (let r = 0; r < loadPoints.length; r++) {
+            changes.push({ row: r, col: selection.index, value: newVal });
+          }
+        } else if (selection.type === 'range') {
+          // Update range
+          const minR = Math.min(selection.startRow, selection.endRow);
+          const maxR = Math.max(selection.startRow, selection.endRow);
+          const minC = Math.min(selection.startCol, selection.endCol);
+          const maxC = Math.max(selection.startCol, selection.endCol);
+          
+          // Only if editing cell is within range (it should be)
+          if (editingCell.row >= minR && editingCell.row <= maxR && 
+              editingCell.col >= minC && editingCell.col <= maxC) {
+             for (let r = minR; r <= maxR; r++) {
+               for (let c = minC; c <= maxC; c++) {
+                 changes.push({ row: r, col: c, value: newVal });
+               }
+             }
+          } else {
+             changes.push({ row: editingCell.row, col: editingCell.col, value: newVal });
+          }
+        } else {
+          // Single cell update (fallback)
+          changes.push({ row: editingCell.row, col: editingCell.col, value: newVal });
+        }
+        
+        if (changes.length > 0) {
+           onBulkChange(changes);
+        }
+      } else {
+        // Single cell update
+        onCellChange(editingCell!.row, editingCell!.col, newVal);
+      }
+      
       setInputValue(newVal.toFixed(decimals));
-      onCellChange(editingCell!.row, editingCell!.col, newVal);
     } else {
       setInputValue(value.toFixed(decimals));
       onCellChange(editingCell!.row, editingCell!.col, value);
     }
-    // 只将限定后的newVal传递给onCellChange
     setEditingCell(null);
   };
 
@@ -101,9 +196,160 @@ export const MapTable: React.FC<MapTableProps> = ({
   useEffect(() => {
     if (editingCell && inputRef.current) {
       inputRef.current.focus();
-      inputRef.current.select();
+      if (isTypingRef.current) {
+        // If initiated by typing, place cursor at end and do NOT select all
+        // This prevents the next keystroke from overwriting the first one
+        inputRef.current.selectionStart = inputRef.current.value.length;
+        inputRef.current.selectionEnd = inputRef.current.value.length;
+        isTypingRef.current = false;
+      } else {
+        inputRef.current.select();
+      }
     }
   }, [editingCell]);
+
+  // Handle Copy/Paste for Selection
+  useEffect(() => {
+    const handleKeyDown = async (e: KeyboardEvent) => {
+      if (!selection || editingCell) return;
+
+      // Copy: Ctrl+C
+      if ((e.ctrlKey || e.metaKey) && e.key === 'c') {
+        e.preventDefault();
+        let text = '';
+        if (selection.type === 'row') {
+          text = data[selection.index].map(v => v.toFixed(decimals)).join('\t');
+        } else if (selection.type === 'col') {
+          text = data.map(row => row[selection.index].toFixed(decimals)).join('\n');
+        } else if (selection.type === 'range') {
+          const minR = Math.min(selection.startRow, selection.endRow);
+          const maxR = Math.max(selection.startRow, selection.endRow);
+          const minC = Math.min(selection.startCol, selection.endCol);
+          const maxC = Math.max(selection.startCol, selection.endCol);
+          
+          const rows = [];
+          for (let r = minR; r <= maxR; r++) {
+            rows.push(data[r].slice(minC, maxC + 1).map(v => v.toFixed(decimals)).join('\t'));
+          }
+          text = rows.join('\n');
+        }
+        
+        try {
+          await navigator.clipboard.writeText(text);
+        } catch (err) {
+          console.error('Failed to copy', err);
+        }
+      }
+
+      // Paste: Ctrl+V
+      if ((e.ctrlKey || e.metaKey) && e.key === 'v') {
+        e.preventDefault();
+        try {
+          const text = await navigator.clipboard.readText();
+          if (!text) return;
+          
+          const changes: {row: number, col: number, value: number}[] = [];
+          
+          if (selection.type === 'row') {
+             // Try tab separated first
+             let values = text.split('\t').map(s => parseFloat(s.trim()));
+             // Fallback to newline if single value found (maybe copied from column)
+             if (values.length === 1 && text.includes('\n')) {
+                 values = text.split(/\r?\n/).map(s => parseFloat(s.trim()));
+             }
+             
+             values.forEach((val, idx) => {
+                 if (idx < rpmPoints.length && !isNaN(val)) {
+                     let finalVal = val;
+                     if (min !== undefined) finalVal = Math.max(min, finalVal);
+                     if (max !== undefined) finalVal = Math.min(max, finalVal);
+                     changes.push({ row: selection.index, col: idx, value: finalVal });
+                 }
+             });
+          } else if (selection.type === 'col') {
+             // Column: expect newlines
+             let values = text.split(/\r?\n/).map(s => parseFloat(s.trim()));
+             if (values.length <= 1 && text.includes('\t')) {
+                 values = text.split('\t').map(s => parseFloat(s.trim()));
+             }
+
+             values.forEach((val, idx) => {
+                 if (idx < loadPoints.length && !isNaN(val)) {
+                     let finalVal = val;
+                     if (min !== undefined) finalVal = Math.max(min, finalVal);
+                     if (max !== undefined) finalVal = Math.min(max, finalVal);
+                     changes.push({ row: idx, col: selection.index, value: finalVal });
+                 }
+             });
+          } else if (selection.type === 'range') {
+             const minR = Math.min(selection.startRow, selection.endRow);
+             const minC = Math.min(selection.startCol, selection.endCol);
+             
+             const rows = text.split(/\r?\n/);
+             rows.forEach((rowStr, rOffset) => {
+               const cols = rowStr.split('\t');
+               cols.forEach((colStr, cOffset) => {
+                 const val = parseFloat(colStr.trim());
+                 const targetR = minR + rOffset;
+                 const targetC = minC + cOffset;
+                 
+                 if (!isNaN(val) && targetR < loadPoints.length && targetC < rpmPoints.length) {
+                   let finalVal = val;
+                   if (min !== undefined) finalVal = Math.max(min, finalVal);
+                   if (max !== undefined) finalVal = Math.min(max, finalVal);
+                   changes.push({ row: targetR, col: targetC, value: finalVal });
+                 }
+               });
+             });
+          }
+
+          if (changes.length > 0 && onBulkChange) {
+              onBulkChange(changes);
+          }
+        } catch (err) {
+          console.error('Failed to paste', err);
+        }
+      }
+
+      // Enter to Edit
+      if (e.key === 'Enter' && !editingCell) {
+          e.preventDefault();
+          let r: number | undefined, c: number | undefined;
+          if (selection.type === 'row') { r = selection.index; c = 0; }
+          else if (selection.type === 'col') { r = 0; c = selection.index; }
+          else if (selection.type === 'range') { 
+              r = Math.min(selection.startRow, selection.endRow); 
+              c = Math.min(selection.startCol, selection.endCol); 
+          }
+          
+          if (r !== undefined && c !== undefined) {
+             setEditingCell({ row: r, col: c });
+             setInputValue(data[r][c].toFixed(decimals));
+          }
+      }
+
+      // Direct typing to edit (Numbers, minus, dot)
+      if (!editingCell && !e.ctrlKey && !e.metaKey && !e.altKey && e.key.length === 1 && /^[0-9.-]$/.test(e.key)) {
+          let r: number | undefined, c: number | undefined;
+          if (selection.type === 'row') { r = selection.index; c = 0; }
+          else if (selection.type === 'col') { r = 0; c = selection.index; }
+          else if (selection.type === 'range') { 
+              r = Math.min(selection.startRow, selection.endRow); 
+              c = Math.min(selection.startCol, selection.endCol); 
+          }
+          
+          if (r !== undefined && c !== undefined) {
+             e.preventDefault();
+             isTypingRef.current = true;
+             setEditingCell({ row: r, col: c });
+             setInputValue(e.key);
+          }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selection, editingCell, data, decimals, min, max, onBulkChange, rpmPoints.length, loadPoints.length]);
 
   return (
     <div className="flex flex-col w-full h-full bg-gray-900 text-[11px] select-none overflow-hidden font-mono">
@@ -111,22 +357,30 @@ export const MapTable: React.FC<MapTableProps> = ({
       {/* Header Row (X-Axis / RPM) */}
       <div className="flex w-full border-b border-gray-700 bg-gray-800">
         {/* Corner Label */}
-        <div className="w-16 flex-shrink-0 p-1 flex items-center justify-center border-r border-gray-700 bg-gray-900 text-gray-500 font-bold text-[10px] leading-tight text-center">
+        <div 
+          className="w-16 flex-shrink-0 p-1 flex items-center justify-center border-r border-gray-700 bg-gray-900 text-gray-500 font-bold text-[17px] leading-tight text-center cursor-pointer"
+          onClick={() => setSelection(null)}
+        >
           {cornerLabel}
         </div>
         
         {/* X-Axis Values */}
         <div className="flex-1 overflow-hidden">
             <div className="flex w-full h-full">
-                {rpmPoints.map((rpm, i) => (
-                <div 
-                    key={i} 
-                    className={`flex-1 min-w-[42px] flex items-center justify-center font-bold transition-colors duration-150 border-r border-gray-700 last:border-0
-                    ${i === activeColIndex ? 'bg-red-600 text-white' : 'bg-gray-800 text-gray-400'}`}
-                >
-                    {rpm}
-                </div>
-                ))}
+                {rpmPoints.map((rpm, i) => {
+                  const isSelected = selection?.type === 'col' && selection.index === i;
+                  return (
+                    <div 
+                        key={i} 
+                        className={`flex-1 min-w-[42px] flex items-center justify-center font-bold transition-colors duration-150 border-r border-gray-700 last:border-0 cursor-pointer hover:bg-gray-700
+                        ${i === activeColIndex ? 'bg-red-600 text-white' : isSelected ? 'bg-blue-900/50 text-blue-200' : 'bg-gray-800 text-gray-400'}`}
+                        style={{ fontSize: 16 }}
+                        onClick={() => setSelection(prev => (prev?.type === 'col' && prev.index === i) ? null : { type: 'col', index: i })}
+                    >
+                        {rpm}
+                    </div>
+                  );
+                })}
             </div>
         </div>
       </div>
@@ -136,23 +390,46 @@ export const MapTable: React.FC<MapTableProps> = ({
         
         {/* Y-Axis Column */}
         <div className="flex flex-col w-16 flex-shrink-0 border-r border-gray-700 bg-gray-800">
-          {loadPoints.map((val, i) => (
-            <div 
-              key={i} 
-              className={`flex-1 min-h-[24px] flex items-center justify-center font-bold transition-colors duration-150 border-b border-gray-700 text-[10px]
-              ${i === activeRowIndex ? 'bg-red-600 text-white' : 'text-gray-400'}`}
-            >
-              {val}{yAxisUnit}
-            </div>
-          ))}
+          {loadPoints.map((val, i) => {
+            const isSelected = selection?.type === 'row' && selection.index === i;
+            return (
+              <div 
+                key={i} 
+                className={`flex-1 min-h-[24px] flex items-center justify-center font-bold transition-colors duration-150 border-b border-gray-700 text-[16px] cursor-pointer hover:bg-gray-700
+                ${i === activeRowIndex ? 'bg-red-600 text-white' : isSelected ? 'bg-blue-900/50 text-blue-200' : 'text-gray-400'}`}
+                onClick={() => setSelection(prev => (prev?.type === 'row' && prev.index === i) ? null : { type: 'row', index: i })}
+              >
+                {val}{yAxisUnit}
+              </div>
+            );
+          })}
         </div>
 
         {/* Data Grid */}
-        <div className="flex-1 flex flex-col w-full">
+        <div 
+          className="flex-1 flex flex-col w-full"
+          onClick={(e) => {
+            if (justFinishedDrag.current) return;
+            if (e.target === e.currentTarget) setSelection(null);
+          }}
+        >
            {data.map((row, rIdx) => (
              <div key={rIdx} className="flex-1 flex min-h-[24px]">
                 {row.map((cellValue, cIdx) => {
                     const isActive = rIdx === activeRowIndex && cIdx === activeColIndex;
+                    let isSelected = false;
+                    if (selection) {
+                        if (selection.type === 'row') isSelected = selection.index === rIdx;
+                        else if (selection.type === 'col') isSelected = selection.index === cIdx;
+                        else if (selection.type === 'range') {
+                            const minR = Math.min(selection.startRow, selection.endRow);
+                            const maxR = Math.max(selection.startRow, selection.endRow);
+                            const minC = Math.min(selection.startCol, selection.endCol);
+                            const maxC = Math.max(selection.startCol, selection.endCol);
+                            isSelected = rIdx >= minR && rIdx <= maxR && cIdx >= minC && cIdx <= maxC;
+                        }
+                    }
+                    
                     const bg = getHeatmapColor(cellValue, min, max);
                     
                     return (
@@ -162,9 +439,15 @@ export const MapTable: React.FC<MapTableProps> = ({
                             className={`flex-1 min-w-[42px] flex items-center justify-center text-gray-900 font-bold border-r border-b border-black/10 cursor-pointer relative
                             ${isActive ? 'z-10' : 'opacity-90 hover:opacity-100'}`}
                             style={{ backgroundColor: bg }}
+                            onMouseDown={(e) => handleCellMouseDown(rIdx, cIdx, e)}
+                            onMouseEnter={() => handleCellMouseEnter(rIdx, cIdx)}
                         >
                             {/* Active Selection Highlight Border */}
                             {isActive && <div className="absolute inset-0 border-2 border-white pointer-events-none shadow-lg"></div>}
+                            
+                            {/* Row/Col Selection Overlay */}
+                            {isSelected && !isActive && <div className="absolute inset-0 bg-blue-500/30 pointer-events-none border border-blue-400/50"></div>}
+
                             {editingCell && editingCell.row === rIdx && editingCell.col === cIdx ? (
                               <input
                                 ref={inputRef}
@@ -174,18 +457,21 @@ export const MapTable: React.FC<MapTableProps> = ({
                                 onBlur={handleInputBlur}
                                 onKeyDown={handleInputKeyDown}
                                 autoFocus
-                                className="w-full h-full px-2 py-0.5 rounded-md border-2 border-blue-500 focus:border-orange-500 text-right text-base font-mono text-blue-200 shadow-inner outline-none transition-all duration-150 select-all ring-0 focus:bg-[#23272e] focus:text-orange-300"
-                                style={{ fontSize: 12, color: 'black', minWidth: 42, textAlign: 'center', fontVariantNumeric: 'tabular-nums', backgroundColor: bg }}
+                                className="w-full h-full px-0.5 py-0.5 rounded-md border-2 border-blue-500 focus:border-orange-500 text-right text-base font-mono text-blue-200 shadow-inner outline-none transition-all duration-150 select-all ring-0 focus:bg-[#23272e] focus:text-orange-300"
+                                style={{ fontSize: 15, color: 'black', minWidth: 42, textAlign: 'center', fontVariantNumeric: 'tabular-nums', backgroundColor: bg }}
                               />
                           ) : (
                             <span 
                               className={`flex-1 min-w-[42px] flex items-center justify-center text-gray-900 font-bold border-r border-black/10 cursor-pointer relative
                                 ${isActive ? 'z-10' : 'opacity-90 hover:opacity-100'}`}
-                              style={{ fontSize: 12 }}
+                              style={{ fontSize: 17 }}
                               onClick={() => {
+                                if (justFinishedDrag.current) return;
+                                if (!isSelected) {
+                                  setSelection(null);
+                                }
                                 setEditingCell({ row: rIdx, col: cIdx });
                                 setInputValue(cellValue.toFixed(decimals));
-                                setOriginalValue(cellValue);
                               }}
                             >
                               {cellValue.toFixed(decimals)}

@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain, Menu } = require('electron');
 const path = require('path');
 
 // Helper to check if we are in dev mode (running via npm run dev)
@@ -20,24 +20,49 @@ const createWindow = () => {
     },
   });
 
-  // Add F12 to toggle DevTools
-  mainWindow.webContents.on('before-input-event', (event, input) => {
-    if (input.key === 'F12' && input.type === 'keyDown') {
-      mainWindow.webContents.toggleDevTools();
-      event.preventDefault();
-    }
-  });
-
   if (isDev) {
     // In development, load from Vite dev server
     mainWindow.loadURL('http://localhost:5173');
-    // Open DevTools automatically in dev mode
+    // Open DevTools automatically in dev mode (commented out)
     // mainWindow.webContents.openDevTools({ mode: 'detach' });
+    
+    // 创建一个简单的菜单来支持 F12 和 Ctrl+R
+    const template = [
+      {
+        label: 'View',
+        submenu: [
+          {
+            label: 'Toggle Developer Tools',
+            accelerator: 'F12',
+            click: () => {
+              mainWindow.webContents.toggleDevTools();
+            }
+          },
+          {
+            label: 'Reload',
+            accelerator: 'CmdOrCtrl+R',
+            click: () => {
+              mainWindow.reload();
+            }
+          }
+        ]
+      }
+    ];
+    const menu = Menu.buildFromTemplate(template);
+    Menu.setApplicationMenu(menu);
   } else {
     // In production, load the built index.html
     // Adjusted path since main.js is in electron/ folder
     mainWindow.loadFile(path.join(__dirname, '..', 'dist', 'index.html'));
   }
+
+  // Send window state events to renderer
+  mainWindow.on('maximize', () => {
+    mainWindow.webContents.send('window-state-change', 'maximized');
+  });
+  mainWindow.on('unmaximize', () => {
+    mainWindow.webContents.send('window-state-change', 'normal');
+  });
 };
 
 // This method will be called when Electron has finished initialization

@@ -67,7 +67,7 @@ export const ParamRow: React.FC<ParamRowProps> = ({
   };
 
   return (
-    <div className="flex items-center border-b border-gray-700 last:border-0 h-8 text-xs">
+    <div className="flex items-center border-b border-gray-700 last:border-0 h-8 text-sm">
       {label && <div className="flex-[2] px-2 text-gray-400 font-medium truncate border-r border-gray-700 h-full flex items-center justify-end bg-[#2d323a]" title={label}>{label}</div>}
       <div 
         className={`flex-1 px-2 font-mono font-bold h-full flex items-center justify-center cursor-pointer ${

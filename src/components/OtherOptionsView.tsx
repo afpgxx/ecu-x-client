@@ -2,7 +2,25 @@ import React, { useState } from 'react';
 import { useI18n } from '../i18n/I18nContext';
 import { ParamRow } from './ParamRow';
 
-export const OtherOptionsView: React.FC = () => {
+interface OtherOptionsViewProps {
+  params: {
+    throttleMin: number; throttleMax: number; idleMinInjCold: number; idleMinInjHot: number;
+    idleAutoAngle: number; idleAutoInj: number; idleSteps: number; fanTemp: number;
+    o2Work: number; o2Delay: number; o2Rpm: number; o2Inj: number;
+    startEnrichRpm: number; idleHoleMax: number; idleHoleMin: number; idleHoleMaxAdj: number;
+  };
+  grids: {
+    tempIdle: { stepTime: number[]; injVe: number[] };
+    startEnrich: { delayed: number[]; injVeAdd: number[]; notStartedAdd: number[] };
+    iatComp: { injVeComp: number[] };
+    mapComp: { motorStep: number[] };
+    extAdj: { injAdjPct: number[]; ignAdjDeg: number[] };
+  };
+  onParamsChange: (params: any) => void;
+  onGridsChange: (grids: any) => void;
+}
+
+export const OtherOptionsView: React.FC<OtherOptionsViewProps> = ({ params, grids, onParamsChange, onGridsChange }) => {
    const { t } = useI18n();
    
    const subTabs = [
@@ -14,16 +32,11 @@ export const OtherOptionsView: React.FC = () => {
    ];
    const [activeSubTab, setActiveSubTab] = useState(subTabs[0]);
    const [extAdjMode, setExtAdjMode] = useState<'TPS' | 'RPM'>('TPS');
-
-   // State for parameters (simplified for demo)
-   const [params, setParams] = useState({
-     throttleMin: 0, throttleMax: 0, idleMinInjCold: 0, idleMinInjHot: 0, idleAutoAngle: 0, idleAutoInj: 0,
-     idleSteps: 0, fanTemp: 0, o2Work: 0, o2Delay: 0, o2Rpm: 0, o2Inj: 0,
-     startEnrichRpm: 0, idleHoleMax: 0, idleHoleMin: 0, idleHoleMaxAdj: 0
-   });
+   const [editingCell, setEditingCell] = useState<{row: number, col: number} | null>(null);
+   const [inputValue, setInputValue] = useState('');
 
    const updateParam = (key: keyof typeof params, val: number) => {
-     setParams(prev => ({ ...prev, [key]: val }));
+     onParamsChange({ ...params, [key]: val });
    };
 
    // Grid Data Logic
@@ -32,18 +45,20 @@ export const OtherOptionsView: React.FC = () => {
        return {
          cols: ['-14°C', '0°C', '14°C', '28°C', '42°C', '56°C', '70°C', '84°C', '98°C', '112°C', '126°C'],
          rows: [
-           { label: t.otherOptions_row_delayed, values: Array(11).fill('0') },
-           { label: t.otherOptions_row_injVeAdd, values: Array(11).fill('0') },
-           { label: t.otherOptions_row_notStartedAdd, values: Array(11).fill('0') },
-         ]
+           { label: t.otherOptions_row_delayed, values: grids.startEnrich.delayed },
+           { label: t.otherOptions_row_injVeAdd, values: grids.startEnrich.injVeAdd },
+           { label: t.otherOptions_row_notStartedAdd, values: grids.startEnrich.notStartedAdd },
+         ],
+         gridKey: 'startEnrich'
        };
      }
      if (activeSubTab === t.otherOptions_tab_iatComp) {
        return {
          cols: ['-14°C', '-7°C', '0°C', '7°C', '14°C', '21°C', '28°C', '35°C', '42°C', '49°C', '56°C'],
          rows: [
-           { label: t.otherOptions_row_injVeComp, values: Array(11).fill('0') },
-         ]
+           { label: t.otherOptions_row_injVeComp, values: grids.iatComp.injVeComp },
+         ],
+         gridKey: 'iatComp'
        };
      }
      if (activeSubTab === t.otherOptions_tab_mapComp) {
@@ -52,8 +67,9 @@ export const OtherOptionsView: React.FC = () => {
        return {
          cols,
          rows: [
-           { label: t.otherOptions_row_motorStep, values: Array(cols.length).fill('0') }
-         ]
+           { label: t.otherOptions_row_motorStep, values: grids.mapComp.motorStep }
+         ],
+         gridKey: 'mapComp'
        };
      }
      if (activeSubTab === t.otherOptions_tab_extAdj) {
@@ -61,22 +77,38 @@ export const OtherOptionsView: React.FC = () => {
        return {
          cols,
          rows: [
-           { label: t.otherOptions_row_injAdjPct, values: Array(cols.length).fill('0') },
-           { label: t.otherOptions_row_ignAdjDeg, values: Array(cols.length).fill('0') },
-         ]
+           { label: t.otherOptions_row_injAdjPct, values: grids.extAdj.injAdjPct },
+           { label: t.otherOptions_row_ignAdjDeg, values: grids.extAdj.ignAdjDeg },
+         ],
+         gridKey: 'extAdj'
        };
      }
      // Default: Temp-Idle Motor
      return {
        cols: ['-14°C', '0°C', '14°C', '28°C', '42°C', '56°C', '70°C', '84°C', '98°C', '112°C', '126°C'],
        rows: [
-         { label: t.otherOptions_row_stepTime, values: Array(11).fill('0') },
-         { label: t.otherOptions_row_injVe, values: Array(11).fill('0') },
-       ]
+         { label: t.otherOptions_row_stepTime, values: grids.tempIdle.stepTime },
+         { label: t.otherOptions_row_injVe, values: grids.tempIdle.injVe },
+       ],
+       gridKey: 'tempIdle'
      };
    };
 
-   const { cols, rows } = getGridData();
+   const { cols, rows, gridKey } = getGridData() as any;
+
+   const handleCellChange = (rowIndex: number, colIndex: number, value: number) => {
+     const newGrids = { ...grids };
+     const rowKey = Object.keys(grids[gridKey as keyof typeof grids])[rowIndex];
+     // 创建数组的副本而不是直接修改
+     const currentArray = (grids[gridKey as keyof typeof grids] as any)[rowKey];
+     const newArray = [...currentArray];
+     newArray[colIndex] = value;
+     (newGrids[gridKey as keyof typeof grids] as any) = {
+       ...(grids[gridKey as keyof typeof grids] as any),
+       [rowKey]: newArray
+     };
+     onGridsChange(newGrids);
+   };
 
    // Determine the top-left header label based on active tab
    let topLeftHeader = t.otherOptions_row_ect;
@@ -168,28 +200,65 @@ export const OtherOptionsView: React.FC = () => {
          {/* Bottom Section: Data Grid */}
          <div className="flex-1 border border-gray-700 overflow-auto bg-[#1e2126]">
             <div className="min-w-max">
-               <div className="flex h-8 text-xs border-b border-gray-700">
+               <div className="flex h-8 text-sm border-b border-gray-700">
                   <div className="w-28 bg-[#2d323a] border-r border-gray-700 text-gray-400 flex items-center justify-center font-bold sticky left-0 z-10">
                      {topLeftHeader}
                   </div>
-                  {cols.map((col, i) => (
+                  {cols.map((col: any, i: number) => (
                      <div key={i} className="flex-1 min-w-[60px] bg-[#2d323a] border-r border-gray-700 text-gray-400 flex items-center justify-center">
                         {col}
                      </div>
                   ))}
                </div>
-               {rows.map((row, rIndex) => (
-                  <div key={rIndex} className="flex h-8 text-xs border-b border-gray-700 last:border-0">
+               {rows.map((row: any, rIndex: number) => (
+                  <div key={rIndex} className="flex h-8 text-sm border-b border-gray-700 last:border-0">
                      <div className="w-28 bg-[#2d323a] border-r border-gray-700 text-gray-400 flex items-center justify-center font-bold sticky left-0 z-10 truncate px-1" title={row.label}>
                         {row.label}
                      </div>
-                     {row.values.map((val, cIndex) => (
-                        <div key={cIndex} className="flex-1 min-w-[60px] bg-[#111316] text-white font-bold flex items-center justify-center border-r border-gray-700 hover:bg-gray-800 cursor-pointer">
-                           {val}
+                     {row.values.map((val: number, cIndex: number) => (
+                        <div 
+                          key={cIndex} 
+                          className="flex-1 min-w-[60px] bg-[#111316] text-white font-bold flex items-center justify-center border-r border-gray-700 hover:bg-gray-800 cursor-pointer"
+                          onClick={() => {
+                            setEditingCell({ row: rIndex, col: cIndex });
+                            setInputValue(val.toString());
+                          }}
+                        >
+                          {editingCell && editingCell.row === rIndex && editingCell.col === cIndex ? (
+                            <input
+                              autoFocus
+                              type="text"
+                              className="w-full h-full bg-blue-600 text-white text-center outline-none font-bold"
+                              value={inputValue}
+                              onChange={(e) => setInputValue(e.target.value)}
+                              onBlur={() => {
+                                const parsed = parseFloat(inputValue);
+                                if (!isNaN(parsed)) {
+                                  handleCellChange(rIndex, cIndex, parsed);
+                                }
+                                setEditingCell(null);
+                              }}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  const parsed = parseFloat(inputValue);
+                                  if (!isNaN(parsed)) {
+                                    handleCellChange(rIndex, cIndex, parsed);
+                                  }
+                                  setEditingCell(null);
+                                } else if (e.key === 'Escape') {
+                                  setEditingCell(null);
+                                }
+                              }}
+                              onFocus={(e) => e.target.select()}
+                            />
+                          ) : (
+                            val
+                          )}
                         </div>
                      ))}
                   </div>
                ))}
+
             </div>
          </div>
       </div>

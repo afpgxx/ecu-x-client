@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   Save, FolderOpen, Settings,
   Cpu, Play, Pause, RefreshCw,
-  Download, X, Minus, Square, Plus, Globe
+  Download, X, Minus, Square, Plus, Globe, Copy
 } from 'lucide-react';
 import { VerticalBar } from './components/VerticalBar';
 import { Gauge } from './components/Gauge';
@@ -193,14 +193,62 @@ const App: React.FC = () => {
   const [mapCompData, setMapCompData] = useState<number[][]>(generateMapCompData()); // MAP补偿
   const [idleLimitData, setIdleLimitData] = useState<number[]>(generateIdleLimitData()); // 怠速/限转
   
+  // 数据版本号，用于强制重置组件状态
+  const [dataVersion, setDataVersion] = useState(0);
+
+  // OtherOptions 数据状态
+  const [otherOptionsParams, setOtherOptionsParams] = useState({
+    throttleMin: 0, throttleMax: 0, idleMinInjCold: 0, idleMinInjHot: 0, idleAutoAngle: 0, idleAutoInj: 0,
+    idleSteps: 0, fanTemp: 0, o2Work: 0, o2Delay: 0, o2Rpm: 0, o2Inj: 0,
+    startEnrichRpm: 0, idleHoleMax: 0, idleHoleMin: 0, idleHoleMaxAdj: 0
+  });
+  
+  const [otherOptionsGrids, setOtherOptionsGrids] = useState({
+    tempIdle: { stepTime: Array(11).fill(0), injVe: Array(11).fill(0) },
+    startEnrich: { delayed: Array(11).fill(0), injVeAdd: Array(11).fill(0), notStartedAdd: Array(11).fill(0) },
+    iatComp: { injVeComp: Array(11).fill(0) },
+    mapComp: { motorStep: Array(11).fill(0) },
+    extAdj: { injAdjPct: Array(15).fill(0), ignAdjDeg: Array(15).fill(0) }
+  });
+
+  // ParametersView 数据状态
+  const [parametersData, setParametersData] = useState({
+    afrVoltage: Array(10).fill(0),
+    iatVoltage: Array(11).fill(0),
+    ectVoltage: Array(11).fill(0),
+    pressureVoltage: Array(11).fill(0),
+    tpsSettings: [0,0.5,3,6,12,20,30,40,50,60,70,80,90,100],
+    rpmSettings: [500,1000,1500,2000,2500,3000,3500,4000,4500,5000,5500,6000,6500,7000,7500,8000,8500,9000,9500,10000,10500,11000,11500,12000,12500,13000,13500,14000,14500,15000]
+  });
+
+  // SettingsView 数据状态
+  const [settingsData, setSettingsData] = useState({
+    ecuSettings: {
+      passwordEnabled: false,
+      maxPowerAt100: false,
+      ignoreThrottleVoltage: false,
+      noMapProcessing: false,
+      spare: false
+    },
+    afrControl: {
+      enabled: true,
+      useOemSensor: true
+    },
+    spareTable1: Array(6).fill(0),
+    spareTable2: Array(9).fill(0)
+  });
+  
   const [isSimulating, setIsSimulating] = useState(false);
   const [isSweeping, setIsSweeping] = useState(false);
   const [ecuConnected] = useState(true);
   const [masterSwitch, setMasterSwitch] = useState(true);
-  const [activeTab, setActiveTab] = useState(MAIN_TABS[0]); // 使用数组第一项而不是直接访问 t
+  const [activeTabIndex, setActiveTabIndex] = useState(0);
+  const activeTab = MAIN_TABS[activeTabIndex] || MAIN_TABS[0];
   const [showLanguageMenu, setShowLanguageMenu] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
   const [showFileMenu, setShowFileMenu] = useState(false);
+  const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const [isMaximized, setIsMaximized] = useState(false);
   
   // Controller values
   const [idleValue, setIdleValue] = useState(850);
@@ -208,8 +256,16 @@ const App: React.FC = () => {
   const [fuelValue, setFuelValue] = useState(2.5);
   const [modeValue, setModeValue] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const isImporting = useRef(false);
 
   const simInterval = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const showNotification = (message: string, type: 'success' | 'error' = 'success') => {
+    setNotification({ message, type });
+    setTimeout(() => {
+      setNotification(null);
+    }, 2000);
+  };
 
   const handleSaveMapData = () => {
     // 整合所有数据表
@@ -233,6 +289,12 @@ const App: React.FC = () => {
         fuelValue,
         modeValue,
       },
+      otherOptions: {
+        params: otherOptionsParams,
+        grids: otherOptionsGrids
+      },
+      parameters: parametersData,
+      settings: settingsData
     };
     
     const json = JSON.stringify(allData);
@@ -252,8 +314,11 @@ const App: React.FC = () => {
   };
 
   const handleImportMapData = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (isImporting.current) return;
     const file = e.target.files?.[0];
     if (!file) return;
+
+    isImporting.current = true;
     const reader = new FileReader();
     reader.onload = (event) => {
       try {
@@ -262,39 +327,124 @@ const App: React.FC = () => {
         const decrypted = bytes.toString(CryptoJS.enc.Utf8);
         const data = JSON.parse(decrypted);
         
+        // 辅助函数：确保数组中的值都是数字
+        const ensureNumberArray = (arr: any[]): number[] => {
+          return arr.map(v => {
+            if (v === null || v === undefined) return 0;
+            if (typeof v === 'string') {
+              const parsed = parseFloat(v);
+              return isNaN(parsed) ? 0 : parsed;
+            }
+            if (typeof v === 'number') {
+              return isNaN(v) ? 0 : v;
+            }
+            return 0;
+          });
+        };
+        
+        const ensureNumber2DArray = (arr: any[][]): number[][] => {
+          return arr.map(row => ensureNumberArray(row));
+        };
+        
         // 检查是否为新格式（包含所有数据）
         if (data.maps && typeof data.maps === 'object') {
-          // 新格式：导入所有数据
-          if (data.maps.fuelMap) setFuelMapData(data.maps.fuelMap);
-          if (data.maps.fuelAdvance) setFuelAdvanceData(data.maps.fuelAdvance);
-          if (data.maps.ignitionAngle) setIgnitionAngleData(data.maps.ignitionAngle);
-          if (data.maps.dwellTime) setDwellTimeData(data.maps.dwellTime);
-          if (data.maps.afrTarget) setAfrTargetData(data.maps.afrTarget);
-          if (data.maps.ectCompFuel) setEctCompFuelData(data.maps.ectCompFuel);
-          if (data.maps.ectCompIgn) setEctCompIgnData(data.maps.ectCompIgn);
-          if (data.maps.mapComp) setMapCompData(data.maps.mapComp);
-          if (data.maps.idleLimit) setIdleLimitData(data.maps.idleLimit);
+          // 新格式：导入所有数据（创建深拷贝并确保数字类型）
+          if (data.maps.fuelMap) {
+            setFuelMapData(ensureNumber2DArray(JSON.parse(JSON.stringify(data.maps.fuelMap))));
+          }
+          if (data.maps.fuelAdvance) setFuelAdvanceData(ensureNumber2DArray(JSON.parse(JSON.stringify(data.maps.fuelAdvance))));
+          if (data.maps.ignitionAngle) setIgnitionAngleData(ensureNumber2DArray(JSON.parse(JSON.stringify(data.maps.ignitionAngle))));
+          if (data.maps.dwellTime) setDwellTimeData(ensureNumberArray(JSON.parse(JSON.stringify(data.maps.dwellTime))));
+          if (data.maps.afrTarget) setAfrTargetData(ensureNumber2DArray(JSON.parse(JSON.stringify(data.maps.afrTarget))));
+          if (data.maps.ectCompFuel) setEctCompFuelData(ensureNumber2DArray(JSON.parse(JSON.stringify(data.maps.ectCompFuel))));
+          if (data.maps.ectCompIgn) setEctCompIgnData(ensureNumber2DArray(JSON.parse(JSON.stringify(data.maps.ectCompIgn))));
+          if (data.maps.mapComp) setMapCompData(ensureNumber2DArray(JSON.parse(JSON.stringify(data.maps.mapComp))));
+          if (data.maps.idleLimit) setIdleLimitData(ensureNumberArray(JSON.parse(JSON.stringify(data.maps.idleLimit))));
           
           // 导入控制器参数
           if (data.controllers) {
-            if (data.controllers.idleValue !== undefined) setIdleValue(data.controllers.idleValue);
-            if (data.controllers.ignitionValue !== undefined) setIgnitionValue(data.controllers.ignitionValue);
-            if (data.controllers.fuelValue !== undefined) setFuelValue(data.controllers.fuelValue);
-            if (data.controllers.modeValue !== undefined) setModeValue(data.controllers.modeValue);
+            if (data.controllers.idleValue !== undefined) setIdleValue(Number(data.controllers.idleValue));
+            if (data.controllers.ignitionValue !== undefined) setIgnitionValue(Number(data.controllers.ignitionValue));
+            if (data.controllers.fuelValue !== undefined) setFuelValue(Number(data.controllers.fuelValue));
+            if (data.controllers.modeValue !== undefined) setModeValue(Number(data.controllers.modeValue));
           }
           
-          alert(`成功导入数据\n版本: ${data.version || '未知'}\n时间: ${data.timestamp ? new Date(data.timestamp).toLocaleString('zh-CN') : '未知'}`);
+          // 导入OtherOptions数据（创建深拷贝并确保数字类型）
+          if (data.otherOptions) {
+            if (data.otherOptions.params) {
+              const params = JSON.parse(JSON.stringify(data.otherOptions.params));
+              // 确保所有参数都是数字
+              Object.keys(params).forEach(key => {
+                params[key] = Number(params[key]);
+              });
+              setOtherOptionsParams(params);
+            }
+            if (data.otherOptions.grids) {
+              const grids = JSON.parse(JSON.stringify(data.otherOptions.grids));
+              // 确保所有网格数据都是数字数组
+              Object.keys(grids).forEach(gridKey => {
+                Object.keys(grids[gridKey]).forEach(rowKey => {
+                  grids[gridKey][rowKey] = ensureNumberArray(grids[gridKey][rowKey]);
+                });
+              });
+              setOtherOptionsGrids(grids);
+            }
+          }
+          
+          // 导入Parameters数据（创建深拷贝并确保数字类型）
+          if (data.parameters) {
+            const params = JSON.parse(JSON.stringify(data.parameters));
+            Object.keys(params).forEach(key => {
+              if (Array.isArray(params[key])) {
+                params[key] = ensureNumberArray(params[key]);
+              }
+            });
+            setParametersData(params);
+          }
+          
+          // 导入Settings数据（创建深拷贝并确保数字类型）
+          if (data.settings) {
+            const settings = JSON.parse(JSON.stringify(data.settings));
+            if (settings.spareTable1) settings.spareTable1 = ensureNumberArray(settings.spareTable1);
+            if (settings.spareTable2) settings.spareTable2 = ensureNumberArray(settings.spareTable2);
+            setSettingsData(settings);
+          }
+          
+          // 递增版本号以强制重置所有组件（必须在alert之前）
+          setDataVersion(prev => {
+            const newVersion = prev + 1;
+            return newVersion;
+          });
+          
+          // 使用setTimeout确保状态更新后再显示alert
+          setTimeout(() => {
+            showNotification(`成功导入数据\n版本: ${data.version || '未知'}\n时间: ${data.timestamp ? new Date(data.timestamp).toLocaleString('zh-CN') : '未知'}`, 'success');
+          }, 100);
         } else if (Array.isArray(data)) {
-          // 旧格式：只导入燃油MAP
-          setFuelMapData(data);
-          alert("成功导入燃油MAP数据（旧格式）");
+          // 旧格式：只导入燃油MAP（创建深拷贝并确保数字类型）
+          setFuelMapData(ensureNumber2DArray(JSON.parse(JSON.stringify(data))));
+          setDataVersion(prev => prev + 1);
+          
+          setTimeout(() => {
+            showNotification("成功导入燃油MAP数据（旧格式）", 'success');
+          }, 100);
         } else {
-          alert("文件格式不正确");
+          showNotification("文件格式不正确", 'error');
         }
       } catch (error) {
         console.error(error);
-        alert("解密或解析失败，请检查文件是否正确");
+        showNotification("解密或解析失败，请检查文件是否正确", 'error');
+      } finally {
+        isImporting.current = false;
+        // 重置文件输入，允许再次导入相同文件
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
       }
+    };
+    reader.onerror = () => {
+      isImporting.current = false;
+      showNotification("读取文件失败", 'error');
     };
     reader.readAsText(file);
   };
@@ -367,6 +517,24 @@ const App: React.FC = () => {
       setIsSweeping(false);
     }, 1000);
   };
+
+  // Listen for window state changes from Electron
+  useEffect(() => {
+    if ((window as any).require) {
+      try {
+        const { ipcRenderer } = (window as any).require('electron');
+        const handleWindowStateChange = (_event: any, state: string) => {
+          setIsMaximized(state === 'maximized');
+        };
+        ipcRenderer.on('window-state-change', handleWindowStateChange);
+        return () => {
+          ipcRenderer.removeListener('window-state-change', handleWindowStateChange);
+        };
+      } catch (error) {
+        console.error('Failed to setup IPC listener', error);
+      }
+    }
+  }, []);
 
   // Sim loop with Jitter
   useEffect(() => {
@@ -550,6 +718,7 @@ const App: React.FC = () => {
   const renderContent = () => {
     return (
       <TabContentView
+        key={dataVersion}
         activeTab={activeTab}
         t={t}
         engineState={engineState}
@@ -571,8 +740,56 @@ const App: React.FC = () => {
         setMapCompData={setMapCompData}
         idleLimitData={idleLimitData}
         setIdleLimitData={setIdleLimitData}
+        otherOptionsParams={otherOptionsParams}
+        setOtherOptionsParams={setOtherOptionsParams}
+        otherOptionsGrids={otherOptionsGrids}
+        setOtherOptionsGrids={setOtherOptionsGrids}
+        parametersData={parametersData}
+        setParametersData={setParametersData}
+        settingsData={settingsData}
+        setSettingsData={setSettingsData}
       />
     );
+  };
+
+  const renderTabControls = () => {
+    if (activeTab === t.tabs_fuelMap) {
+      return (
+        <div className="flex items-center gap-3 ml-auto py-0.5">
+          <div className="flex items-center justify-center bg-black/30 rounded p-0.5 border border-gray-700">
+              <button className="w-6 h-5 flex items-center justify-center hover:bg-gray-700 text-gray-400 rounded-sm text-xs"><Minus size={12}/></button>
+              <input className="w-12 h-5 bg-transparent text-center text-xs font-mono text-white border-none focus:ring-0" defaultValue="1.0" />
+              <button className="w-6 h-5 flex items-center justify-center hover:bg-gray-700 text-gray-400 rounded-sm text-xs"><Plus size={12}/></button>
+          </div>
+          <div className="h-4 w-[1px] bg-gray-700"></div>
+          <select className="bg-[#2d323a] text-xs text-gray-300 border border-gray-600 rounded px-2 py-0.5 outline-none">
+              <option>{t.mapTable_percentage}</option>
+              <option>{t.mapTable_rawValue}</option>
+              <option>{t.mapTable_lambda}</option>
+          </select>
+          <div className="flex gap-2 ml-2">
+            <button className="px-3 py-0.5 bg-red-600 text-white text-[10px] font-bold rounded-full">{t.mapTable_table1Active}</button>
+            <button className="px-3 py-0.5 bg-gray-800 text-gray-500 border border-gray-600 text-[10px] font-bold rounded-full">{t.mapTable_table2}</button>
+          </div>
+        </div>
+      );
+    }
+    if (activeTab === t.tabs_ectCompFuel) {
+       return (
+        <div className="flex items-center gap-3 ml-auto py-0.5">
+          <div className="flex items-center justify-center bg-black/30 rounded p-0.5 border border-gray-700">
+              <button className="w-6 h-5 flex items-center justify-center hover:bg-gray-700 text-gray-400 rounded-sm text-xs"><Minus size={12}/></button>
+              <input className="w-12 h-5 bg-transparent text-center text-xs font-mono text-white border-none focus:ring-0" defaultValue="0.1" />
+              <button className="w-6 h-5 flex items-center justify-center hover:bg-gray-700 text-gray-400 rounded-sm text-xs"><Plus size={12}/></button>
+          </div>
+          <div className="h-4 w-[1px] bg-gray-700"></div>
+          <select className="bg-[#2d323a] text-xs text-gray-300 border border-gray-600 rounded px-2 py-0.5 outline-none">
+             <option>{t.mapTable_unit}</option>
+          </select>
+        </div>
+       );
+    }
+    return null;
   };
 
   return (
@@ -617,7 +834,11 @@ const App: React.FC = () => {
             </div>
             <Settings size={14} className="hover:text-white cursor-pointer" />
             <Minus size={16} className="hover:text-white cursor-pointer hover:bg-gray-700 rounded" onClick={() => handleWindowControl('window-minimize')} />
-            <Square size={14} className="hover:text-white cursor-pointer hover:bg-gray-700 rounded" onClick={() => handleWindowControl('window-maximize')} />
+            {isMaximized ? (
+              <Copy size={14} className="hover:text-white cursor-pointer hover:bg-gray-700 rounded" style={{ transform: 'scaleX(-1)' }} onClick={() => handleWindowControl('window-maximize')} />
+            ) : (
+              <Square size={14} className="hover:text-white cursor-pointer hover:bg-gray-700 rounded" onClick={() => handleWindowControl('window-maximize')} />
+            )}
             <X size={16} className="hover:text-red-500 cursor-pointer hover:bg-red-900/50 rounded" onClick={() => handleWindowControl('window-close')} />
           </div>
         </div>
@@ -695,10 +916,10 @@ const App: React.FC = () => {
       </div>
 
       {/* --- Main Workspace --- */}
-      <div className="flex-1 p-2 flex flex-col gap-2 overflow-hidden">
+      <div className="flex-1 p-2 flex flex-col gap-0 overflow-hidden">
          
          {/* Top Dashboard Row (40% Height) */}
-         <div className="flex gap-2 shrink-0" style={{ minHeight: '180px', maxHeight: '25vh' }}>
+         <div className="flex gap-2 shrink-0 mb-2" style={{ minHeight: '180px', maxHeight: '25vh' }}>
             
             {/* 1. Sensor Bars Panel */}
             <div className="min-w-[200px] bg-[#16181c] rounded-lg border border-gray-700/50 p-3 shadow-xl flex flex-col" style={{ flex: '0.25 1 0%' }}>
@@ -790,11 +1011,11 @@ const App: React.FC = () => {
          </div>
 
          {/* Middle Tab Bar (Updated) */}
-         <div className="flex gap-1 px-1 shrink-0 overflow-x-auto">
-            {MAIN_TABS.map((tab) => (
+         <div className="flex flex-wrap gap-1 px-1 shrink-0 z-10 relative items-center">
+            {MAIN_TABS.map((tab, index) => (
                <button 
                   key={tab} 
-                  onClick={() => setActiveTab(tab)}
+                  onClick={() => setActiveTabIndex(index)}
                   className={`px-6 py-1.5 rounded-t-md text-xs font-bold border-t border-x transition-colors whitespace-nowrap
                   ${activeTab === tab 
                      ? 'bg-blue-600 border-blue-500 text-white' 
@@ -803,15 +1024,20 @@ const App: React.FC = () => {
                   {tab}
                </button>
             ))}
+            
+            {/* Tab Controls (Moved from TabContentView) */}
+            <div className="flex-1 flex justify-end min-w-[200px]">
+               {renderTabControls()}
+            </div>
          </div>
 
          {/* Bottom Content Area (Switches between Views) */}
-         <div className="flex-1 bg-[#16181c] rounded-b-lg rounded-tr-lg border border-gray-700 flex flex-col overflow-hidden shadow-2xl">
+         <div className="flex-1 bg-[#16181c] rounded-b-lg rounded-tr-lg border border-gray-700 flex flex-col overflow-hidden shadow-2xl -mt-[1px] z-0 relative">
              {renderContent()}
          </div>
 
          {/* Status Bar */}
-         <div className="h-6 bg-[#111316] border-t border-gray-800 flex items-center justify-between px-4 text-[10px] font-mono text-gray-500 select-none shrink-0">
+         <div className="h-6 bg-[#111316] border-t border-gray-800 flex items-center justify-between px-4 text-[10px] font-mono text-gray-500 select-none shrink-0 mt-2">
              <div className="flex gap-6">
                 <span className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-green-500"></div> {t.statusBar_ecuSync}</span>
                 <span>{t.statusBar_throttle}: <span className="text-gray-300">{engineState.tps.toFixed(1)}%</span></span>
@@ -851,6 +1077,16 @@ const App: React.FC = () => {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Notification Toast */}
+      {notification && (
+        <div className={`fixed top-10 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded shadow-lg z-[100] flex items-center gap-3 border animate-in fade-in slide-in-from-top-4 duration-200
+          ${notification.type === 'success' ? 'bg-emerald-900/90 border-emerald-500 text-emerald-100' : 'bg-red-900/90 border-red-500 text-red-100'}`}
+        >
+          <div className={`w-2 h-2 rounded-full ${notification.type === 'success' ? 'bg-emerald-400' : 'bg-red-400'}`}></div>
+          <span className="text-sm font-medium whitespace-pre-line">{notification.message}</span>
         </div>
       )}
     </div>
