@@ -25,13 +25,36 @@ export default {
 
   // 選單欄
   menu_file: 'Fichier',
-  menu_edit: 'Édition',
-  menu_view: 'Affichage',
-  menu_ecu: 'ECU',
-  menu_dataLog: 'Journal de données',
-  menu_tools: 'Outils',
-  menu_window: 'Fenêtre',
+  menu_data: 'Données',
+  menu_selectPort: 'Sélectionner le port',
+  menu_learnTps: 'Apprentissage TPS',
+  menu_importToCurrent: 'Importer vers actuel',
+  menu_copyDataTo: 'Copier les données vers',
+  menu_copyToAll: 'Copier les données actuelles vers tous...',
+  menu_testInjector: 'Test injecteur',
+  menu_afr: 'AFR',
+  menu_afr_record: 'Enregistrer AFR',
+  menu_afr_adjust: 'Ajustement injection AFR',
   menu_help: 'Aide',
+  menu_help_login: 'Connexion',
+  menu_help_setColor: 'Définir la couleur',
+  menu_help_manual: 'Manuel du logiciel',
+  menu_help_operation: 'Opération typique',
+  menu_help_about: 'À propos',
+
+  // Menu de données
+  data_readCurrent: 'Lire actuel',
+  data_sendCurrent: 'Envoyer actuel',
+  data_readAll: 'Tout lire',
+  data_sendAll: 'Tout envoyer',
+  data_restoreFactory: 'Rétablir usine',
+  data_add1: '+ 1',
+  data_sub1: '- 1',
+  data_add01: '+ 0.1',
+  data_sub01: '- 0.1',
+  data_add001: '+ 0.01',
+  data_sub001: '- 0.01',
+  data_autoSmooth: 'Lissage auto',
 
   // 工具列
   toolbar_burn: 'Écrire',
@@ -145,7 +168,7 @@ export default {
   otherOptions_diagnostic: 'Options de diagnostic',
 
   // 地圖表格
-  mapTable_table1Active: 'Table 1 (Active)',
+  mapTable_table1Active: 'Tableau 1',
   mapTable_table2: 'Table 2',
   mapTable_unit: 'Unité',
   mapTable_percentage: 'Pourcentage (%)',

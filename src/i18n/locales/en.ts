@@ -25,13 +25,36 @@ export default {
 
   // Menu Bar
   menu_file: 'File',
-  menu_edit: 'Edit',
-  menu_view: 'View',
-  menu_ecu: 'ECU',
-  menu_dataLog: 'Data Log',
-  menu_tools: 'Tools',
-  menu_window: 'Window',
+  menu_data: 'Data',
+  menu_selectPort: 'Select Port',
+  menu_learnTps: 'Learn TPS',
+  menu_importToCurrent: 'Import to Current',
+  menu_copyDataTo: 'Copy Data To',
+  menu_copyToAll: 'Copy current data to all...',
+  menu_testInjector: 'Test Injector',
+  menu_afr: 'AFR',
+  menu_afr_record: 'Record AFR',
+  menu_afr_adjust: 'AFR Injection Adjustment',
   menu_help: 'Help',
+  menu_help_login: 'Login',
+  menu_help_setColor: 'Set Color',
+  menu_help_manual: 'Software User Manual',
+  menu_help_operation: 'Software Typical Operation',
+  menu_help_about: 'About',
+
+  // Data Menu
+  data_readCurrent: 'Read Current',
+  data_sendCurrent: 'Send Current',
+  data_readAll: 'Read All',
+  data_sendAll: 'Send All',
+  data_restoreFactory: 'Restore Factory Data',
+  data_add1: 'Add 1',
+  data_sub1: 'Subtract 1',
+  data_add01: 'Add 0.1',
+  data_sub01: 'Subtract 0.1',
+  data_add001: 'Add 0.01',
+  data_sub001: 'Subtract 0.01',
+  data_autoSmooth: 'Auto Smooth',
 
   // Toolbar
   toolbar_burn: 'Burn',
@@ -171,7 +194,7 @@ export default {
   otherOptions_tab_extAdj: 'External Adjust',
 
   // Map Table
-  mapTable_table1Active: 'Table 1 (Active)',
+  mapTable_table1Active: 'Table 1',
   mapTable_table2: 'Table 2',
   mapTable_unit: 'Unit',
   mapTable_percentage: 'Percentage (%)',

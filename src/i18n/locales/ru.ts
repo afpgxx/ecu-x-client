@@ -25,13 +25,36 @@ export default {
 
   // 選單欄
   menu_file: 'Файл',
-  menu_edit: 'Редактировать',
-  menu_view: 'Вид',
-  menu_ecu: 'ECU',
-  menu_dataLog: 'Журнал данных',
-  menu_tools: 'Инструменты',
-  menu_window: 'Окно',
+  menu_data: 'Данные',
+  menu_selectPort: 'Выбрать порт',
+  menu_learnTps: 'Обучение TPS',
+  menu_importToCurrent: 'Импорт в текущий',
+  menu_copyDataTo: 'Копировать данные в',
+  menu_copyToAll: 'Копировать текущие данные во все...',
+  menu_testInjector: 'Тест форсунок',
+  menu_afr: 'AFR',
+  menu_afr_record: 'Запись AFR',
+  menu_afr_adjust: 'Коррекция впрыска по AFR',
   menu_help: 'Справка',
+  menu_help_login: 'Вход',
+  menu_help_setColor: 'Настройка цвета',
+  menu_help_manual: 'Руководство пользователя',
+  menu_help_operation: 'Типовые операции',
+  menu_help_about: 'О программе',
+
+  // Меню данных
+  data_readCurrent: 'Считать текущие',
+  data_sendCurrent: 'Отправить текущие',
+  data_readAll: 'Считать все',
+  data_sendAll: 'Отправить все',
+  data_restoreFactory: 'Сброс к заводским',
+  data_add1: '+ 1',
+  data_sub1: '- 1',
+  data_add01: '+ 0.1',
+  data_sub01: '- 0.1',
+  data_add001: '+ 0.01',
+  data_sub001: '- 0.01',
+  data_autoSmooth: 'Автосглаживание',
 
   // 工具列
   toolbar_burn: 'Записать',
@@ -145,7 +168,7 @@ export default {
   otherOptions_diagnostic: 'Параметры диагностики',
 
   // 地圖表格
-  mapTable_table1Active: 'Таблица 1 (активна)',
+  mapTable_table1Active: 'Таблица 1',
   mapTable_table2: 'Таблица 2',
   mapTable_unit: 'Единица измерения',
   mapTable_percentage: 'Процент (%)',

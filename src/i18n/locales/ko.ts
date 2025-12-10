@@ -25,13 +25,36 @@ export default {
 
   // 選單欄
   menu_file: '파일',
-  menu_edit: '편집',
-  menu_view: '보기',
-  menu_ecu: 'ECU',
-  menu_dataLog: '데이터 로그',
-  menu_tools: '도구',
-  menu_window: '창',
+  menu_data: '데이터',
+  menu_selectPort: '포트 선택',
+  menu_learnTps: 'TPS 학습',
+  menu_importToCurrent: '현재로 가져오기',
+  menu_copyDataTo: '데이터 복사 대상',
+  menu_copyToAll: '현재 데이터를 모두에게 복사...',
+  menu_testInjector: '인젝터 테스트',
+  menu_afr: 'AFR',
+  menu_afr_record: 'AFR 기록',
+  menu_afr_adjust: 'AFR 분사 조정',
   menu_help: '도움말',
+  menu_help_login: '로그인',
+  menu_help_setColor: '색상 설정',
+  menu_help_manual: '소프트웨어 매뉴얼',
+  menu_help_operation: '일반적인 작업',
+  menu_help_about: '정보',
+
+  // 데이터 메뉴
+  data_readCurrent: '현재 값 읽기',
+  data_sendCurrent: '현재 값 보내기',
+  data_readAll: '모두 읽기',
+  data_sendAll: '모두 보내기',
+  data_restoreFactory: '공장 초기화',
+  data_add1: '+ 1',
+  data_sub1: '- 1',
+  data_add01: '+ 0.1',
+  data_sub01: '- 0.1',
+  data_add001: '+ 0.01',
+  data_sub001: '- 0.01',
+  data_autoSmooth: '자동 다듬기',
 
   // 工具列
   toolbar_burn: '쓰기',
@@ -145,7 +168,7 @@ export default {
   otherOptions_diagnostic: '진단 옵션',
 
   // 地圖表格
-  mapTable_table1Active: '테이블 1 (활성)',
+  mapTable_table1Active: '표 1',
   mapTable_table2: '테이블 2',
   mapTable_unit: '단위',
   mapTable_percentage: '백분율 (%)',

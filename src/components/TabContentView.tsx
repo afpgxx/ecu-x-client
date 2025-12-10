@@ -38,16 +38,14 @@ interface TabContentViewProps {
   setSettingsData: React.Dispatch<React.SetStateAction<any>>;
 }
 
-const RPM_POINTS = [800, 1200, 1600, 2000, 2400, 2800, 3200, 3600, 4000, 4400, 4800, 5200, 5600, 6000, 6400, 6800, 7200, 7600, 8000];
-const LOAD_POINTS = [100, 90, 80, 70, 60, 50, 40, 30, 20, 10, 0];
-const DWELL_RPM_POINTS = [
-  800, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000, 
-  5500, 6000, 6500, 7000, 7500, 8000, 8500, 9000, 9500, 10000, 
-  10500, 11000, 11500, 12000, 12500, 13000, 13500, 14000, 14500, 15000
-];
-const ECT_COMP_TEMP_POINTS = [126, 112, 98, 84, 70, 56, 42, 28, 14, 0, -14];
-const ECT_COMP_RPM_POINTS = DWELL_RPM_POINTS;
-const IDLE_LIMIT_RPM_POINTS = [0, 500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000];
+import { 
+  RPM_POINTS, 
+  LOAD_POINTS, 
+  DWELL_RPM_POINTS, 
+  ECT_COMP_TEMP_POINTS, 
+  ECT_COMP_RPM_POINTS, 
+  IDLE_LIMIT_RPM_POINTS 
+} from '../constants';
 
 export const TabContentView: React.FC<TabContentViewProps> = ({
   activeTab,
@@ -122,11 +120,13 @@ export const TabContentView: React.FC<TabContentViewProps> = ({
     return (
       <div className="flex-1 overflow-hidden relative p-1">
         <MapTable 
+          key="fuelMap"
           rpmPoints={RPM_POINTS}
           loadPoints={LOAD_POINTS}
           data={fuelMapData}
           activeRpm={engineState.rpm}
           activeLoad={engineState.tps}
+          cornerLabel="TPS"
           value={0}
           onCellChange={handle2DCellChange(setFuelMapData)}
           onBulkChange={handle2DBulkChange(setFuelMapData)}
@@ -140,11 +140,13 @@ export const TabContentView: React.FC<TabContentViewProps> = ({
     return (
       <div className="flex-1 overflow-hidden relative p-1">
         <MapTable 
+          key="fuelAdvance"
           rpmPoints={RPM_POINTS}
           loadPoints={LOAD_POINTS}
           data={fuelAdvanceData}
           activeRpm={engineState.rpm}
           activeLoad={engineState.tps}
+          cornerLabel="TPS"
           value={0}
           onCellChange={handle2DCellChange(setFuelAdvanceData)}
           onBulkChange={handle2DBulkChange(setFuelAdvanceData)}
@@ -158,11 +160,13 @@ export const TabContentView: React.FC<TabContentViewProps> = ({
     return (
       <div className="flex-1 overflow-hidden relative p-1">
         <MapTable 
+          key="ignitionAngle"
           rpmPoints={RPM_POINTS}
           loadPoints={LOAD_POINTS}
           data={ignitionAngleData}
           activeRpm={engineState.rpm}
           activeLoad={engineState.tps}
+          cornerLabel="TPS"
           value={0}
           onCellChange={handle2DCellChange(setIgnitionAngleData)}
           onBulkChange={handle2DBulkChange(setIgnitionAngleData)}

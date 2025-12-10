@@ -25,13 +25,36 @@ export default {
 
   // 選單欄
   menu_file: '檔案',
-  menu_edit: '編輯',
-  menu_view: '檢視',
-  menu_ecu: 'ECU',
-  menu_dataLog: '資料紀錄',
-  menu_tools: '工具',
-  menu_window: '視窗',
+  menu_data: '數據',
+  menu_selectPort: '選擇序列埠',
+  menu_learnTps: '學習節流閥',
+  menu_importToCurrent: '匯入數據到當前',
+  menu_copyDataTo: '數據複製到',
+  menu_copyToAll: '複製當前數據到所有...',
+  menu_testInjector: '測試噴油嘴',
+  menu_afr: '空燃比',
+  menu_afr_record: '記錄空燃比',
+  menu_afr_adjust: '空燃比噴油調節',
   menu_help: '說明',
+  menu_help_login: '登入',
+  menu_help_setColor: '設定顏色',
+  menu_help_manual: '軟體使用手冊',
+  menu_help_operation: '軟體典型操作',
+  menu_help_about: '關於',
+
+  // 數據菜單
+  data_readCurrent: '讀取當前',
+  data_sendCurrent: '發送當前',
+  data_readAll: '讀取全部',
+  data_sendAll: '發送全部',
+  data_restoreFactory: '恢復出廠數據',
+  data_add1: '加 1',
+  data_sub1: '減 1',
+  data_add01: '加 0.1',
+  data_sub01: '減 0.1',
+  data_add001: '加 0.01',
+  data_sub001: '減 0.01',
+  data_autoSmooth: '自動平滑',
 
   // 工具列
   toolbar_burn: '燒錄',
@@ -171,7 +194,7 @@ export default {
   otherOptions_tab_extAdj: '外部調節',
 
   // 地圖表格
-  mapTable_table1Active: '表 1 (啟用)',
+  mapTable_table1Active: '表 1',
   mapTable_table2: '表 2',
   mapTable_unit: '單位',
   mapTable_percentage: '百分比 (%)',

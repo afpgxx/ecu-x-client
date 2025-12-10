@@ -25,13 +25,36 @@ export default {
 
   // 選單欄
   menu_file: 'Datei',
-  menu_edit: 'Bearbeiten',
-  menu_view: 'Ansicht',
-  menu_ecu: 'ECU',
-  menu_dataLog: 'Datenprotokoll',
-  menu_tools: 'Werkzeuge',
-  menu_window: 'Fenster',
+  menu_data: 'Daten',
+  menu_selectPort: 'Port wählen',
+  menu_learnTps: 'TPS lernen',
+  menu_importToCurrent: 'In Aktuelle importieren',
+  menu_copyDataTo: 'Daten kopieren nach',
+  menu_copyToAll: 'Aktuelle Daten in alle kopieren...',
+  menu_testInjector: 'Injektor testen',
+  menu_afr: 'AFR',
+  menu_afr_record: 'AFR aufzeichnen',
+  menu_afr_adjust: 'AFR-Einspritzanpassung',
   menu_help: 'Hilfe',
+  menu_help_login: 'Anmelden',
+  menu_help_setColor: 'Farbe einstellen',
+  menu_help_manual: 'Software-Handbuch',
+  menu_help_operation: 'Typische Bedienung',
+  menu_help_about: 'Über',
+
+  // Datenmenü
+  data_readCurrent: 'Aktuelle lesen',
+  data_sendCurrent: 'Aktuelle senden',
+  data_readAll: 'Alle lesen',
+  data_sendAll: 'Alle senden',
+  data_restoreFactory: 'Werkseinstellungen',
+  data_add1: '+ 1',
+  data_sub1: '- 1',
+  data_add01: '+ 0.1',
+  data_sub01: '- 0.1',
+  data_add001: '+ 0.01',
+  data_sub001: '- 0.01',
+  data_autoSmooth: 'Auto-Glätten',
 
   // 工具列
   toolbar_burn: 'Schreiben',
@@ -145,7 +168,7 @@ export default {
   otherOptions_diagnostic: 'Diagnoseoptionen',
 
   // 地圖表格
-  mapTable_table1Active: 'Tabelle 1 (Aktiv)',
+  mapTable_table1Active: 'Tabelle 1',
   mapTable_table2: 'Tabelle 2',
   mapTable_unit: 'Einheit',
   mapTable_percentage: 'Prozent (%)',

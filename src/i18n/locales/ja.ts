@@ -25,13 +25,36 @@ export default {
 
   // 選單欄
   menu_file: 'ファイル',
-  menu_edit: '編集',
-  menu_view: '表示',
-  menu_ecu: 'ECU',
-  menu_dataLog: 'データログ',
-  menu_tools: 'ツール',
-  menu_window: 'ウィンドウ',
+  menu_data: 'データ',
+  menu_selectPort: 'ポート選択',
+  menu_learnTps: 'TPS学習',
+  menu_importToCurrent: '現在へインポート',
+  menu_copyDataTo: 'データのコピー先',
+  menu_copyToAll: '現在のデータをすべてにコピー...',
+  menu_testInjector: 'インジェクターテスト',
+  menu_afr: '空燃比',
+  menu_afr_record: '空燃比記録',
+  menu_afr_adjust: '空燃比噴射調整',
   menu_help: 'ヘルプ',
+  menu_help_login: 'ログイン',
+  menu_help_setColor: '色設定',
+  menu_help_manual: 'ソフトウェアマニュアル',
+  menu_help_operation: '一般的な操作',
+  menu_help_about: 'バージョン情報',
+
+  // データメニュー
+  data_readCurrent: '現在値を読込',
+  data_sendCurrent: '現在値を送信',
+  data_readAll: '全データを読込',
+  data_sendAll: '全データを送信',
+  data_restoreFactory: '工場出荷時設定',
+  data_add1: '+ 1',
+  data_sub1: '- 1',
+  data_add01: '+ 0.1',
+  data_sub01: '- 0.1',
+  data_add001: '+ 0.01',
+  data_sub001: '- 0.01',
+  data_autoSmooth: '自動スムージング',
 
   // 工具列
   toolbar_burn: '書き込み',
@@ -145,7 +168,7 @@ export default {
   otherOptions_diagnostic: '診断オプション',
 
   // 地圖表格
-  mapTable_table1Active: 'テーブル 1 (アクティブ)',
+  mapTable_table1Active: '表 1',
   mapTable_table2: 'テーブル 2',
   mapTable_unit: '単位',
   mapTable_percentage: 'パーセンテージ (%)',

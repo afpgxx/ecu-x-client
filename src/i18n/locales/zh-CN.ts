@@ -25,13 +25,36 @@ export default {
 
   // 菜单栏
   menu_file: '文件',
-  menu_edit: '编辑',
-  menu_view: '视图',
-  menu_ecu: 'ECU',
-  menu_dataLog: '数据日志',
-  menu_tools: '工具',
-  menu_window: '窗口',
+  menu_data: '数据',
+  menu_selectPort: '选择串口',
+  menu_learnTps: '学习节流阀',
+  menu_importToCurrent: '导入数据到当前',
+  menu_copyDataTo: '数据拷贝到',
+  menu_copyToAll: '拷贝当前数据到所有...',
+  menu_testInjector: '测试喷油嘴',
+  menu_afr: '空燃比',
+  menu_afr_record: '记录空燃比',
+  menu_afr_adjust: '空燃比喷油调节',
   menu_help: '帮助',
+  menu_help_login: '登陆',
+  menu_help_setColor: '设置颜色',
+  menu_help_manual: '软件使用手册',
+  menu_help_operation: '软件典型操作',
+  menu_help_about: '关于',
+
+  // 数据菜单
+  data_readCurrent: '读取当前',
+  data_sendCurrent: '发送当前',
+  data_readAll: '读取全部',
+  data_sendAll: '发送全部',
+  data_restoreFactory: '恢复出厂数据',
+  data_add1: '加 1',
+  data_sub1: '减 1',
+  data_add01: '加 0.1',
+  data_sub01: '减 0.1',
+  data_add001: '加 0.01',
+  data_sub001: '减 0.01',
+  data_autoSmooth: '自动平滑',
 
   // 工具栏
   toolbar_burn: '烧录',
@@ -171,7 +194,7 @@ export default {
   otherOptions_tab_extAdj: '外部调节',
 
   // 地图表格
-  mapTable_table1Active: '表 1 (激活)',
+  mapTable_table1Active: '表1',
   mapTable_table2: '表 2',
   mapTable_unit: '单位',
   mapTable_percentage: '百分比 (%)',

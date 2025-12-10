@@ -25,13 +25,36 @@ export default {
 
   // 選單欄
   menu_file: 'ไฟล์',
-  menu_edit: 'แก้ไข',
-  menu_view: 'มุมมอง',
-  menu_ecu: 'ECU',
-  menu_dataLog: 'บันทึกข้อมูล',
-  menu_tools: 'เครื่องมือ',
-  menu_window: 'หน้าต่าง',
+  menu_data: 'ข้อมูล',
+  menu_selectPort: 'เลือกพอร์ต',
+  menu_learnTps: 'เรียนรู้ TPS',
+  menu_importToCurrent: 'นำเข้าสู่ปัจจุบัน',
+  menu_copyDataTo: 'คัดลอกข้อมูลไปยัง',
+  menu_copyToAll: 'คัดลอกข้อมูลปัจจุบันไปยังทั้งหมด...',
+  menu_testInjector: 'ทดสอบหัวฉีด',
+  menu_afr: 'AFR',
+  menu_afr_record: 'บันทึก AFR',
+  menu_afr_adjust: 'ปรับการฉีด AFR',
   menu_help: 'ช่วยเหลือ',
+  menu_help_login: 'เข้าสู่ระบบ',
+  menu_help_setColor: 'ตั้งค่าสี',
+  menu_help_manual: 'คู่มือการใช้ซอฟต์แวร์',
+  menu_help_operation: 'การใช้งานทั่วไป',
+  menu_help_about: 'เกี่ยวกับ',
+
+  // เมนูข้อมูล
+  data_readCurrent: 'อ่านปัจจุบัน',
+  data_sendCurrent: 'ส่งปัจจุบัน',
+  data_readAll: 'อ่านทั้งหมด',
+  data_sendAll: 'ส่งทั้งหมด',
+  data_restoreFactory: 'คืนค่าโรงงาน',
+  data_add1: 'เพิ่ม 1',
+  data_sub1: 'ลด 1',
+  data_add01: 'เพิ่ม 0.1',
+  data_sub01: 'ลด 0.1',
+  data_add001: 'เพิ่ม 0.01',
+  data_sub001: 'ลด 0.01',
+  data_autoSmooth: 'ปรับเรียบอัตโนมัติ',
 
   // 工具列
   toolbar_burn: 'เขียนข้อมูล',
@@ -171,7 +194,7 @@ export default {
   otherOptions_tab_extAdj: 'External Adjust',
 
   // 地圖表格
-  mapTable_table1Active: 'ตาราง 1 (ใช้งาน)',
+  mapTable_table1Active: 'ตาราง 1',
   mapTable_table2: 'ตาราง 2',
   mapTable_unit: 'หน่วย',
   mapTable_percentage: 'เปอร์เซ็นต์ (%)',

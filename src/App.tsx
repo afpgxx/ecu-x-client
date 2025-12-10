@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   Save, FolderOpen, Settings,
-  Cpu, Play, Pause, RefreshCw,
-  Download, X, Minus, Square, Plus, Globe, Copy
+  Play, Pause, RefreshCw,
+  X, Minus, Square, Plus, Globe, Copy, ChevronRight, ChevronDown,
+  UploadCloud, DownloadCloud, RotateCcw
 } from 'lucide-react';
 import { VerticalBar } from './components/VerticalBar';
 import { Gauge } from './components/Gauge';
@@ -15,136 +16,22 @@ import { APP_VERSION } from './version';
 import CryptoJS from 'crypto-js';
 import TabContentView from './components/TabContentView';
 
-// --- Encryption Key for Data Protection ---
-const SECRET_KEY = "MySuperSecretKey123!"; // Change this to a strong key in production
-
-// --- Data Generation Constants ---
-const RPM_POINTS = [800, 1200, 1600, 2000, 2400, 2800, 3200, 3600, 4000, 4400, 4800, 5200, 5600, 6000, 6400, 6800, 7200, 7600, 8000];
-const LOAD_POINTS = [100, 90, 80, 70, 60, 50, 40, 30, 20, 10, 0];
-
-// --- Dwell Time Data (RPM vs Time) ---
-const DWELL_RPM_POINTS = [
-  800, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000, 
-  5500, 6000, 6500, 7000, 7500, 8000, 8500, 9000, 9500, 10000, 
-  10500, 11000, 11500, 12000, 12500, 13000, 13500, 14000, 14500, 15000
-];
-// Fill with 8.81 as per screenshot UI hint
-const DWELL_DATA_POINTS = new Array(DWELL_RPM_POINTS.length).fill(8.81);
-
-// --- ECT Compensation Data (2D: RPM x Temp) ---
-// Y-Axis: Temp from 126 down to -14
-const ECT_COMP_TEMP_POINTS = [126, 112, 98, 84, 70, 56, 42, 28, 14, 0, -14];
-// X-Axis: Re-use DWELL_RPM_POINTS (800-15000)
-const ECT_COMP_RPM_POINTS = DWELL_RPM_POINTS;
-
-// Generate 2D data filled with 12.8
-const ECT_COMP_2D_DATA: number[][] = [];
-for (let i = 0; i < ECT_COMP_TEMP_POINTS.length; i++) {
-  const row = new Array(ECT_COMP_RPM_POINTS.length).fill(12.8);
-  ECT_COMP_2D_DATA.push(row);
-}
-
-// Generate a realistic-looking VE (Volumetric Efficiency) Map
-const generateMapData = (randomize = false) => {
-  const data: number[][] = [];
-  for (let i = 0; i < LOAD_POINTS.length; i++) {
-    const row: number[] = [];
-    const loadFactor = LOAD_POINTS[i] / 100; // 1.0 to 0.0
-    
-    for (let j = 0; j < RPM_POINTS.length; j++) {
-      const rpmFactor = RPM_POINTS[j] / 8000; // 0.1 to 1.0
-      let ve = 5.0;
-      ve += loadFactor * 4.0;
-      const rpmCurve = Math.sin(rpmFactor * Math.PI);
-      ve += rpmCurve * 2.5;
-      ve += (j * 0.05) - (i * 0.02);
-      
-      if (randomize) {
-         ve += (Math.random() * 2) - 1; // Add random noise
-      }
-      
-      row.push(Math.max(2, Number(ve.toFixed(2))));
-    }
-    data.push(row);
-  }
-  return data;
-};
-
-const MAP_DATA = generateMapData();
-
-// 生成点火角度表数据（示例值）
-const generateIgnitionData = () => {
-  const data: number[][] = [];
-  for (let i = 0; i < LOAD_POINTS.length; i++) {
-    const row: number[] = [];
-    for (let j = 0; j < RPM_POINTS.length; j++) {
-      const baseAngle = 10 + (j * 0.5) - (i * 0.3);
-      row.push(Number(Math.max(5, Math.min(40, baseAngle)).toFixed(1)));
-    }
-    data.push(row);
-  }
-  return data;
-};
-
-// 生成燃油前馈数据（示例值）
-const generateFuelAdvanceData = () => {
-  const data: number[][] = [];
-  for (let i = 0; i < LOAD_POINTS.length; i++) {
-    const row: number[] = [];
-    for (let j = 0; j < RPM_POINTS.length; j++) {
-      row.push(Number((1.0 + Math.random() * 0.5).toFixed(2)));
-    }
-    data.push(row);
-  }
-  return data;
-};
-
-// 生成AFR目标表数据
-const generateAfrData = () => {
-  const data: number[][] = [];
-  for (let i = 0; i < LOAD_POINTS.length; i++) {
-    const row: number[] = [];
-    const loadFactor = LOAD_POINTS[i] / 100;
-    for (let j = 0; j < RPM_POINTS.length; j++) {
-      const afr = loadFactor > 0.7 ? 12.5 : loadFactor > 0.4 ? 13.8 : 14.7;
-      row.push(Number((afr + (Math.random() - 0.5) * 0.3).toFixed(1)));
-    }
-    data.push(row);
-  }
-  return data;
-};
-
-// 生成ECT点火补偿数据
-const generateEctIgnData = () => {
-  const data: number[][] = [];
-  for (let i = 0; i < ECT_COMP_TEMP_POINTS.length; i++) {
-    const row = new Array(ECT_COMP_RPM_POINTS.length).fill(0);
-    for (let j = 0; j < row.length; j++) {
-      row[j] = Number((5 - i * 0.5 + (Math.random() - 0.5)).toFixed(1));
-    }
-    data.push(row);
-  }
-  return data;
-};
-
-// 生成MAP补偿数据
-const generateMapCompData = () => {
-  const data: number[][] = [];
-  for (let i = 0; i < LOAD_POINTS.length; i++) {
-    const row: number[] = [];
-    for (let j = 0; j < RPM_POINTS.length; j++) {
-      row.push(Number((1.0 + (Math.random() - 0.5) * 0.2).toFixed(2)));
-    }
-    data.push(row);
-  }
-  return data;
-};
-
-// 生成怠速/限转数据（1D表格）
-const IDLE_LIMIT_RPM_POINTS = [0, 500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000];
-const generateIdleLimitData = () => {
-  return IDLE_LIMIT_RPM_POINTS.map((_, i) => Number((850 + i * 50).toFixed(0)));
-};
+import { ControllerBlock } from './components/ControllerBlock';
+import { 
+  SECRET_KEY, 
+  DWELL_DATA_POINTS, 
+  ECT_COMP_2D_DATA
+} from './constants';
+import { 
+  generateMapData, 
+  MAP_DATA, 
+  generateIgnitionData, 
+  generateFuelAdvanceData, 
+  generateAfrData, 
+  generateEctIgnData, 
+  generateMapCompData, 
+  generateIdleLimitData 
+} from './utils/dataGenerator';
 
 const App: React.FC = () => {
   const { language, setLanguage, t } = useI18n();
@@ -246,7 +133,7 @@ const App: React.FC = () => {
   const activeTab = MAIN_TABS[activeTabIndex] || MAIN_TABS[0];
   const [showLanguageMenu, setShowLanguageMenu] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
-  const [showFileMenu, setShowFileMenu] = useState(false);
+  const [activeMenu, setActiveMenu] = useState<string | null>(null);
   const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [isMaximized, setIsMaximized] = useState(false);
   
@@ -570,6 +457,8 @@ const App: React.FC = () => {
         });
 
         // 2. Simulate Map Data Fluctuation
+        // Optimization: Disable map data simulation to prevent UI freezing
+        /*
         setFuelMapData(prevData => {
            return prevData.map((row, rIdx) => 
               row.map((_, cIdx) => {
@@ -580,139 +469,23 @@ const App: React.FC = () => {
               })
            );
         });
+        */
 
-      }, 50); // 20Hz update
+      }, 100); // 10Hz update (Reduced from 20Hz to prevent freezing)
     } else {
       if (simInterval.current) clearInterval(simInterval.current);
     }
     return () => { if (simInterval.current) clearInterval(simInterval.current); };
   }, [isSimulating]);
 
-  const ControllerBlock = ({ 
-    label, 
-    value, 
-    onChange, 
-    unit = '', 
-    step = 1, 
-    decimals = 0,
-    min,
-    max
-  }: { 
-    label: string; 
-    value: number; 
-    onChange: (val: number) => void;
-    unit?: string; 
-    step?: number;
-    decimals?: number;
-    min?: number;
-    max?: number;
-  }) => {
-    const [isEditing, setIsEditing] = useState(false);
-    const [inputValue, setInputValue] = useState(value.toFixed(decimals));
-    const inputRef = useRef<HTMLInputElement>(null);
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = () => setActiveMenu(null);
+    window.addEventListener('click', handleClickOutside);
+    return () => window.removeEventListener('click', handleClickOutside);
+  }, []);
 
-    useEffect(() => {
-      setInputValue(value.toFixed(decimals));
-    }, [value, decimals]);
 
-    const handleIncrement = () => {
-      const newVal = value + step;
-      if (max === undefined || newVal <= max) {
-        onChange(Number(newVal.toFixed(decimals)));
-      }
-    };
-
-    const handleDecrement = () => {
-      const newVal = value - step;
-      if (min === undefined || newVal >= min) {
-        onChange(Number(newVal.toFixed(decimals)));
-      }
-    };
-
-    const handleWheel = (e: React.WheelEvent) => {
-      e.preventDefault();
-      if (e.deltaY < 0) {
-        handleIncrement();
-      } else {
-        handleDecrement();
-      }
-    };
-
-    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      setInputValue(e.target.value);
-    };
-
-    const handleInputBlur = () => {
-      const parsed = parseFloat(inputValue);
-      if (!isNaN(parsed)) {
-        let newVal = parsed;
-        if (min !== undefined) newVal = Math.max(min, newVal);
-        if (max !== undefined) newVal = Math.min(max, newVal);
-        onChange(Number(newVal.toFixed(decimals)));
-      } else {
-        setInputValue(value.toFixed(decimals));
-      }
-      setIsEditing(false);
-    };
-
-    const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-      if (e.key === 'Enter') {
-        handleInputBlur();
-      } else if (e.key === 'Escape') {
-        setInputValue(value.toFixed(decimals));
-        setIsEditing(false);
-      }
-    };
-
-    return (
-      <div 
-        className="bg-[#0d0f11] rounded border border-gray-700 relative p-1.5 flex flex-col overflow-hidden"
-        onWheel={handleWheel}
-      >
-        <div className="flex justify-between items-center mb-1 absolute top-1 right-1 left-1 px-1 z-10">
-          <button 
-            onClick={handleIncrement}
-            className="w-4 h-4 rounded-full bg-[#252830] hover:bg-[#30343d] flex items-center justify-center text-gray-400 shadow active:scale-95 transition-transform border border-gray-600"
-          >
-            <Plus size={8} />
-          </button>
-          <button 
-            onClick={handleDecrement}
-            className="w-4 h-4 rounded-full bg-[#252830] hover:bg-[#30343d] flex items-center justify-center text-gray-400 shadow active:scale-95 transition-transform border border-gray-600"
-          >
-            <Minus size={8} />
-          </button>
-        </div>
-        <div className="flex-1 flex items-center justify-center pt-2">
-          <div className="flex items-baseline translate-y-1">
-            {isEditing ? (
-              <input
-                ref={inputRef}
-                type="text"
-                value={inputValue}
-                onChange={handleInputChange}
-                onBlur={handleInputBlur}
-                onKeyDown={handleInputKeyDown}
-                className="font-digital text-gray-200 tracking-tighter bg-transparent border-none outline-none text-center"
-                style={{ fontSize: 'clamp(1.5rem, 3vw, 1.875rem)', width: 'clamp(6rem, 12vw, 8rem)' }}
-                autoFocus
-              />
-            ) : (
-              <span 
-                  className="font-digital text-gray-200 tracking-tighter drop-shadow-[0_0_5px_rgba(255,255,255,0.1)] cursor-pointer"
-                  style={{ fontSize: 'clamp(1.5rem, 3vw, 1.875rem)' }}
-                  onClick={() => setIsEditing(true)}
-              >
-                {unit === '%' ? (value >= 0 ? '+' : '') : ''}{value.toFixed(decimals)}
-              </span>
-            )}
-            {unit && !isEditing && <span className="text-gray-500 text-[9px] font-bold ml-1">{unit}</span>}
-          </div>
-        </div>
-        <div className="text-center text-[9px] text-gray-500 font-bold uppercase tracking-widest border-t border-gray-800 pt-0.5 truncate">{label}</div>
-      </div>
-    );
-  };
 
   // --- View Renderer ---
   const renderContent = () => {
@@ -752,44 +525,115 @@ const App: React.FC = () => {
     );
   };
 
+  const [activeTable, setActiveTable] = useState<1 | 2>(1);
+  const [activeSubTable, setActiveSubTable] = useState<1 | 2 | 3 | 4>(1);
+
   const renderTabControls = () => {
-    if (activeTab === t.tabs_fuelMap) {
+    const mapTabs = [
+      t.tabs_fuelMap,
+      t.tabs_fuelAdvance,
+      t.tabs_ignitionAngle,
+      t.tabs_dwellTime,
+      t.tabs_afr,
+      t.tabs_ectCompFuel,
+      t.tabs_ectCompIgn,
+      t.tabs_mapComp,
+      t.tabs_idleLimit,
+    ];
+
+    if (mapTabs.includes(activeTab)) {
       return (
-        <div className="flex items-center gap-3 ml-auto py-0.5">
-          <div className="flex items-center justify-center bg-black/30 rounded p-0.5 border border-gray-700">
-              <button className="w-6 h-5 flex items-center justify-center hover:bg-gray-700 text-gray-400 rounded-sm text-xs"><Minus size={12}/></button>
-              <input className="w-12 h-5 bg-transparent text-center text-xs font-mono text-white border-none focus:ring-0" defaultValue="1.0" />
-              <button className="w-6 h-5 flex items-center justify-center hover:bg-gray-700 text-gray-400 rounded-sm text-xs"><Plus size={12}/></button>
+        <div className="flex items-center w-full py-0.5 pointer-events-none">
+          <div className="absolute left-1/2 -translate-x-1/2 flex items-center justify-center gap-3 pointer-events-auto">
+            <div className="flex items-center justify-center bg-black/30 rounded p-0.5 border border-gray-700">
+                <button className="w-6 h-5 flex items-center justify-center hover:bg-gray-700 text-gray-400 rounded-sm text-xs" onClick={handlePlusClick}><Plus size={12}/></button>
+                <input className="w-12 h-5 bg-transparent text-center text-xs font-mono text-white border-none focus:ring-0" value={editValue} onChange={handleEditValueChange} />
+                <button className="w-6 h-5 flex items-center justify-center hover:bg-gray-700 text-gray-400 rounded-sm text-xs"><Minus size={12}/></button>
+            </div>
+            <div className="h-4 w-[1px] bg-gray-700"></div>
+            <select className="bg-[#2d323a] text-xs text-gray-300 border border-gray-600 rounded px-2 py-0.5 outline-none h-6" value={editMode === 'percentage' ? t.mapTable_percentage : t.mapTable_rawValue} onChange={handleEditModeChange}>
+                <option>{t.mapTable_percentage}</option>
+                <option>{t.mapTable_rawValue}</option>
+            </select>
           </div>
-          <div className="h-4 w-[1px] bg-gray-700"></div>
-          <select className="bg-[#2d323a] text-xs text-gray-300 border border-gray-600 rounded px-2 py-0.5 outline-none">
-              <option>{t.mapTable_percentage}</option>
-              <option>{t.mapTable_rawValue}</option>
-              <option>{t.mapTable_lambda}</option>
-          </select>
-          <div className="flex gap-2 ml-2">
-            <button className="px-3 py-0.5 bg-red-600 text-white text-[10px] font-bold rounded-full">{t.mapTable_table1Active}</button>
-            <button className="px-3 py-0.5 bg-gray-800 text-gray-500 border border-gray-600 text-[10px] font-bold rounded-full">{t.mapTable_table2}</button>
+          <div className="flex gap-2 ml-auto shrink-0 pointer-events-auto">
+            <button 
+              onClick={() => setActiveTable(1)}
+              className={`px-3 py-0.5 text-[10px] font-bold rounded-full border transition-colors ${
+                activeTable === 1 
+                  ? 'bg-red-600 text-white border-red-600' 
+                  : 'bg-gray-800 text-gray-500 border-gray-600 hover:bg-gray-700'
+              }`}
+            >
+              {t.mapTable_table1Active}
+            </button>
+            <button 
+              onClick={() => setActiveTable(2)}
+              className={`px-3 py-0.5 text-[10px] font-bold rounded-full border transition-colors ${
+                activeTable === 2 
+                  ? 'bg-red-600 text-white border-red-600' 
+                  : 'bg-gray-800 text-gray-500 border-gray-600 hover:bg-gray-700'
+              }`}
+            >
+              {t.mapTable_table2}
+            </button>
+            <div className="flex gap-1 ml-2">
+              {[1, 2, 3, 4].map((num) => (
+                <button
+                  key={num}
+                  onClick={() => setActiveSubTable(num as 1 | 2 | 3 | 4)}
+                  className={`px-2 py-0.5 border text-[10px] font-bold rounded transition-colors ${
+                    activeSubTable === num
+                      ? 'bg-blue-600 text-white border-blue-500'
+                      : 'bg-gray-800 text-gray-400 border-gray-600 hover:bg-gray-700'
+                  }`}
+                >
+                  No.{num}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       );
     }
-    if (activeTab === t.tabs_ectCompFuel) {
-       return (
-        <div className="flex items-center gap-3 ml-auto py-0.5">
-          <div className="flex items-center justify-center bg-black/30 rounded p-0.5 border border-gray-700">
-              <button className="w-6 h-5 flex items-center justify-center hover:bg-gray-700 text-gray-400 rounded-sm text-xs"><Minus size={12}/></button>
-              <input className="w-12 h-5 bg-transparent text-center text-xs font-mono text-white border-none focus:ring-0" defaultValue="0.1" />
-              <button className="w-6 h-5 flex items-center justify-center hover:bg-gray-700 text-gray-400 rounded-sm text-xs"><Plus size={12}/></button>
-          </div>
-          <div className="h-4 w-[1px] bg-gray-700"></div>
-          <select className="bg-[#2d323a] text-xs text-gray-300 border border-gray-600 rounded px-2 py-0.5 outline-none">
-             <option>{t.mapTable_unit}</option>
-          </select>
-        </div>
-       );
-    }
     return null;
+  };
+
+  const [editValue, setEditValue] = useState(1.0);
+  const [editMode, setEditMode] = useState<'percentage' | 'raw'>('percentage');
+  const [selectedCell, setSelectedCell] = useState<{row: number, col: number, value: number} | null>(null);
+
+  const handleEditModeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setEditMode(e.target.value === t.mapTable_percentage ? 'percentage' : 'raw');
+  };
+
+  const handleEditValueChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setEditValue(Number(e.target.value));
+  };
+
+  const updateCell = (row: number, col: number, newValue: number) => {
+    // 这里需要根据当前activeTab和数据类型进行更新
+    // 这里只做喷油量表格为例
+    if (activeTab === t.tabs_fuelMap) {
+      setFuelMapData(prev => {
+        const newData = prev.map(r => r.slice());
+        newData[row][col] = newValue;
+        return newData;
+      });
+    }
+    // 其他表格可按需扩展
+  };
+
+  const handlePlusClick = () => {
+    if (selectedCell) {
+      let newValue = selectedCell.value;
+      if (editMode === 'percentage') {
+        newValue += newValue * (editValue / 100);
+      } else {
+        newValue += editValue;
+      }
+      updateCell(selectedCell.row, selectedCell.col, newValue);
+    }
   };
 
   return (
@@ -847,32 +691,149 @@ const App: React.FC = () => {
       {/* --- Menu Bar --- */}
       <div className="h-8 bg-[#1e2126] flex items-center px-2 gap-1 shrink-0 border-b border-black">
         {/* 文件菜单，带下拉 */}
-        <div
-          className="relative"
-          onMouseEnter={() => setShowFileMenu(true)}
-          onMouseLeave={() => setShowFileMenu(false)}
-        >
-          <button
-            className="px-3 py-1 text-[11px] hover:bg-[#2d323a] text-gray-400 hover:text-white rounded-sm transition-colors"
-            onClick={() => setShowFileMenu(v => !v)}
-          >
-            {t.menu_file}
-          </button>
-          {showFileMenu && (
-            <div className="absolute mt-1 bg-[#2d323a] border border-gray-600 rounded shadow-lg z-50 min-w-[140px]">
-              <button className="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-700 transition-colors" onClick={handleImportButtonClick}>{t.common_open}</button>
-              <button className="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-700 transition-colors" onClick={handleSaveMapData}>{t.common_save}</button>
-            </div>
-          )}
-        </div>
-        {/* 其它菜单按钮 */}
-        <button className="px-3 py-1 text-[11px] hover:bg-[#2d323a] text-gray-400 hover:text-white rounded-sm transition-colors" onClick={() => setShowAbout(true)}>{t.menu_edit}</button>
-        <button className="px-3 py-1 text-[11px] hover:bg-[#2d323a] text-gray-400 hover:text-white rounded-sm transition-colors">{t.menu_view}</button>
-        <button className="px-3 py-1 text-[11px] hover:bg-[#2d323a] text-gray-400 hover:text-white rounded-sm transition-colors">{t.menu_ecu}</button>
-        <button className="px-3 py-1 text-[11px] hover:bg-[#2d323a] text-gray-400 hover:text-white rounded-sm transition-colors">{t.menu_dataLog}</button>
-        <button className="px-3 py-1 text-[11px] hover:bg-[#2d323a] text-gray-400 hover:text-white rounded-sm transition-colors">{t.menu_tools}</button>
-        <button className="px-3 py-1 text-[11px] hover:bg-[#2d323a] text-gray-400 hover:text-white rounded-sm transition-colors">{t.menu_window}</button>
-        <button className="px-3 py-1 text-[11px] hover:bg-[#2d323a] text-gray-400 hover:text-white rounded-sm transition-colors" onClick={() => setShowAbout(true)}>{t.menu_help}</button>
+        {[
+          { key: 'file', label: t.menu_file },
+          { key: 'data', label: t.menu_data },
+          { key: 'selectPort', label: t.menu_selectPort },
+          { key: 'learnTps', label: t.menu_learnTps },
+          { key: 'copyDataTo', label: t.menu_copyDataTo },
+          { key: 'testInjector', label: t.menu_testInjector },
+          { key: 'afr', label: t.menu_afr },
+          { key: 'help', label: t.menu_help },
+        ].map((item) => (
+          <div key={item.key} className="relative">
+            <button
+              className={`px-3 py-1 text-[11px] rounded-sm transition-colors ${
+                activeMenu === item.key 
+                  ? 'bg-[#2d323a] text-white' 
+                  : 'hover:bg-[#2d323a] text-gray-400 hover:text-white'
+              }`}
+              onClick={(e) => {
+                e.stopPropagation();
+                setActiveMenu(activeMenu === item.key ? null : item.key);
+              }}
+            >
+              {item.label}
+            </button>
+            {activeMenu === item.key && (
+              <div 
+                className={`absolute mt-1 left-0 bg-[#2d323a] border border-gray-600 rounded shadow-lg z-50 py-1 ${
+                  item.key === 'selectPort' ? 'min-w-[112px]' : 
+                  item.key === 'copyDataTo' ? 'min-w-[168px]' : 
+                  'min-w-[140px]'
+                }`}
+                onClick={(e) => e.stopPropagation()}
+              >
+                {item.key === 'file' && (
+                  <>
+                    <button className="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-700 transition-colors text-gray-300 hover:text-white" onClick={() => { handleImportButtonClick(); setActiveMenu(null); }}>{t.common_open}</button>
+                    <button className="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-700 transition-colors text-gray-300 hover:text-white" onClick={() => { handleSaveMapData(); setActiveMenu(null); }}>{t.common_save}</button>
+                    <div className="relative group">
+                      <button className="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-700 transition-colors text-gray-300 hover:text-white flex items-center justify-between">
+                        <span>{t.menu_importToCurrent}</span>
+                        <ChevronRight size={12} />
+                      </button>
+                      <div className="absolute left-full top-0 ml-0.5 bg-[#2d323a] border border-gray-600 rounded shadow-lg min-w-[160px] py-1 hidden group-hover:block">
+                        {[1, 2, 3, 4].map(num => (
+                          <button 
+                            key={num}
+                            className="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-700 transition-colors text-gray-300 hover:text-white"
+                            onClick={() => {
+                              console.log(`Import to ${activeTab} No.${num}`);
+                              setActiveMenu(null);
+                            }}
+                          >
+                            {activeTab} No.{num}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                )}
+                {item.key === 'data' && (
+                  <>
+                    <button className="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-700 transition-colors text-gray-300 hover:text-white" onClick={() => setActiveMenu(null)}>{t.data_readCurrent}</button>
+                    <button className="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-700 transition-colors text-gray-300 hover:text-white" onClick={() => setActiveMenu(null)}>{t.data_sendCurrent}</button>
+                    <button className="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-700 transition-colors text-gray-300 hover:text-white" onClick={() => setActiveMenu(null)}>{t.data_readAll}</button>
+                    <button className="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-700 transition-colors text-gray-300 hover:text-white" onClick={() => setActiveMenu(null)}>{t.data_sendAll}</button>
+                    <button className="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-700 transition-colors text-gray-300 hover:text-white" onClick={() => setActiveMenu(null)}>{t.data_restoreFactory}</button>
+                    <div className="h-[1px] bg-gray-600 my-1 mx-2"></div>
+                    <button className="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-700 transition-colors text-gray-300 hover:text-white" onClick={() => setActiveMenu(null)}>{t.data_add1}</button>
+                    <button className="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-700 transition-colors text-gray-300 hover:text-white" onClick={() => setActiveMenu(null)}>{t.data_sub1}</button>
+                    <button className="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-700 transition-colors text-gray-300 hover:text-white" onClick={() => setActiveMenu(null)}>{t.data_add01}</button>
+                    <button className="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-700 transition-colors text-gray-300 hover:text-white" onClick={() => setActiveMenu(null)}>{t.data_sub01}</button>
+                    <button className="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-700 transition-colors text-gray-300 hover:text-white" onClick={() => setActiveMenu(null)}>{t.data_add001}</button>
+                    <button className="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-700 transition-colors text-gray-300 hover:text-white" onClick={() => setActiveMenu(null)}>{t.data_sub001}</button>
+                    <div className="h-[1px] bg-gray-600 my-1 mx-2"></div>
+                    <button className="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-700 transition-colors text-gray-300 hover:text-white" onClick={() => setActiveMenu(null)}>{t.data_autoSmooth}</button>
+                  </>
+                )}
+                {item.key === 'copyDataTo' && (
+                  <>
+                    {[1, 2, 3, 4].map(num => (
+                      <button 
+                        key={num}
+                        disabled={activeSubTable === num}
+                        className={`w-full text-left px-3 py-1.5 text-xs transition-colors ${
+                          activeSubTable === num 
+                            ? 'text-gray-600 cursor-not-allowed' 
+                            : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                        }`}
+                        onClick={() => {
+                          console.log(`Copy to No.${num}`);
+                          setActiveMenu(null);
+                        }}
+                      >
+                        No.{num}
+                      </button>
+                    ))}
+                    <div className="h-[1px] bg-gray-600 my-1 mx-2"></div>
+                    <button 
+                      className="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-700 transition-colors text-gray-300 hover:text-white"
+                      onClick={() => {
+                        console.log('Copy to all');
+                        setActiveMenu(null);
+                      }}
+                    >
+                      {t.menu_copyToAll}
+                    </button>
+                  </>
+                )}
+                {item.key === 'afr' && (
+                  <>
+                    <button className="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-700 transition-colors text-gray-300 hover:text-white" onClick={() => setActiveMenu(null)}>{t.menu_afr_record}</button>
+                    <button className="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-700 transition-colors text-gray-300 hover:text-white" onClick={() => setActiveMenu(null)}>{t.menu_afr_adjust}</button>
+                  </>
+                )}
+                {item.key === 'help' && (
+                  <>
+                    <button className="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-700 transition-colors text-gray-300 hover:text-white" onClick={() => setActiveMenu(null)}>{t.menu_help_login}</button>
+                    <button className="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-700 transition-colors text-gray-300 hover:text-white" onClick={() => setActiveMenu(null)}>{t.menu_help_setColor}</button>
+                    <button className="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-700 transition-colors text-gray-300 hover:text-white" onClick={() => setActiveMenu(null)}>{t.menu_help_manual}</button>
+                    <button className="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-700 transition-colors text-gray-300 hover:text-white" onClick={() => setActiveMenu(null)}>{t.menu_help_operation}</button>
+                    <button className="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-700 transition-colors text-gray-300 hover:text-white" onClick={() => { setShowAbout(true); setActiveMenu(null); }}>{t.menu_help_about}</button>
+                  </>
+                )}
+                {item.key === 'selectPort' && (
+                  <div className="p-1.5 min-w-[112px]">
+                     <div className="relative">
+                        <select 
+                          className="w-full bg-[#16181c] text-gray-300 text-xs border border-gray-600 rounded pl-2 pr-7 py-1 appearance-none outline-none focus:border-blue-500 cursor-pointer"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                           <option value=""></option>
+                        </select>
+                        <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                     </div>
+                  </div>
+                )}
+                {item.key !== 'file' && item.key !== 'data' && item.key !== 'help' && item.key !== 'selectPort' && item.key !== 'copyDataTo' && item.key !== 'afr' && (
+                  <div className="px-3 py-1.5 text-xs text-gray-500 italic">No options</div>
+                )}
+              </div>
+            )}
+          </div>
+        ))}
       </div>
 
       {/* --- Toolbar --- */}
@@ -893,8 +854,26 @@ const App: React.FC = () => {
           />
          </div>
          <div className="flex items-center gap-1 pr-3 border-r border-gray-700">
-            <button className="p-1.5 hover:bg-gray-700 rounded text-gray-400 hover:text-green-400" title={t.common_download}><Download size={18} /></button>
-            <button className="p-1.5 hover:bg-gray-700 rounded text-gray-400 hover:text-orange-400" title={t.toolbar_burn}><Cpu size={18} /></button>
+            <button className="flex items-center gap-1.5 px-2 py-1 hover:bg-gray-700 rounded text-gray-300 hover:text-white transition-colors">
+               <UploadCloud size={18} className="text-yellow-300" />
+               <span className="text-xs font-medium">{t.data_readCurrent}</span>
+            </button>
+            <button className="flex items-center gap-1.5 px-2 py-1 hover:bg-gray-700 rounded text-gray-300 hover:text-white transition-colors">
+               <DownloadCloud size={18} className="text-green-400" />
+               <span className="text-xs font-medium">{t.data_sendCurrent}</span>
+            </button>
+            <button className="flex items-center gap-1.5 px-2 py-1 hover:bg-gray-700 rounded text-gray-300 hover:text-white transition-colors">
+               <UploadCloud size={18} className="text-pink-300" />
+               <span className="text-xs font-medium">{t.data_readAll}</span>
+            </button>
+            <button className="flex items-center gap-1.5 px-2 py-1 hover:bg-gray-700 rounded text-gray-300 hover:text-white transition-colors">
+               <DownloadCloud size={18} className="text-red-400" />
+               <span className="text-xs font-medium">{t.data_sendAll}</span>
+            </button>
+            <button className="flex items-center gap-1.5 px-2 py-1 hover:bg-gray-700 rounded text-gray-300 hover:text-white transition-colors">
+               <RotateCcw size={18} className="text-orange-400" />
+               <span className="text-xs font-medium">{t.common_reset}</span>
+            </button>
          </div>
          <div className="flex items-center gap-2">
             <button 
@@ -998,13 +977,13 @@ const App: React.FC = () => {
             <div className="bg-[#16181c] rounded-lg border border-gray-700/50 p-2 shadow-xl flex items-center justify-evenly relative overflow-hidden" style={{ flex: '0.4 1 0%' }}>
                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/40 pointer-events-none"></div>
                <div className="w-[32%] h-full" style={{ maxHeight: 'min(220px, 25vh)' }}>
-                  <Gauge label={t.sensors_rpm} value={engineState.rpm} min={0} max={9000} unit="RPM x1000" dangerStart={7500} majorTicks={9} />
+                  <Gauge label={t.sensors_rpm} value={engineState.rpm} min={0} max={15000} unit="RPM" variant="rpm" />
                </div>
                <div className="w-[32%] h-full" style={{ maxHeight: 'min(220px, 25vh)' }}>
-                  <Gauge label={t.sensors_tps} value={engineState.tps} min={0} max={100} unit="%" majorTicks={5} />
+                  <Gauge label={t.sensors_tps} value={engineState.tps} min={0} max={100} unit="%" variant="tps" />
                </div>
                <div className="w-[32%] h-full" style={{ maxHeight: 'min(220px, 25vh)' }}>
-                  <Gauge label={t.sensors_afr} value={engineState.afr} min={10} max={20} unit="AFR" majorTicks={5} />
+                  <Gauge label={t.sensors_afr} value={engineState.afr} min={9} max={18} unit="AFR" variant="afr" />
                </div>
             </div>
 
@@ -1026,7 +1005,7 @@ const App: React.FC = () => {
             ))}
             
             {/* Tab Controls (Moved from TabContentView) */}
-            <div className="flex-1 flex justify-end min-w-[200px]">
+            <div className="flex-1 flex justify-end min-w-[400px]">
                {renderTabControls()}
             </div>
          </div>

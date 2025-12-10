@@ -42,7 +42,7 @@ export const MapTable: React.FC<MapTableProps> = ({
   activeRpm,
   activeLoad,
   yAxisUnit = '%',
-  cornerLabel = '负荷/转速',
+  cornerLabel = 'TPS',
   decimals = 1,
   value = 0,
   min = 0,
@@ -358,7 +358,7 @@ export const MapTable: React.FC<MapTableProps> = ({
       <div className="flex w-full border-b border-gray-700 bg-gray-800">
         {/* Corner Label */}
         <div 
-          className="w-16 flex-shrink-0 p-1 flex items-center justify-center border-r border-gray-700 bg-gray-900 text-gray-500 font-bold text-[17px] leading-tight text-center cursor-pointer"
+          className="w-16 flex-shrink-0 p-1 flex items-center justify-center border-r border-gray-700 bg-gray-800 text-gray-500 font-bold text-[17px] leading-tight text-center cursor-pointer"
           onClick={() => setSelection(null)}
         >
           {cornerLabel}
@@ -443,10 +443,10 @@ export const MapTable: React.FC<MapTableProps> = ({
                             onMouseEnter={() => handleCellMouseEnter(rIdx, cIdx)}
                         >
                             {/* Active Selection Highlight Border */}
-                            {isActive && <div className="absolute inset-0 border-2 border-white pointer-events-none shadow-lg"></div>}
+                            {isActive && <div className="absolute inset-0 border-2 border-white pointer-events-none shadow-lg z-20"></div>}
                             
                             {/* Row/Col Selection Overlay */}
-                            {isSelected && !isActive && <div className="absolute inset-0 bg-blue-500/30 pointer-events-none border border-blue-400/50"></div>}
+                            {isSelected && !isActive && <div className="absolute inset-0 bg-blue-600/50 pointer-events-none border-2 border-blue-300/80 z-10"></div>}
 
                             {editingCell && editingCell.row === rIdx && editingCell.col === cIdx ? (
                               <input
