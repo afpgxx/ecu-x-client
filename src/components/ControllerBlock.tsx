@@ -81,25 +81,20 @@ export const ControllerBlock: React.FC<ControllerBlockProps> = ({
 
   return (
     <div 
-      className="bg-[#0d0f11] rounded border border-gray-700 relative p-1.5 flex flex-col overflow-hidden"
+      className="flex flex-col items-center h-full py-2 select-none"
       onWheel={handleWheel}
     >
-      <div className="flex justify-between items-center mb-1 absolute top-1 right-1 left-1 px-1 z-10">
-        <button 
-          onClick={handleIncrement}
-          className="w-4 h-4 rounded-full bg-[#252830] hover:bg-[#30343d] flex items-center justify-center text-gray-400 shadow active:scale-95 transition-transform border border-gray-600"
-        >
-          <Plus size={8} />
-        </button>
-        <button 
-          onClick={handleDecrement}
-          className="w-4 h-4 rounded-full bg-[#252830] hover:bg-[#30343d] flex items-center justify-center text-gray-400 shadow active:scale-95 transition-transform border border-gray-600"
-        >
-          <Minus size={8} />
-        </button>
-      </div>
-      <div className="flex-1 flex items-center justify-center pt-0">
-        <div className="flex items-baseline translate-y-1">
+      {/* Top Button */}
+      <button 
+        onClick={handleIncrement}
+        className="w-6 h-6 rounded-full bg-gradient-to-b from-[#6b7280] to-[#374151] hover:from-[#7f8896] hover:to-[#4b5563] flex items-center justify-center text-black shadow-lg active:scale-95 transition-transform border border-gray-600 mb-2"
+      >
+        <Plus size={12} strokeWidth={3} />
+      </button>
+
+      {/* Digital Screen */}
+      <div className="flex-1 w-full bg-[#b8bcbf] rounded border-1 border-[#1f2937] shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)] flex items-center justify-center relative overflow-hidden mx-1 min-h-[72px]">
+        <div className="flex items-baseline z-0 w-full justify-center px-1">
           {isEditing ? (
             <input
               ref={inputRef}
@@ -108,23 +103,33 @@ export const ControllerBlock: React.FC<ControllerBlockProps> = ({
               onChange={handleInputChange}
               onBlur={handleInputBlur}
               onKeyDown={handleInputKeyDown}
-              className="font-digital text-gray-200 tracking-tighter bg-transparent border-none outline-none text-center"
-              style={{ fontSize: 'clamp(1.5rem, 3vw, 1.875rem)', width: 'clamp(6rem, 12vw, 8rem)' }}
+              className="font-digital text-black tracking-normal bg-transparent border-none outline-none text-center w-full"
+              style={{ fontSize: 'clamp(3.5rem, 3vw, 2.5rem)' }}
               autoFocus
             />
           ) : (
             <span 
-                className="font-digital text-gray-200 tracking-tighter drop-shadow-[0_0_5px_rgba(255,255,255,0.1)] cursor-pointer"
-                style={{ fontSize: 'clamp(1.5rem, 3vw, 1.875rem)' }}
+                className="font-digital text-black tracking-normal cursor-pointer w-full text-center"
+                style={{ fontSize: 'clamp(1.5rem, 10vw, 2.5rem)' }}
                 onClick={() => setIsEditing(true)}
             >
               {unit === '%' ? (value >= 0 ? '+' : '') : ''}{value.toFixed(decimals)}
             </span>
           )}
-          {unit && !isEditing && <span className="text-gray-500 text-[9px] font-bold ml-1">{unit}</span>}
+          {unit && !isEditing && <span className="text-gray-800 text-[10px] font-bold absolute top-0.5 right-1 font-sans">{unit}</span>}
         </div>
       </div>
-      <div className="text-center text-[11px] text-gray-500 font-bold uppercase tracking-widest border-t border-gray-800 pt-0 pb-0.5 truncate">{label}</div>
+
+      {/* Bottom Button */}
+      <button 
+        onClick={handleDecrement}
+        className="w-6 h-6 rounded-full bg-gradient-to-b from-[#6b7280] to-[#374151] hover:from-[#7f8896] hover:to-[#4b5563] flex items-center justify-center text-black shadow-lg active:scale-95 transition-transform border border-gray-600 mt-2"
+      >
+        <Minus size={12} strokeWidth={3} />
+      </button>
+
+      {/* Label */}
+      <div className="text-[12px] text-gray-300 font-bold mt-2 text-center leading-none">{label}</div>
     </div>
   );
 };

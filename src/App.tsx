@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { 
   Save, FolderOpen, Settings,
   Play, Pause, RefreshCw,
@@ -65,20 +65,25 @@ const App: React.FC = () => {
     ect: 85,
     ign: 10,
     inj: 0,
-    afr: 14.7,
+    afr: 0,
     battery: 12.2
   });
 
+  // Helper to create 4 banks of data
+  const createBanks = <T,>(data: T): T[] => Array(4).fill(0).map(() => JSON.parse(JSON.stringify(data)));
+
   // 各个tab的独立数据状态
-  const [fuelMapData, setFuelMapData] = useState<number[][]>(MAP_DATA); // 燃油MAP
-  const [fuelAdvanceData, setFuelAdvanceData] = useState<number[][]>(generateFuelAdvanceData()); // 燃油前馈
-  const [ignitionAngleData, setIgnitionAngleData] = useState<number[][]>(generateIgnitionData()); // 点火提前角
-  const [dwellTimeData, setDwellTimeData] = useState<number[]>(DWELL_DATA_POINTS); // 驻留时间
-  const [afrTargetData, setAfrTargetData] = useState<number[][]>(generateAfrData()); // AFR目标
+  const [fuelMapData, setFuelMapData] = useState<number[][][]>(createBanks(MAP_DATA)); // 燃油MAP (4 banks)
+  const [fuelAdvanceData, setFuelAdvanceData] = useState<number[][][]>(createBanks(generateFuelAdvanceData())); // 燃油前馈 (4 banks)
+  const [ignitionAngleData, setIgnitionAngleData] = useState<number[][][]>(createBanks(generateIgnitionData())); // 点火提前角 (4 banks)
+  const [dwellTimeData, setDwellTimeData] = useState<number[][]>(createBanks(DWELL_DATA_POINTS)); // 驻留时间 (4 banks)
+  const [afrTargetData, setAfrTargetData] = useState<number[][][]>(createBanks(generateAfrData())); // AFR目标 (4 banks)
+  const [idleLimitData, setIdleLimitData] = useState<number[][]>(createBanks(generateIdleLimitData())); // 怠速/限转 (4 banks)
+
+  // Single bank tables (No buttons)
   const [ectCompFuelData, setEctCompFuelData] = useState<number[][]>(ECT_COMP_2D_DATA); // ECT燃油补偿
   const [ectCompIgnData, setEctCompIgnData] = useState<number[][]>(generateEctIgnData()); // ECT点火补偿
   const [mapCompData, setMapCompData] = useState<number[][]>(generateMapCompData()); // MAP补偿
-  const [idleLimitData, setIdleLimitData] = useState<number[]>(generateIdleLimitData()); // 怠速/限转
   
   // 数据版本号，用于强制重置组件状态
   const [dataVersion, setDataVersion] = useState(0);
@@ -237,16 +242,16 @@ const App: React.FC = () => {
         if (data.maps && typeof data.maps === 'object') {
           // 新格式：导入所有数据（创建深拷贝并确保数字类型）
           if (data.maps.fuelMap) {
-            setFuelMapData(ensureNumber2DArray(JSON.parse(JSON.stringify(data.maps.fuelMap))));
+            setFuelMapData(createBanks(ensureNumber2DArray(JSON.parse(JSON.stringify(data.maps.fuelMap)))));
           }
-          if (data.maps.fuelAdvance) setFuelAdvanceData(ensureNumber2DArray(JSON.parse(JSON.stringify(data.maps.fuelAdvance))));
-          if (data.maps.ignitionAngle) setIgnitionAngleData(ensureNumber2DArray(JSON.parse(JSON.stringify(data.maps.ignitionAngle))));
-          if (data.maps.dwellTime) setDwellTimeData(ensureNumberArray(JSON.parse(JSON.stringify(data.maps.dwellTime))));
-          if (data.maps.afrTarget) setAfrTargetData(ensureNumber2DArray(JSON.parse(JSON.stringify(data.maps.afrTarget))));
+          if (data.maps.fuelAdvance) setFuelAdvanceData(createBanks(ensureNumber2DArray(JSON.parse(JSON.stringify(data.maps.fuelAdvance)))));
+          if (data.maps.ignitionAngle) setIgnitionAngleData(createBanks(ensureNumber2DArray(JSON.parse(JSON.stringify(data.maps.ignitionAngle)))));
+          if (data.maps.dwellTime) setDwellTimeData(createBanks(ensureNumberArray(JSON.parse(JSON.stringify(data.maps.dwellTime)))));
+          if (data.maps.afrTarget) setAfrTargetData(createBanks(ensureNumber2DArray(JSON.parse(JSON.stringify(data.maps.afrTarget)))));
           if (data.maps.ectCompFuel) setEctCompFuelData(ensureNumber2DArray(JSON.parse(JSON.stringify(data.maps.ectCompFuel))));
           if (data.maps.ectCompIgn) setEctCompIgnData(ensureNumber2DArray(JSON.parse(JSON.stringify(data.maps.ectCompIgn))));
           if (data.maps.mapComp) setMapCompData(ensureNumber2DArray(JSON.parse(JSON.stringify(data.maps.mapComp))));
-          if (data.maps.idleLimit) setIdleLimitData(ensureNumberArray(JSON.parse(JSON.stringify(data.maps.idleLimit))));
+          if (data.maps.idleLimit) setIdleLimitData(createBanks(ensureNumberArray(JSON.parse(JSON.stringify(data.maps.idleLimit)))));
           
           // 导入控制器参数
           if (data.controllers) {
@@ -309,7 +314,7 @@ const App: React.FC = () => {
           }, 100);
         } else if (Array.isArray(data)) {
           // 旧格式：只导入燃油MAP（创建深拷贝并确保数字类型）
-          setFuelMapData(ensureNumber2DArray(JSON.parse(JSON.stringify(data))));
+          setFuelMapData(createBanks(ensureNumber2DArray(JSON.parse(JSON.stringify(data)))));
           setDataVersion(prev => prev + 1);
           
           setTimeout(() => {
@@ -400,7 +405,7 @@ const App: React.FC = () => {
         battery: Number((12 + Math.random() * 2).toFixed(1))
       });
       
-      setFuelMapData(generateMapData(true)); // Randomize map data
+      setFuelMapData(createBanks(generateMapData(true))); // Randomize map data
       setIsSweeping(false);
     }, 1000);
   };
@@ -488,31 +493,54 @@ const App: React.FC = () => {
 
 
   // --- View Renderer ---
+  // Memoized editing change handler to avoid creating new function each render
+  const handleEditingChange = useCallback((cell: {row:number;col:number;value:number} | null) => {
+    setEditingCell(cell);
+    // 保存最近一次非空编辑单元格，便于工具栏按钮在输入失焦时仍能使用
+    if (cell) lastEditingRef.current = cell;
+  }, []);
+
+  // 保存最近一次编辑单元格（防止输入框失焦后 editingCell 变为 null 导致工具栏无法作用）
+  const lastEditingRef = useRef<{row:number;col:number;value:number} | null>(null);
+
+  const makeBankSetter = <T,>(setter: React.Dispatch<React.SetStateAction<T[]>>, index: number) => {
+    return (valueOrFn: any) => {
+      setter(prev => {
+        const newBanks = [...prev];
+        const currentBank = newBanks[index];
+        const newValue = typeof valueOrFn === 'function' ? valueOrFn(currentBank) : valueOrFn;
+        newBanks[index] = newValue;
+        return newBanks;
+      });
+    };
+  };
+
   const renderContent = () => {
+    const bankIndex = activeSubTable - 1;
     return (
       <TabContentView
         key={dataVersion}
         activeTab={activeTab}
         t={t}
         engineState={engineState}
-        fuelMapData={fuelMapData}
-        setFuelMapData={setFuelMapData}
-        fuelAdvanceData={fuelAdvanceData}
-        setFuelAdvanceData={setFuelAdvanceData}
-        ignitionAngleData={ignitionAngleData}
-        setIgnitionAngleData={setIgnitionAngleData}
-        dwellTimeData={dwellTimeData}
-        setDwellTimeData={setDwellTimeData}
-        afrTargetData={afrTargetData}
-        setAfrTargetData={setAfrTargetData}
+        fuelMapData={fuelMapData[bankIndex]}
+        setFuelMapData={makeBankSetter(setFuelMapData, bankIndex)}
+        fuelAdvanceData={fuelAdvanceData[bankIndex]}
+        setFuelAdvanceData={makeBankSetter(setFuelAdvanceData, bankIndex)}
+        ignitionAngleData={ignitionAngleData[bankIndex]}
+        setIgnitionAngleData={makeBankSetter(setIgnitionAngleData, bankIndex)}
+        dwellTimeData={dwellTimeData[bankIndex]}
+        setDwellTimeData={makeBankSetter(setDwellTimeData, bankIndex)}
+        afrTargetData={afrTargetData[bankIndex]}
+        setAfrTargetData={makeBankSetter(setAfrTargetData, bankIndex)}
         ectCompFuelData={ectCompFuelData}
         setEctCompFuelData={setEctCompFuelData}
         ectCompIgnData={ectCompIgnData}
         setEctCompIgnData={setEctCompIgnData}
         mapCompData={mapCompData}
         setMapCompData={setMapCompData}
-        idleLimitData={idleLimitData}
-        setIdleLimitData={setIdleLimitData}
+        idleLimitData={idleLimitData[bankIndex]}
+        setIdleLimitData={makeBankSetter(setIdleLimitData, bankIndex)}
         otherOptionsParams={otherOptionsParams}
         setOtherOptionsParams={setOtherOptionsParams}
         otherOptionsGrids={otherOptionsGrids}
@@ -521,12 +549,31 @@ const App: React.FC = () => {
         setParametersData={setParametersData}
         settingsData={settingsData}
         setSettingsData={setSettingsData}
+        onEditingChange={handleEditingChange}
+        onForceEditing={forceEditing}
+        suppressBlur={suppressBlur}
+        recentToolbarUpdatesRef={recentToolbarUpdatesRef}
       />
     );
   };
 
   const [activeTable, setActiveTable] = useState<1 | 2>(1);
   const [activeSubTable, setActiveSubTable] = useState<1 | 2 | 3 | 4>(1);
+  const [editingCell, setEditingCell] = useState<{row:number;col:number;value:number} | null>(null);
+  const [forceEditing, setForceEditing] = useState<{row:number;col:number} | null>(null);
+  const [suppressBlur, setSuppressBlur] = useState<boolean>(false);
+  const recentToolbarUpdatesRef = useRef<Map<string, number>>(new Map());
+  const [editValue, setEditValue] = useState<number>(1.0);
+  const [editMode, setEditMode] = useState<'percentage'|'raw'>('percentage');
+
+  // 当切换 tab 时，清除所有编辑状态
+  useEffect(() => {
+    setEditingCell(null);
+    lastEditingRef.current = null;
+    setForceEditing(null);
+    setSuppressBlur(false);
+    recentToolbarUpdatesRef.current.clear();
+  }, [activeTabIndex]);
 
   const renderTabControls = () => {
     const mapTabs = [
@@ -545,15 +592,256 @@ const App: React.FC = () => {
       return (
         <div className="flex items-center w-full py-0.5 pointer-events-none">
           <div className="absolute left-1/2 -translate-x-1/2 flex items-center justify-center gap-3 pointer-events-auto">
-            <div className="flex items-center justify-center bg-black/30 rounded p-0.5 border border-gray-700">
-                <button className="w-6 h-5 flex items-center justify-center hover:bg-gray-700 text-gray-400 rounded-sm text-xs" onClick={handlePlusClick}><Plus size={12}/></button>
-                <input className="w-12 h-5 bg-transparent text-center text-xs font-mono text-white border-none focus:ring-0" value={editValue} onChange={handleEditValueChange} />
-                <button className="w-6 h-5 flex items-center justify-center hover:bg-gray-700 text-gray-400 rounded-sm text-xs"><Minus size={12}/></button>
+                <div className="flex items-center justify-center bg-black/30 rounded p-0.5 border border-gray-700">
+                <button className="w-6 h-5 flex items-center justify-center hover:bg-gray-700 text-gray-400 rounded-sm text-xs" onMouseDown={() => {
+                    const target = editingCell || lastEditingRef.current;
+                    if (!target) { return; }
+                    // 读取当前数据表中的实时值（基于 activeTabIndex）
+                    let cur = 0;
+                    const bankIndex = activeSubTable - 1;
+                    switch (activeTabIndex) {
+                      case 0:
+                        cur = fuelMapData[bankIndex][target.row][target.col];
+                        break;
+                      case 1:
+                        cur = fuelAdvanceData[bankIndex][target.row][target.col];
+                        break;
+                      case 2:
+                        cur = ignitionAngleData[bankIndex][target.row][target.col];
+                        break;
+                      case 4:
+                        cur = afrTargetData[bankIndex][target.row][target.col];
+                        break;
+                      case 5:
+                        cur = ectCompFuelData[target.row][target.col];
+                        break;
+                      case 6:
+                        cur = ectCompIgnData[target.row][target.col];
+                        break;
+                      case 7:
+                        cur = mapCompData[target.row][target.col];
+                        break;
+                      case 3:
+                        cur = dwellTimeData[bankIndex][target.col];
+                        break;
+                      case 8:
+                        cur = idleLimitData[bankIndex][target.col];
+                        break;
+                      default:
+                        cur = 0;
+                        break;
+                    }
+                    let next = cur;
+                    if (editMode === 'percentage') {
+                      next = cur - cur * (editValue / 100);
+                    } else {
+                      next = cur - editValue;
+                    }
+                    // 根据当前激活 tabIndex 更新对应的数据集（支持 2D 和 1D）
+                    const updateCellValue = (row: number, col: number, value: number) => {
+                      switch (activeTabIndex) {
+                        case 0: // fuelMap
+                          setFuelMapData(prev => { 
+                            const newBanks = [...prev];
+                            const newBank = newBanks[bankIndex].map(r => r.slice());
+                            newBank[row][col] = value;
+                            newBanks[bankIndex] = newBank;
+                            return newBanks;
+                          });
+                          break;
+                        case 1: // fuelAdvance
+                          setFuelAdvanceData(prev => { 
+                            const newBanks = [...prev];
+                            const newBank = newBanks[bankIndex].map(r => r.slice());
+                            newBank[row][col] = value;
+                            newBanks[bankIndex] = newBank;
+                            return newBanks;
+                          });
+                          break;
+                        case 2: // ignitionAngle
+                          setIgnitionAngleData(prev => { 
+                            const newBanks = [...prev];
+                            const newBank = newBanks[bankIndex].map(r => r.slice());
+                            newBank[row][col] = value;
+                            newBanks[bankIndex] = newBank;
+                            return newBanks;
+                          });
+                          break;
+                        case 4: // afr
+                          setAfrTargetData(prev => { 
+                            const newBanks = [...prev];
+                            const newBank = newBanks[bankIndex].map(r => r.slice());
+                            newBank[row][col] = value;
+                            newBanks[bankIndex] = newBank;
+                            return newBanks;
+                          });
+                          break;
+                        case 5: // ectCompFuel
+                          setEctCompFuelData(prev => { const d = prev.map(r => r.slice()); d[row][col] = value; return d; });
+                          break;
+                        case 6: // ectCompIgn
+                          setEctCompIgnData(prev => { const d = prev.map(r => r.slice()); d[row][col] = value; return d; });
+                          break;
+                        case 7: // mapComp
+                          setMapCompData(prev => { const d = prev.map(r => r.slice()); d[row][col] = value; return d; });
+                          break;
+                        case 3: // dwellTime (1D)
+                          setDwellTimeData(prev => { 
+                            const newBanks = [...prev];
+                            const newBank = newBanks[bankIndex].slice();
+                            newBank[col] = value;
+                            newBanks[bankIndex] = newBank;
+                            return newBanks;
+                          });
+                          break;
+                        case 8: // idleLimit (1D)
+                          setIdleLimitData(prev => { 
+                            const newBanks = [...prev];
+                            const newBank = newBanks[bankIndex].slice();
+                            newBank[col] = value;
+                            newBanks[bankIndex] = newBank;
+                            return newBanks;
+                          });
+                          break;
+                        default:
+                          break;
+                      }
+                    };
+
+                    updateCellValue(target.row, target.col, next);
+                    recentToolbarUpdatesRef.current.set(`${target.row},${target.col}`, Date.now());
+                    // 在执行修改时，抑制 child 的 blur 写入，然后恢复编辑
+                    setSuppressBlur(true);
+                    setForceEditing({ row: target.row, col: target.col });
+                    setTimeout(() => { setForceEditing(null); setSuppressBlur(false); }, 200);
+                  }}><Minus size={12}/></button>
+                <input className="w-12 h-5 bg-transparent text-center text-xs font-mono text-white border-none focus:ring-0" value={editValue} onChange={(e) => setEditValue(Number(e.target.value))} />
+                <button className="w-6 h-5 flex items-center justify-center hover:bg-gray-700 text-gray-400 rounded-sm text-xs" onMouseDown={() => {
+                  const target = editingCell || lastEditingRef.current;
+                  if (!target) { return; }
+                  // 从当前数据读取最新值（基于 activeTabIndex）
+                  let cur = 0;
+                  const bankIndex = activeSubTable - 1;
+                  switch (activeTabIndex) {
+                    case 0:
+                      cur = fuelMapData[bankIndex][target.row][target.col];
+                      break;
+                    case 1:
+                      cur = fuelAdvanceData[bankIndex][target.row][target.col];
+                      break;
+                    case 2:
+                      cur = ignitionAngleData[bankIndex][target.row][target.col];
+                      break;
+                    case 4:
+                      cur = afrTargetData[bankIndex][target.row][target.col];
+                      break;
+                    case 5:
+                      cur = ectCompFuelData[target.row][target.col];
+                      break;
+                    case 6:
+                      cur = ectCompIgnData[target.row][target.col];
+                      break;
+                    case 7:
+                      cur = mapCompData[target.row][target.col];
+                      break;
+                    case 3:
+                      cur = dwellTimeData[bankIndex][target.col];
+                      break;
+                    case 8:
+                      cur = idleLimitData[bankIndex][target.col];
+                      break;
+                    default:
+                      cur = 0;
+                      break;
+                  }
+                  let next = cur;
+                  if (editMode === 'percentage') {
+                    next = cur + cur * (editValue / 100);
+                  } else {
+                    next = cur + editValue;
+                  }
+                  // 根据当前激活 tab 更新对应的数据集（支持 2D 和 1D）
+                  const updateCellValue = (row: number, col: number, value: number) => {
+                    switch (activeTabIndex) {
+                      case 0: // fuelMap
+                        setFuelMapData(prev => { 
+                          const newBanks = [...prev];
+                          const newBank = newBanks[bankIndex].map(r => r.slice());
+                          newBank[row][col] = value;
+                          newBanks[bankIndex] = newBank;
+                          return newBanks;
+                        });
+                        break;
+                      case 1: // fuelAdvance
+                        setFuelAdvanceData(prev => { 
+                          const newBanks = [...prev];
+                          const newBank = newBanks[bankIndex].map(r => r.slice());
+                          newBank[row][col] = value;
+                          newBanks[bankIndex] = newBank;
+                          return newBanks;
+                        });
+                        break;
+                      case 2: // ignitionAngle
+                        setIgnitionAngleData(prev => { 
+                          const newBanks = [...prev];
+                          const newBank = newBanks[bankIndex].map(r => r.slice());
+                          newBank[row][col] = value;
+                          newBanks[bankIndex] = newBank;
+                          return newBanks;
+                        });
+                        break;
+                      case 4: // afr
+                        setAfrTargetData(prev => { 
+                          const newBanks = [...prev];
+                          const newBank = newBanks[bankIndex].map(r => r.slice());
+                          newBank[row][col] = value;
+                          newBanks[bankIndex] = newBank;
+                          return newBanks;
+                        });
+                        break;
+                      case 5: // ectCompFuel
+                        setEctCompFuelData(prev => { const d = prev.map(r => r.slice()); d[row][col] = value; return d; });
+                        break;
+                      case 6: // ectCompIgn
+                        setEctCompIgnData(prev => { const d = prev.map(r => r.slice()); d[row][col] = value; return d; });
+                        break;
+                      case 7: // mapComp
+                        setMapCompData(prev => { const d = prev.map(r => r.slice()); d[row][col] = value; return d; });
+                        break;
+                      case 3: // dwellTime (1D)
+                        setDwellTimeData(prev => { 
+                          const newBanks = [...prev];
+                          const newBank = newBanks[bankIndex].slice();
+                          newBank[col] = value;
+                          newBanks[bankIndex] = newBank;
+                          return newBanks;
+                        });
+                        break;
+                      case 8: // idleLimit (1D)
+                        setIdleLimitData(prev => { 
+                          const newBanks = [...prev];
+                          const newBank = newBanks[bankIndex].slice();
+                          newBank[col] = value;
+                          newBanks[bankIndex] = newBank;
+                          return newBanks;
+                        });
+                        break;
+                      default:
+                        break;
+                    }
+                  };
+
+                  updateCellValue(target.row, target.col, next);
+                  recentToolbarUpdatesRef.current.set(`${target.row},${target.col}`, Date.now());
+                  setSuppressBlur(true);
+                  setForceEditing({ row: target.row, col: target.col });
+                  setTimeout(() => { setForceEditing(null); setSuppressBlur(false); }, 200);
+                }}><Plus size={12}/></button>
             </div>
             <div className="h-4 w-[1px] bg-gray-700"></div>
-            <select className="bg-[#2d323a] text-xs text-gray-300 border border-gray-600 rounded px-2 py-0.5 outline-none h-6" value={editMode === 'percentage' ? t.mapTable_percentage : t.mapTable_rawValue} onChange={handleEditModeChange}>
-                <option>{t.mapTable_percentage}</option>
-                <option>{t.mapTable_rawValue}</option>
+            <select className="bg-[#2d323a] text-xs text-gray-300 border border-gray-600 rounded px-2 py-0.5 outline-none h-6" value={editMode === 'percentage' ? t.mapTable_percentage : t.mapTable_rawValue} onChange={(e) => setEditMode(e.target.value === t.mapTable_percentage ? 'percentage' : 'raw')}>
+              <option>{t.mapTable_percentage}</option>
+              <option>{t.mapTable_rawValue}</option>
             </select>
           </div>
           <div className="flex gap-2 ml-auto shrink-0 pointer-events-auto">
@@ -578,7 +866,7 @@ const App: React.FC = () => {
               {t.mapTable_table2}
             </button>
             <div className="flex gap-1 ml-2">
-              {[1, 2, 3, 4].map((num) => (
+              {![5, 6, 7].includes(activeTabIndex) && [1, 2, 3, 4].map((num) => (
                 <button
                   key={num}
                   onClick={() => setActiveSubTable(num as 1 | 2 | 3 | 4)}
@@ -597,43 +885,6 @@ const App: React.FC = () => {
       );
     }
     return null;
-  };
-
-  const [editValue, setEditValue] = useState(1.0);
-  const [editMode, setEditMode] = useState<'percentage' | 'raw'>('percentage');
-  const [selectedCell, setSelectedCell] = useState<{row: number, col: number, value: number} | null>(null);
-
-  const handleEditModeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setEditMode(e.target.value === t.mapTable_percentage ? 'percentage' : 'raw');
-  };
-
-  const handleEditValueChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setEditValue(Number(e.target.value));
-  };
-
-  const updateCell = (row: number, col: number, newValue: number) => {
-    // 这里需要根据当前activeTab和数据类型进行更新
-    // 这里只做喷油量表格为例
-    if (activeTab === t.tabs_fuelMap) {
-      setFuelMapData(prev => {
-        const newData = prev.map(r => r.slice());
-        newData[row][col] = newValue;
-        return newData;
-      });
-    }
-    // 其他表格可按需扩展
-  };
-
-  const handlePlusClick = () => {
-    if (selectedCell) {
-      let newValue = selectedCell.value;
-      if (editMode === 'percentage') {
-        newValue += newValue * (editValue / 100);
-      } else {
-        newValue += editValue;
-      }
-      updateCell(selectedCell.row, selectedCell.col, newValue);
-    }
   };
 
   return (
@@ -739,7 +990,6 @@ const App: React.FC = () => {
                             key={num}
                             className="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-700 transition-colors text-gray-300 hover:text-white"
                             onClick={() => {
-                              console.log(`Import to ${activeTab} No.${num}`);
                               setActiveMenu(null);
                             }}
                           >
@@ -780,7 +1030,6 @@ const App: React.FC = () => {
                             : 'text-gray-300 hover:bg-gray-700 hover:text-white'
                         }`}
                         onClick={() => {
-                          console.log(`Copy to No.${num}`);
                           setActiveMenu(null);
                         }}
                       >
@@ -791,7 +1040,6 @@ const App: React.FC = () => {
                     <button 
                       className="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-700 transition-colors text-gray-300 hover:text-white"
                       onClick={() => {
-                        console.log('Copy to all');
                         setActiveMenu(null);
                       }}
                     >
@@ -907,12 +1155,12 @@ const App: React.FC = () => {
                   <span className="text-blue-500">{t.sensors_realtime}</span>
                </div>
                <div className="flex-1 grid grid-cols-6 gap-1 sm:gap-2">
-                  <VerticalBar label={t.sensors_ect} value={engineState.ect} unit="°C" min={0} max={120} warningThreshold={110} color="bg-yellow-500" />
-                  <VerticalBar label={t.sensors_iat} value={engineState.iat} unit="°C" min={0} max={80} warningThreshold={60} color="bg-sky-400" />
-                  <VerticalBar label={t.sensors_map} value={engineState.map} unit="kPa" min={0} max={250} color="bg-emerald-500" />
-                  <VerticalBar label={t.sensors_ign} value={engineState.ign} unit="°" min={0} max={60} color="bg-indigo-500" />
-                  <VerticalBar label={t.sensors_inj} value={engineState.inj} unit="ms" min={0} max={20} color="bg-rose-500" />
-                  <VerticalBar label={t.sensors_battery} value={engineState.battery} unit="V" min={8} max={16} color="bg-amber-500" />
+                  <VerticalBar label={t.sensors_ect} value={engineState.ect} unit="°C" min={-14} max={126} warningThreshold={110} color="bg-yellow-500" />
+                  <VerticalBar label={t.sensors_iat} value={engineState.iat} unit="°C" min={-14} max={56} warningThreshold={60} color="bg-sky-400" />
+                  <VerticalBar label={t.sensors_map} value={engineState.map} unit="kPa" min={0} max={120} color="bg-emerald-500" />
+                  <VerticalBar label={t.sensors_ign} value={engineState.ign} unit="°" min={-10} max={60} color="bg-indigo-500" />
+                  <VerticalBar label={t.sensors_inj} value={engineState.inj} unit="ms" min={0} max={16} color="bg-rose-500" />
+                  <VerticalBar label={t.sensors_battery} value={engineState.battery} unit="V" min={0} max={16} color="bg-amber-500" />
                </div>
             </div>
 
@@ -925,12 +1173,25 @@ const App: React.FC = () => {
                     onChange={setMasterSwitch}
                     size="sm"
                   />
+                  <button 
+                    onClick={() => {
+                      setIdleValue(850);
+                      setIgnitionValue(15.5);
+                      setFuelValue(2.5);
+                      setModeValue(0);
+                    }}
+                    className="ml-2 px-2 py-1 flex items-center gap-1 rounded hover:bg-gray-700 text-gray-400 hover:text-white transition-colors"
+                    title={t.common_reset}
+                  >
+                    <RotateCcw size={12} />
+                    <span className="text-[12px] font-bold">{t.common_reset}</span>
+                  </button>
                   <span className={`text-[10px] font-bold ${masterSwitch ? 'text-white' : 'text-gray-600'}`}>
                     {masterSwitch ? t.controllers_enabled : t.controllers_disabled}
                   </span>
                </div>
 
-               <div className="flex-1 grid grid-cols-2 grid-rows-2 gap-2 min-h-0">
+               <div className="flex-1 grid grid-cols-4 grid-rows-1 gap-2 min-h-0">
                   <ControllerBlock 
                     label={t.controllers_idleControl} 
                     value={idleValue} 

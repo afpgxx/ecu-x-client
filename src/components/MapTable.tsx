@@ -14,6 +14,11 @@ interface MapTableProps {
   max?: number;
   onCellChange: (row: number, col: number, newValue: number) => void;
   onBulkChange?: (changes: {row: number, col: number, value: number}[]) => void;
+  onEditingChange?: (cell: {row: number; col: number; value: number} | null) => void;
+  // 外部强制进入编辑（用于工具栏修改后保持/恢复编辑态）
+  forceEditing?: { row: number; col: number } | null;
+  // 当为 true 时，输入框失焦时不要把当前值写回（用于避免工具栏修改与 blur 冲突）
+  suppressBlur?: boolean;
 }
 
 type SelectionState = 
@@ -49,6 +54,10 @@ export const MapTable: React.FC<MapTableProps> = ({
   max = 16,
   onCellChange,
   onBulkChange,
+  onEditingChange,
+  forceEditing,
+  // @ts-ignore
+  recentToolbarUpdatesRef,
 }) => {
   const activeRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -59,6 +68,20 @@ export const MapTable: React.FC<MapTableProps> = ({
   const justFinishedDrag = useRef(false);
   const dragStart = useRef<{row: number, col: number} | null>(null);
   const isTypingRef = useRef(false);
+
+  // Notify parent when editing cell changes
+  useEffect(() => {
+    if (typeof onEditingChange === 'function') {
+      if (editingCell) {
+        const r = editingCell.row;
+        const c = editingCell.col;
+        const val = (data && data[r] && typeof data[r][c] === 'number') ? data[r][c] : 0;
+        try { onEditingChange({ row: r, col: c, value: val }); } catch (e) { /* ignore */ }
+      } else {
+        try { onEditingChange(null); } catch (e) { /* ignore */ }
+      }
+    }
+  }, [editingCell, data, onEditingChange]);
 
   useEffect(() => {
     const handleGlobalMouseUp = () => {
@@ -90,6 +113,9 @@ export const MapTable: React.FC<MapTableProps> = ({
     justFinishedDrag.current = false;
     dragStart.current = { row: rIdx, col: cIdx };
     // Do NOT set selection here immediately to allow simple click to edit without selection
+    // 如果外部抑制 blur，则不要清除 editingCell
+    // @ts-ignore
+    if (typeof suppressBlur !== 'undefined' && suppressBlur) return;
     setEditingCell(null);
   };
 
@@ -107,6 +133,24 @@ export const MapTable: React.FC<MapTableProps> = ({
   };
 
   const handleInputBlur = () => {
+    // 如果外部要求 suppress blur 写入，则直接退出编辑，不写回数据
+    // 该场景用于工具栏修改与 blur 的互斥情况
+    // @ts-ignore
+    if (typeof suppressBlur !== 'undefined' && suppressBlur) {
+      // 如果 suppressBlur 生效，跳过 blur 时的写回和退出编辑
+      return;
+    }
+      // 如果最近 toolbar 已对该单元格进行了写入（避免 race），则跳过 blur 的写回
+      try {
+        if (editingCell && recentToolbarUpdatesRef && recentToolbarUpdatesRef.current) {
+          const key = `${editingCell.row},${editingCell.col}`;
+          const t = recentToolbarUpdatesRef.current.get(key);
+          if (t && (Date.now() - t) < 500) {
+              // 最近由 toolbar 更新，忽略 blur 写回并保持编辑（让 forceEditing 恢复）
+              return;
+            }
+        }
+      } catch (e) { /* ignore */ }
     const parsed = parseFloat(inputValue);
     let newVal = parsed;
     if (!isNaN(parsed)) {
@@ -170,6 +214,8 @@ export const MapTable: React.FC<MapTableProps> = ({
     if (e.key === 'Enter') {
       handleInputBlur();
     } else if (e.key === 'Escape') {
+      // @ts-ignore
+      if (typeof suppressBlur !== 'undefined' && suppressBlur) return;
       setEditingCell(null);
     }
   };
@@ -207,6 +253,34 @@ export const MapTable: React.FC<MapTableProps> = ({
       }
     }
   }, [editingCell]);
+
+  // 外部强制进入编辑态：当 forceEditing 改变且不为 null 时，设置 editingCell 并同步输入值
+  useEffect(() => {
+    // @ts-ignore
+    if (typeof forceEditing !== 'undefined' && forceEditing !== null) {
+      const r = forceEditing.row;
+      const c = forceEditing.col;
+      const val = (data && data[r] && typeof data[r][c] === 'number') ? data[r][c] : 0;
+      
+      if (r >= 0 && c >= 0 && r < loadPoints.length && c < rpmPoints.length) {
+        setEditingCell({ row: r, col: c });
+        setInputValue(val.toFixed(decimals));
+      }
+    }
+  }, [forceEditing, data, decimals, loadPoints.length, rpmPoints.length]);
+
+  // 当外部数据发生变化且当前正在编辑某单元格时，更新输入框的值以反映最新数据
+  useEffect(() => {
+    if (!editingCell) return;
+    const r = editingCell.row;
+    const c = editingCell.col;
+    const val = (data && data[r] && typeof data[r][c] === 'number') ? data[r][c] : 0;
+    const formatted = val.toFixed(decimals);
+    // 如果用户正在输入，则不要覆盖输入（避免打字时被重置）
+    if (!isTypingRef.current && inputValue !== formatted) {
+      setInputValue(formatted);
+    }
+  }, [data, editingCell, decimals]);
 
   // Handle Copy/Paste for Selection
   useEffect(() => {
@@ -359,7 +433,11 @@ export const MapTable: React.FC<MapTableProps> = ({
         {/* Corner Label */}
         <div 
           className="w-16 flex-shrink-0 p-1 flex items-center justify-center border-r border-gray-700 bg-gray-800 text-gray-500 font-bold text-[17px] leading-tight text-center cursor-pointer"
-          onClick={() => setSelection(null)}
+          onClick={() => {
+            setSelection({ type: 'range', startRow: 0, startCol: 0, endRow: loadPoints.length - 1, endCol: rpmPoints.length - 1 });
+            setEditingCell({ row: 0, col: 0 });
+            setInputValue(data[0][0].toFixed(decimals));
+          }}
         >
           {cornerLabel}
         </div>
@@ -467,9 +545,7 @@ export const MapTable: React.FC<MapTableProps> = ({
                               style={{ fontSize: 17 }}
                               onClick={() => {
                                 if (justFinishedDrag.current) return;
-                                if (!isSelected) {
-                                  setSelection(null);
-                                }
+                                setSelection(null);
                                 setEditingCell({ row: rIdx, col: cIdx });
                                 setInputValue(cellValue.toFixed(decimals));
                               }}

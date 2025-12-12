@@ -19,3 +19,7 @@
 ```
 
 ```
+- [x] **VerticalBar Refinement**: Adjusted layout, scale markers, and range values for the 6 sensor bars to match reference images. (2025-11-26)
+- [x] **ControllerBlock Redesign**: Refactored 4 controller blocks to be horizontal, changed font to digital (DSEG7), and adjusted layout/spacing. (2025-11-26)
+- [x] **Table Selection Logic**: Modified MapTable and MapTable1D so clicking the corner selects all, and clicking a cell deselects previous ranges. (2025-11-26)
+- [x] **Data Banking**: Implemented 4 independent data banks for main tables (Fuel, Ign, etc.) and single bank for compensation tables. Updated Toolbar UI and logic to support banking. (2025-11-26)

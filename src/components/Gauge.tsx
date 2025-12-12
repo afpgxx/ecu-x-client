@@ -27,19 +27,19 @@ export const Gauge: React.FC<GaugeProps> = ({
   // 100% 0 -> Third gauge (Right)
   const config = {
     rpm: {
-      bgPosition: '61.6% -14px', // Left gauge (RPM 0-15)
-      startAngle: 234,
-      endAngle: 486.2,
+      bgPosition: '61.39% -10px', // Left gauge (RPM 0-15)
+      startAngle: 232,
+      endAngle: 487.5,
     },
     tps: {
-      bgPosition: '77.25% -14px', // Center gauge (TPS 0-10)
-      startAngle: 233.4,
-      endAngle: 487,
+      bgPosition: '76.9% -10px', // Center gauge (TPS 0-10)
+      startAngle: 231.5,
+      endAngle: 487.9,
     },
     afr: {
-      bgPosition: '93.0% -14px', // Right gauge (AFR 9-18)
-      startAngle: 245.5,
-      endAngle: 474.5,
+      bgPosition: '92.44% -10px', // Right gauge (AFR 9-18)
+      startAngle: 243.8,
+      endAngle: 475.7,
     }
   };
 
@@ -75,7 +75,7 @@ export const Gauge: React.FC<GaugeProps> = ({
             className="absolute inset-0 w-full h-full bg-no-repeat"
             style={{
               backgroundImage: `url(${assetDigitalFont})`,
-              backgroundSize: '740% 116%', 
+              backgroundSize: '800% 110%', 
               backgroundPosition: currentConfig.bgPosition
             }}
          />
@@ -119,17 +119,17 @@ export const Gauge: React.FC<GaugeProps> = ({
             {/* Center Cap */}
             <circle cx={center} cy={center} r={6} fill="#1f2937" stroke="#374151" strokeWidth="1" />
             <circle cx={center} cy={center} r={2} fill="#000" />
-         </svg>
-      </div>
-      
-      {/* Digital Readout Section */}
-      <div className="flex flex-col items-center justify-center z-10 -mt-4 w-full">
-        <div className="text-gray-500 text-[12px] font-bold uppercase tracking-widest mb-0.5 translate-y-2.5">{label}</div>
-        <div className="bg-[#0d0f11] border border-gray-700/50 rounded px-4 py-0.5 shadow-inner min-w-[40%] text-center flex justify-center items-center gap-1 translate-y-2">
-             <span className="text-blue-400 text-xl font-digital font-bold leading-none tracking-wider drop-shadow-[0_0_5px_rgba(59,130,246,0.4)]">
-                {variant === 'afr' ? value.toFixed(2) : Math.round(value)}
-             </span>
-             <span className="text-gray-500 text-[11px] font-bold">{unit}</span>
+        </svg>
+        
+        {/* Digital Readout Section */}
+        <div className="flex flex-col items-center justify-center z-20 -mt-200 w-full">
+          <div className="text-white-500 text-[10px] font-bold uppercase tracking-widest mb-0.5 translate-y-11">{label}</div>
+          <div className="border border-gray-700/50 rounded px-4 py-0.5 shadow-inner min-w-[0%] text-center flex justify-center items-center gap-1 translate-y-10">
+              <span className="text-blue-400 text-[11px] font-digital font-bold leading-none tracking-wider drop-shadow-[0_0_5px_rgba(59,130,246,0.4)]">
+                  {variant === 'afr' ? value.toFixed(2) : Math.round(value)}
+              </span>
+              <span className="text-gray-500 text-[10px] font-bold">{unit}</span>
+          </div>
         </div>
       </div>
     </div>

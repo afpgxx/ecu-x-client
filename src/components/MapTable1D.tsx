@@ -9,6 +9,10 @@ interface MapTable1DProps {
   colorMode?: 'heatmap' | 'dark'; // 颜色模式：热力图 或 深色统一样式
   onCellChange: (row: number, col: number, value: number) => void; // 可选的单元格变更回调
   onBulkChange?: (changes: { col: number; value: number }[]) => void; // （整行批量更改回调
+  onEditingChange?: (cell: {row:number;col:number;value:number} | null) => void;
+  forceEditing?: { row:number; col:number } | null;
+  suppressBlur?: boolean;
+  recentToolbarUpdatesRef?: React.RefObject<Map<string, number>>;
   min?: number;      // 最小值
   max?: number;      // 最大值
 }
@@ -32,6 +36,10 @@ export const MapTable1D: React.FC<MapTable1DProps> = ({
   colorMode = 'heatmap',
   onCellChange,
   onBulkChange,
+  onEditingChange,
+  forceEditing,
+  suppressBlur,
+  recentToolbarUpdatesRef,
   min = 0,
   max = 999.99, // Default max to a large number
 }) => {
@@ -60,7 +68,27 @@ export const MapTable1D: React.FC<MapTable1DProps> = ({
       inputRef.current.focus();
       inputRef.current.select();
     }
-  }, [editingIndex]);
+    // 通知父组件当前正在编辑的单元格
+    if (typeof onEditingChange === 'function') {
+      if (editingIndex === null) onEditingChange(null);
+      else onEditingChange({ row: 0, col: editingIndex, value: data[editingIndex] });
+    }
+  }, [editingIndex, onEditingChange, data]);
+
+  // 处理外部 forceEditing（恢复编辑状态）
+  useEffect(() => {
+    if (forceEditing && (forceEditing.col !== undefined)) {
+      setEditingIndex(forceEditing.col);
+      setInputValue(String(data[forceEditing.col]));
+    }
+  }, [forceEditing, data]);
+
+  // 当数据更新时，如果当前有激活编辑单元格，保持输入框中显示的值与数据同步（除非用户正在输入）
+  useEffect(() => {
+    if (editingIndex !== null) {
+      setInputValue(String(data[editingIndex]));
+    }
+  }, [data]);
 
   // Handle Copy/Paste for Selection
   useEffect(() => {
@@ -123,9 +151,17 @@ export const MapTable1D: React.FC<MapTable1DProps> = ({
           const changes = headers.map((_, i) => ({ col: i, value: finalVal }));
           onBulkChange(changes);
       } else {
-          onCellChange(0, index, finalVal);
+          // 在写回前检查最近是否由工具栏更新以避免冲突
+          const key = `${0},${index}`;
+          const recent = recentToolbarUpdatesRef?.current?.get(key);
+          const now = Date.now();
+          if (recent && (now - recent) < 300) {
+            // 最近由工具栏修改，跳过写回以避免覆盖
+          } else {
+            onCellChange(0, index, finalVal);
+          }
       }
-      setEditingIndex(null);
+      if (!suppressBlur) setEditingIndex(null);
   };
 
   return (
@@ -163,7 +199,11 @@ export const MapTable1D: React.FC<MapTable1DProps> = ({
             <div 
               className={`w-24 flex-shrink-0 flex items-center justify-center font-bold theme-border border-r border-b cursor-pointer hover:bg-gray-700
               ${selection === 'all' ? 'bg-blue-900/50 text-blue-200' : 'theme-bg-header theme-text-secondary'}`}
-              onClick={() => setSelection(prev => prev === 'all' ? null : 'all')}
+              onClick={() => {
+                setSelection('all');
+                setEditingIndex(0);
+                setInputValue(data[0].toString());
+              }}
             >
               {yLabel}
            </div>

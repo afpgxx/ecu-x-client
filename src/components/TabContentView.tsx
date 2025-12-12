@@ -36,6 +36,10 @@ interface TabContentViewProps {
   setParametersData: React.Dispatch<React.SetStateAction<any>>;
   settingsData: any;
   setSettingsData: React.Dispatch<React.SetStateAction<any>>;
+  onEditingChange?: (cell: {row:number;col:number;value:number} | null) => void;
+  onForceEditing?: { row: number; col: number } | null;
+  suppressBlur?: boolean;
+  recentToolbarUpdatesRef?: React.RefObject<Map<string, number>>;
 }
 
 import { 
@@ -77,6 +81,10 @@ export const TabContentView: React.FC<TabContentViewProps> = ({
   setParametersData,
   settingsData,
   setSettingsData,
+  onEditingChange,
+  onForceEditing,
+  suppressBlur,
+  recentToolbarUpdatesRef,
 }) => {
   // Helper functions to reduce duplication
   const handle2DCellChange = (setter: React.Dispatch<React.SetStateAction<number[][]>>) => (row: number, col: number, val: number) => {
@@ -130,6 +138,11 @@ export const TabContentView: React.FC<TabContentViewProps> = ({
           value={0}
           onCellChange={handle2DCellChange(setFuelMapData)}
           onBulkChange={handle2DBulkChange(setFuelMapData)}
+          onEditingChange={onEditingChange}
+          forceEditing={onForceEditing}
+          suppressBlur={suppressBlur}
+          // @ts-ignore
+          recentToolbarUpdatesRef={recentToolbarUpdatesRef}
         />
       </div>
     );
@@ -150,6 +163,11 @@ export const TabContentView: React.FC<TabContentViewProps> = ({
           value={0}
           onCellChange={handle2DCellChange(setFuelAdvanceData)}
           onBulkChange={handle2DBulkChange(setFuelAdvanceData)}
+          onEditingChange={onEditingChange}
+          forceEditing={onForceEditing}
+          suppressBlur={suppressBlur}
+          // @ts-ignore
+          recentToolbarUpdatesRef={recentToolbarUpdatesRef}
         />
       </div>
     );
@@ -170,6 +188,11 @@ export const TabContentView: React.FC<TabContentViewProps> = ({
           value={0}
           onCellChange={handle2DCellChange(setIgnitionAngleData)}
           onBulkChange={handle2DBulkChange(setIgnitionAngleData)}
+          onEditingChange={onEditingChange}
+          forceEditing={onForceEditing}
+          suppressBlur={suppressBlur}
+          // @ts-ignore
+          recentToolbarUpdatesRef={recentToolbarUpdatesRef}
         />
       </div>
     );
@@ -179,6 +202,7 @@ export const TabContentView: React.FC<TabContentViewProps> = ({
   if (activeTab === t.tabs_dwellTime) {
     return (
       <MapTable1D 
+        key="dwellTime"
         headers={DWELL_RPM_POINTS}
         data={dwellTimeData}
         activeValue={engineState.rpm} 
@@ -187,6 +211,11 @@ export const TabContentView: React.FC<TabContentViewProps> = ({
         colorMode="dark"
         onCellChange={handle1DCellChange(setDwellTimeData)}
         onBulkChange={handle1DBulkChange(setDwellTimeData)}
+        onEditingChange={onEditingChange}
+        forceEditing={onForceEditing}
+        suppressBlur={suppressBlur}
+        // @ts-ignore
+        recentToolbarUpdatesRef={recentToolbarUpdatesRef}
       />
     );
   }
@@ -196,6 +225,7 @@ export const TabContentView: React.FC<TabContentViewProps> = ({
     return (
       <div className="flex-1 overflow-hidden relative p-1">
         <MapTable 
+          key="afrTarget"
           rpmPoints={RPM_POINTS}
           loadPoints={LOAD_POINTS}
           data={afrTargetData}
@@ -204,6 +234,11 @@ export const TabContentView: React.FC<TabContentViewProps> = ({
           value={0}
           onCellChange={handle2DCellChange(setAfrTargetData)}
           onBulkChange={handle2DBulkChange(setAfrTargetData)}
+          onEditingChange={onEditingChange}
+          forceEditing={onForceEditing}
+          suppressBlur={suppressBlur}
+          // @ts-ignore
+          recentToolbarUpdatesRef={recentToolbarUpdatesRef}
         />
       </div>
     );
@@ -214,6 +249,7 @@ export const TabContentView: React.FC<TabContentViewProps> = ({
     return (
       <div className="flex-1 overflow-hidden relative p-1">
         <MapTable
+          key="ectCompFuel"
           rpmPoints={ECT_COMP_RPM_POINTS}
           loadPoints={ECT_COMP_TEMP_POINTS}
           data={ectCompFuelData}
@@ -224,6 +260,11 @@ export const TabContentView: React.FC<TabContentViewProps> = ({
           value={0}
           onCellChange={handle2DCellChange(setEctCompFuelData)}
           onBulkChange={handle2DBulkChange(setEctCompFuelData)}
+          onEditingChange={onEditingChange}
+          forceEditing={onForceEditing}
+          suppressBlur={suppressBlur}
+          // @ts-ignore
+          recentToolbarUpdatesRef={recentToolbarUpdatesRef}
         />
       </div>
     );
@@ -234,6 +275,7 @@ export const TabContentView: React.FC<TabContentViewProps> = ({
     return (
       <div className="flex-1 overflow-hidden relative p-1">
         <MapTable
+          key="ectCompIgn"
           rpmPoints={ECT_COMP_RPM_POINTS}
           loadPoints={ECT_COMP_TEMP_POINTS}
           data={ectCompIgnData}
@@ -244,6 +286,11 @@ export const TabContentView: React.FC<TabContentViewProps> = ({
           value={0}
           onCellChange={handle2DCellChange(setEctCompIgnData)}
           onBulkChange={handle2DBulkChange(setEctCompIgnData)}
+          onEditingChange={onEditingChange}
+          forceEditing={onForceEditing}
+          suppressBlur={suppressBlur}
+          // @ts-ignore
+          recentToolbarUpdatesRef={recentToolbarUpdatesRef}
         />
       </div>
     );
@@ -254,6 +301,7 @@ export const TabContentView: React.FC<TabContentViewProps> = ({
     return (
       <div className="flex-1 overflow-hidden relative p-1">
         <MapTable 
+          key="mapComp"
           rpmPoints={RPM_POINTS}
           loadPoints={LOAD_POINTS}
           data={mapCompData}
@@ -262,6 +310,11 @@ export const TabContentView: React.FC<TabContentViewProps> = ({
           value={0}
           onCellChange={handle2DCellChange(setMapCompData)}
           onBulkChange={handle2DBulkChange(setMapCompData)}
+          onEditingChange={onEditingChange}
+          forceEditing={onForceEditing}
+          suppressBlur={suppressBlur}
+          // @ts-ignore
+          recentToolbarUpdatesRef={recentToolbarUpdatesRef}
         />
       </div>
     );
@@ -271,6 +324,7 @@ export const TabContentView: React.FC<TabContentViewProps> = ({
   if (activeTab === t.tabs_idleLimit) {
     return (
       <MapTable1D 
+        key="idleLimit"
         headers={IDLE_LIMIT_RPM_POINTS}
         data={idleLimitData}
         activeValue={engineState.rpm} 
@@ -279,6 +333,11 @@ export const TabContentView: React.FC<TabContentViewProps> = ({
         colorMode="dark"
         onCellChange={handle1DCellChange(setIdleLimitData)}
         onBulkChange={handle1DBulkChange(setIdleLimitData)}
+        onEditingChange={onEditingChange}
+        forceEditing={onForceEditing}
+        suppressBlur={suppressBlur}
+        // @ts-ignore
+        recentToolbarUpdatesRef={recentToolbarUpdatesRef}
       />
     );
   }

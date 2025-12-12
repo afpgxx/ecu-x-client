@@ -47,27 +47,42 @@ export const VerticalBar: React.FC<VerticalBarProps> = ({
         {value.toFixed(unit ? 1 : 0)}<span className="text-[10px] text-gray-500 ml-0.5">{unit}</span>
       </div>
       
-      {/* Bar Container */}
-      <div className="relative flex-1 w-6 bg-gray-800/50 rounded-sm border border-gray-700 overflow-hidden group backdrop-blur-sm">
-        {/* Scale markers */}
-        <div className="absolute right-0 top-0 h-full w-full flex flex-col justify-between py-1 px-[2px] pointer-events-none z-10 opacity-60">
-           {[...Array(5)].map((_, i) => (
-             <div key={i} className="w-1.5 h-[1px] bg-gray-600 self-end"></div>
-           ))}
+      {/* Bar and Scale Container */}
+      <div className="relative flex-1 flex gap-0 w-full">
+        {/* Scale markers with values - positioned outside on the left */}
+        <div className="h-full flex flex-col justify-between py-1 pr-0.5">
+           {[...Array(17)].map((_, i) => {
+             const isMajor = i % 4 === 0;
+             if (isMajor) {
+               const majorIndex = i / 4;
+               const markerValue = max - (majorIndex * (max - min) / 4);
+               return (
+                 <div key={i} className="flex items-center justify-end gap-1 h-[1px]">
+                   <span className="text-[10px] font-mono text-gray-200 font-bold w-6 text-right leading-none">{markerValue.toFixed(0)}</span>
+                   <div className="w-1.5 h-[1px] bg-gray-400"></div>
+                 </div>
+               );
+             } else {
+               return (
+                 <div key={i} className="flex items-center justify-end gap-1 h-[1px]">
+                   <div className="w-1 h-[1px] bg-gray-600"></div>
+                 </div>
+               );
+             }
+           })}
         </div>
         
-        {/* Fill */}
-        <div 
-          className={`absolute bottom-0 w-full transition-all duration-300 ease-out ${barColor} shadow-[0_-2px_10px_rgba(255,255,255,0.15)]`}
-          style={{ height: `${percent}%` }}
-        />
+        {/* Bar Container */}
+        <div className="relative flex-1 bg-white rounded-sm border border-gray-600 overflow-hidden">
+          {/* Fill */}
+          <div 
+            className={`absolute bottom-0 w-full transition-all duration-300 ease-out ${barColor} shadow-[0_-2px_10px_rgba(255,255,255,0.15)]`}
+            style={{ height: `${percent}%` }}
+          />
+        </div>
       </div>
       
-      {/* Min/Max Labels */}
-      <div className="flex justify-between w-8 text-[8px] text-gray-600 font-mono mt-1">
-        <span>{min}</span>
-        <span>{max}</span>
-      </div>
+      {/* Min/Max Labels - Removed as they are now on the scale */}
     </div>
   );
 };
