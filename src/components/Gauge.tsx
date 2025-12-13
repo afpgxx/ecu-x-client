@@ -123,12 +123,13 @@ export const Gauge: React.FC<GaugeProps> = ({
         
         {/* Digital Readout Section */}
         <div className="flex flex-col items-center justify-center z-20 -mt-200 w-full">
-          <div className="text-white-500 text-[10px] font-bold uppercase tracking-widest mb-0.5 translate-y-11">{label}</div>
+          <div className="flex-wrap text-white-500 text-[10px] font-bold uppercase tracking-widest mb-0.5 translate-y-9">
+            {variant === 'rpm' ? 'RPM' : variant === 'tps' ? 'TPS' : 'OG AFR'}
+          </div>
           <div className="border border-gray-700/50 rounded px-4 py-0.5 shadow-inner min-w-[0%] text-center flex justify-center items-center gap-1 translate-y-10">
-              <span className="text-blue-400 text-[11px] font-digital font-bold leading-none tracking-wider drop-shadow-[0_0_5px_rgba(59,130,246,0.4)]">
+              <span className="text-blue-400 text-[12px] font-digital font-bold leading-none tracking-wider drop-shadow-[0_0_5px_rgba(59,130,246,0.4)]">
                   {variant === 'afr' ? value.toFixed(2) : Math.round(value)}
               </span>
-              <span className="text-gray-500 text-[10px] font-bold">{unit}</span>
           </div>
         </div>
       </div>

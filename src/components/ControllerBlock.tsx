@@ -129,7 +129,7 @@ export const ControllerBlock: React.FC<ControllerBlockProps> = ({
       </button>
 
       {/* Label */}
-      <div className="text-[12px] text-gray-300 font-bold mt-2 text-center leading-none">{label}</div>
+      <div className="text-[12px] flex-wrap text-gray-300 font-bold mt-2 text-center leading-none">{label}</div>
     </div>
   );
 };
