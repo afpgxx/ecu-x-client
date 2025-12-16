@@ -9,7 +9,7 @@ import { VerticalBar } from './components/VerticalBar';
 import { Gauge } from './components/Gauge';
 import { ToggleSwitch } from './components/common/ToggleSwitch';
 import { Logo } from './components/Logo';
-import { EngineState } from './types';
+import { EngineState, IdleLimitState } from './types';
 import { useI18n } from './i18n/I18nContext';
 import { Language } from './i18n';
 import { APP_VERSION } from './version';
@@ -30,7 +30,7 @@ import {
   generateAfrData, 
   generateEctIgnData, 
   generateMapCompData, 
-  generateIdleLimitData 
+  generateIdleLimitState 
 } from './utils/dataGenerator';
 
 const App: React.FC = () => {
@@ -78,7 +78,7 @@ const App: React.FC = () => {
   const [ignitionAngleData, setIgnitionAngleData] = useState<number[][][]>(createBanks(generateIgnitionData())); // 点火提前角 (4 banks)
   const [dwellTimeData, setDwellTimeData] = useState<number[][]>(createBanks(DWELL_DATA_POINTS)); // 驻留时间 (4 banks)
   const [afrTargetData, setAfrTargetData] = useState<number[][][]>(createBanks(generateAfrData())); // AFR目标 (4 banks)
-  const [idleLimitData, setIdleLimitData] = useState<number[][]>(createBanks(generateIdleLimitData())); // 怠速/限转 (4 banks)
+  const [idleLimitData, setIdleLimitData] = useState<IdleLimitState[]>(createBanks(generateIdleLimitState())); // 怠速/限转 (4 banks)
 
   // Single bank tables (No buttons)
   const [ectCompFuelData, setEctCompFuelData] = useState<number[][]>(ECT_COMP_2D_DATA); // ECT燃油补偿
@@ -132,7 +132,7 @@ const App: React.FC = () => {
   
   const [isSimulating, setIsSimulating] = useState(false);
   const [isSweeping, setIsSweeping] = useState(false);
-  const [ecuConnected] = useState(true);
+  const [ecuConnected, setEcuConnected] = useState(false);
   const [masterSwitch, setMasterSwitch] = useState(true);
   const [activeTabIndex, setActiveTabIndex] = useState(0);
   const activeTab = MAIN_TABS[activeTabIndex] || MAIN_TABS[0];
@@ -142,6 +142,10 @@ const App: React.FC = () => {
   const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [isMaximized, setIsMaximized] = useState(false);
   
+  // Serial Port State
+  const [ports, setPorts] = useState<any[]>([]);
+  const [selectedPort, setSelectedPort] = useState<string>('');
+
   // Controller values
   const [idleValue, setIdleValue] = useState(850);
   const [ignitionValue, setIgnitionValue] = useState(15.5);
@@ -251,7 +255,7 @@ const App: React.FC = () => {
           if (data.maps.ectCompFuel) setEctCompFuelData(ensureNumber2DArray(JSON.parse(JSON.stringify(data.maps.ectCompFuel))));
           if (data.maps.ectCompIgn) setEctCompIgnData(ensureNumber2DArray(JSON.parse(JSON.stringify(data.maps.ectCompIgn))));
           if (data.maps.mapComp) setMapCompData(ensureNumber2DArray(JSON.parse(JSON.stringify(data.maps.mapComp))));
-          if (data.maps.idleLimit) setIdleLimitData(createBanks(ensureNumberArray(JSON.parse(JSON.stringify(data.maps.idleLimit)))));
+          if (data.maps.idleLimit) setIdleLimitData(createBanks(JSON.parse(JSON.stringify(data.maps.idleLimit))));
           
           // 导入控制器参数
           if (data.controllers) {
@@ -419,14 +423,83 @@ const App: React.FC = () => {
           setIsMaximized(state === 'maximized');
         };
         ipcRenderer.on('window-state-change', handleWindowStateChange);
+
+        // Serial Data Listener
+        const handleSerialData = (_event: any, dataString: string) => {
+          try {
+            const data = JSON.parse(dataString);
+            // Update engine state from serial data if not simulating
+            if (!isSimulating) {
+              setEngineState(prev => ({ ...prev, ...data }));
+            }
+          } catch (e) {
+            console.error('Failed to parse serial data:', e);
+          }
+        };
+        ipcRenderer.on('serial-data', handleSerialData);
+
+        // Get initial ports
+        ipcRenderer.invoke('serial-list').then((portList: any[]) => {
+          setPorts(portList);
+        });
+
         return () => {
           ipcRenderer.removeListener('window-state-change', handleWindowStateChange);
+          ipcRenderer.removeListener('serial-data', handleSerialData);
         };
       } catch (error) {
         console.error('Failed to setup IPC listener', error);
       }
     }
-  }, []);
+  }, [isSimulating]);
+
+  // Connect Port
+  const handleConnectPort = async (portPath: string) => {
+    if (!portPath) return;
+    try {
+      const { ipcRenderer } = (window as any).require('electron');
+      await ipcRenderer.invoke('serial-open', portPath, 115200);
+      setSelectedPort(portPath);
+      setEcuConnected(true);
+      showNotification(`已连接到 ${portPath}`, 'success');
+    } catch (err) {
+      setEcuConnected(false);
+      showNotification(`连接失败: ${err}`, 'error');
+    }
+  };
+
+  // Send Current Data
+  const handleSendCurrentData = async () => {
+    try {
+      const { ipcRenderer } = (window as any).require('electron');
+      
+      // Determine data to send based on active tab
+      let dataToSend: any = null;
+      const bankIndex = activeSubTable - 1;
+
+      switch (activeTabIndex) {
+        case 0: dataToSend = { type: 'FUEL_MAP', bank: activeSubTable, data: fuelMapData[bankIndex] }; break;
+        case 1: dataToSend = { type: 'FUEL_ADVANCE', bank: activeSubTable, data: fuelAdvanceData[bankIndex] }; break;
+        case 2: dataToSend = { type: 'IGNITION_ANGLE', bank: activeSubTable, data: ignitionAngleData[bankIndex] }; break;
+        case 3: dataToSend = { type: 'DWELL_TIME', bank: activeSubTable, data: dwellTimeData[bankIndex] }; break;
+        case 4: dataToSend = { type: 'AFR_TARGET', bank: activeSubTable, data: afrTargetData[bankIndex] }; break;
+        case 5: dataToSend = { type: 'ECT_COMP_FUEL', data: ectCompFuelData }; break;
+        case 6: dataToSend = { type: 'ECT_COMP_IGN', data: ectCompIgnData }; break;
+        case 7: dataToSend = { type: 'MAP_COMP', data: mapCompData }; break;
+        case 8: dataToSend = { type: 'IDLE_LIMIT', bank: activeSubTable, data: idleLimitData[bankIndex] }; break;
+        case 9: dataToSend = { type: 'OTHER_OPTIONS', data: { params: otherOptionsParams, grids: otherOptionsGrids } }; break;
+        case 10: dataToSend = { type: 'PARAMETERS', data: parametersData }; break;
+        case 11: dataToSend = { type: 'SETTINGS', data: settingsData }; break;
+      }
+
+      if (dataToSend) {
+        await ipcRenderer.invoke('serial-write', JSON.stringify(dataToSend));
+        showNotification('数据发送成功', 'success');
+      }
+    } catch (err) {
+      showNotification('发送失败，请检查连接', 'error');
+    }
+  };
 
   // Sim loop with Jitter
   useEffect(() => {
@@ -517,43 +590,60 @@ const App: React.FC = () => {
 
   const renderContent = () => {
     const bankIndex = activeSubTable - 1;
+    const isTableDisabled = masterSwitch;
+
     return (
-      <TabContentView
-        key={dataVersion}
-        activeTab={activeTab}
-        t={t}
-        engineState={engineState}
-        fuelMapData={fuelMapData[bankIndex]}
-        setFuelMapData={makeBankSetter(setFuelMapData, bankIndex)}
-        fuelAdvanceData={fuelAdvanceData[bankIndex]}
-        setFuelAdvanceData={makeBankSetter(setFuelAdvanceData, bankIndex)}
-        ignitionAngleData={ignitionAngleData[bankIndex]}
-        setIgnitionAngleData={makeBankSetter(setIgnitionAngleData, bankIndex)}
-        dwellTimeData={dwellTimeData[bankIndex]}
-        setDwellTimeData={makeBankSetter(setDwellTimeData, bankIndex)}
-        afrTargetData={afrTargetData[bankIndex]}
-        setAfrTargetData={makeBankSetter(setAfrTargetData, bankIndex)}
-        ectCompFuelData={ectCompFuelData}
-        setEctCompFuelData={setEctCompFuelData}
-        ectCompIgnData={ectCompIgnData}
-        setEctCompIgnData={setEctCompIgnData}
-        mapCompData={mapCompData}
-        setMapCompData={setMapCompData}
-        idleLimitData={idleLimitData[bankIndex]}
-        setIdleLimitData={makeBankSetter(setIdleLimitData, bankIndex)}
-        otherOptionsParams={otherOptionsParams}
-        setOtherOptionsParams={setOtherOptionsParams}
-        otherOptionsGrids={otherOptionsGrids}
-        setOtherOptionsGrids={setOtherOptionsGrids}
-        parametersData={parametersData}
-        setParametersData={setParametersData}
-        settingsData={settingsData}
-        setSettingsData={setSettingsData}
-        onEditingChange={handleEditingChange}
-        onForceEditing={forceEditing}
-        suppressBlur={suppressBlur}
-        recentToolbarUpdatesRef={recentToolbarUpdatesRef}
-      />
+      <div className="relative w-full h-full flex flex-col">
+        {isTableDisabled && (
+          <div className="absolute inset-0 bg-[#16181c]/80 z-50 flex items-center justify-center backdrop-blur-[1px]">
+             <div className="bg-[#23272e] border border-gray-600 px-6 py-4 rounded-lg shadow-2xl text-center transform scale-110">
+                <div className="text-orange-500 font-bold text-lg mb-1 flex items-center justify-center gap-2">
+                  <Settings size={20} />
+                  <span>{t.controllers_enabled}</span>
+                </div>
+                <p className="text-gray-400 text-xs">{t.controllers_tableDisabledMsg || "Table editing is disabled while controllers are active"}</p>
+             </div>
+          </div>
+        )}
+        <div className={`flex-1 flex flex-col overflow-hidden ${isTableDisabled ? 'pointer-events-none opacity-40 grayscale-[0.5]' : ''}`}>
+          <TabContentView
+            key={dataVersion}
+            activeTab={activeTab}
+            t={t}
+            engineState={engineState}
+            fuelMapData={fuelMapData[bankIndex]}
+            setFuelMapData={makeBankSetter(setFuelMapData, bankIndex)}
+            fuelAdvanceData={fuelAdvanceData[bankIndex]}
+            setFuelAdvanceData={makeBankSetter(setFuelAdvanceData, bankIndex)}
+            ignitionAngleData={ignitionAngleData[bankIndex]}
+            setIgnitionAngleData={makeBankSetter(setIgnitionAngleData, bankIndex)}
+            dwellTimeData={dwellTimeData[bankIndex]}
+            setDwellTimeData={makeBankSetter(setDwellTimeData, bankIndex)}
+            afrTargetData={afrTargetData[bankIndex]}
+            setAfrTargetData={makeBankSetter(setAfrTargetData, bankIndex)}
+            ectCompFuelData={ectCompFuelData}
+            setEctCompFuelData={setEctCompFuelData}
+            ectCompIgnData={ectCompIgnData}
+            setEctCompIgnData={setEctCompIgnData}
+            mapCompData={mapCompData}
+            setMapCompData={setMapCompData}
+            idleLimitData={idleLimitData[bankIndex]}
+            setIdleLimitData={makeBankSetter(setIdleLimitData, bankIndex)}
+            otherOptionsParams={otherOptionsParams}
+            setOtherOptionsParams={setOtherOptionsParams}
+            otherOptionsGrids={otherOptionsGrids}
+            setOtherOptionsGrids={setOtherOptionsGrids}
+            parametersData={parametersData}
+            setParametersData={setParametersData}
+            settingsData={settingsData}
+            setSettingsData={setSettingsData}
+            onEditingChange={handleEditingChange}
+            onForceEditing={forceEditing}
+            suppressBlur={suppressBlur}
+            recentToolbarUpdatesRef={recentToolbarUpdatesRef}
+          />
+        </div>
+      </div>
     );
   };
 
@@ -563,7 +653,8 @@ const App: React.FC = () => {
   const [forceEditing, setForceEditing] = useState<{row:number;col:number} | null>(null);
   const [suppressBlur, setSuppressBlur] = useState<boolean>(false);
   const recentToolbarUpdatesRef = useRef<Map<string, number>>(new Map());
-  const [editValue, setEditValue] = useState<number>(1.0);
+  const [editValue, setEditValue] = useState<string>('1.0');
+  const committedEditValueRef = useRef<string>('1.0');
   const [editMode, setEditMode] = useState<'percentage'|'raw'>('percentage');
 
   // 当切换 tab 时，清除所有编辑状态
@@ -586,12 +677,25 @@ const App: React.FC = () => {
       t.tabs_ectCompIgn,
       t.tabs_mapComp,
       t.tabs_idleLimit,
+      t.tabs_otherOptions,
+      t.tabs_parameters,
+      t.tabs_settingsInfo,
     ];
 
     if (mapTabs.includes(activeTab)) {
+      const isMapTable = activeTabIndex <= 8; // Indices 0-7 are map tables, 8 is IdleLimit
+
+      const IDLE_LIMIT_SCALAR_FIELDS = [
+        'idleRpmCold', 'idleReturnCold',
+        'idleRpmHot', 'idleReturnHot',
+        'enterExitSensitivity', 'accelEnrichPercent',
+        'maxRpm', 'vvtOpenRpm'
+      ];
+
       return (
         <div className="flex items-center w-full py-0.5 pointer-events-none">
-          <div className="absolute left-1/2 -translate-x-1/2 flex items-center justify-center gap-3 pointer-events-auto">
+          {isMapTable && (
+            <div className="absolute left-1/2 -translate-x-1/2 flex items-center justify-center gap-3 pointer-events-auto">
                 <div className="flex items-center justify-center bg-black/30 rounded p-0.5 border border-gray-700">
                 <button className="w-6 h-5 flex items-center justify-center hover:bg-gray-700 text-gray-400 rounded-sm text-xs" onMouseDown={() => {
                     const target = editingCell || lastEditingRef.current;
@@ -624,18 +728,27 @@ const App: React.FC = () => {
                       case 3:
                         cur = dwellTimeData[bankIndex][target.col];
                         break;
-                      case 8:
-                        cur = idleLimitData[bankIndex][target.col];
+                      case 8: // IdleLimit
+                        const idleData = idleLimitData[bankIndex];
+                        if (target.row === 0) {
+                          // @ts-ignore
+                          cur = idleData[IDLE_LIMIT_SCALAR_FIELDS[target.col]] as number;
+                        } else if (target.row === 1) {
+                          cur = idleData.autoClutchData[target.col];
+                        } else if (target.row === 2) {
+                          cur = idleData.spareData[target.col];
+                        }
                         break;
                       default:
                         cur = 0;
                         break;
                     }
                     let next = cur;
+                    const val = parseFloat(editValue) || 0;
                     if (editMode === 'percentage') {
-                      next = cur - cur * (editValue / 100);
+                      next = cur - cur * (val / 100);
                     } else {
-                      next = cur - editValue;
+                      next = cur - val;
                     }
                     // 根据当前激活 tabIndex 更新对应的数据集（支持 2D 和 1D）
                     const updateCellValue = (row: number, col: number, value: number) => {
@@ -683,19 +796,30 @@ const App: React.FC = () => {
                           setEctCompIgnData(prev => { const d = prev.map(r => r.slice()); d[row][col] = value; return d; });
                           break;
                         case 7: // mapComp
+                        case 8: // IdleLimit
+                          setIdleLimitData(prev => {
+                            const newBanks = [...prev];
+                            const newData = { ...newBanks[bankIndex] };
+                            if (row === 0) {
+                              // @ts-ignore
+                              newData[IDLE_LIMIT_SCALAR_FIELDS[col]] = value;
+                            } else if (row === 1) {
+                              const newArr = [...newData.autoClutchData];
+                              newArr[col] = value;
+                              newData.autoClutchData = newArr;
+                            } else if (row === 2) {
+                              const newArr = [...newData.spareData];
+                              newArr[col] = value;
+                              newData.spareData = newArr;
+                            }
+                            newBanks[bankIndex] = newData;
+                            return newBanks;
+                          });
+                          break;
                           setMapCompData(prev => { const d = prev.map(r => r.slice()); d[row][col] = value; return d; });
                           break;
                         case 3: // dwellTime (1D)
                           setDwellTimeData(prev => { 
-                            const newBanks = [...prev];
-                            const newBank = newBanks[bankIndex].slice();
-                            newBank[col] = value;
-                            newBanks[bankIndex] = newBank;
-                            return newBanks;
-                          });
-                          break;
-                        case 8: // idleLimit (1D)
-                          setIdleLimitData(prev => { 
                             const newBanks = [...prev];
                             const newBank = newBanks[bankIndex].slice();
                             newBank[col] = value;
@@ -715,7 +839,29 @@ const App: React.FC = () => {
                     setForceEditing({ row: target.row, col: target.col });
                     setTimeout(() => { setForceEditing(null); setSuppressBlur(false); }, 200);
                   }}><Minus size={12}/></button>
-                <input className="w-12 h-5 bg-transparent text-center text-xs font-mono text-white border-none focus:ring-0" value={editValue} onChange={(e) => setEditValue(Number(e.target.value))} />
+                <input 
+                  className="w-12 h-5 bg-transparent text-center text-xs font-mono text-white border-none focus:ring-0" 
+                  value={editValue} 
+                  onChange={(e) => setEditValue(e.target.value)}
+                  onFocus={() => {
+                    committedEditValueRef.current = editValue;
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      const val = parseFloat(editValue);
+                      if (!isNaN(val)) {
+                        committedEditValueRef.current = editValue;
+                        e.currentTarget.blur();
+                      }
+                    } else if (e.key === 'Escape') {
+                      setEditValue(committedEditValueRef.current);
+                      e.currentTarget.blur();
+                    }
+                  }}
+                  onBlur={() => {
+                    setEditValue(committedEditValueRef.current);
+                  }}
+                />
                 <button className="w-6 h-5 flex items-center justify-center hover:bg-gray-700 text-gray-400 rounded-sm text-xs" onMouseDown={() => {
                   const target = editingCell || lastEditingRef.current;
                   if (!target) { return; }
@@ -747,18 +893,16 @@ const App: React.FC = () => {
                     case 3:
                       cur = dwellTimeData[bankIndex][target.col];
                       break;
-                    case 8:
-                      cur = idleLimitData[bankIndex][target.col];
-                      break;
                     default:
                       cur = 0;
                       break;
                   }
                   let next = cur;
+                  const val = parseFloat(editValue) || 0;
                   if (editMode === 'percentage') {
-                    next = cur + cur * (editValue / 100);
+                    next = cur + cur * (val / 100);
                   } else {
-                    next = cur + editValue;
+                    next = cur + val;
                   }
                   // 根据当前激活 tab 更新对应的数据集（支持 2D 和 1D）
                   const updateCellValue = (row: number, col: number, value: number) => {
@@ -790,6 +934,15 @@ const App: React.FC = () => {
                           return newBanks;
                         });
                         break;
+                      case 3: // dwellTime (1D)
+                        setDwellTimeData(prev => { 
+                          const newBanks = [...prev];
+                          const newBank = newBanks[bankIndex].slice();
+                          newBank[col] = value;
+                          newBanks[bankIndex] = newBank;
+                          return newBanks;
+                        });
+                        break;
                       case 4: // afr
                         setAfrTargetData(prev => { 
                           const newBanks = [...prev];
@@ -807,24 +960,6 @@ const App: React.FC = () => {
                         break;
                       case 7: // mapComp
                         setMapCompData(prev => { const d = prev.map(r => r.slice()); d[row][col] = value; return d; });
-                        break;
-                      case 3: // dwellTime (1D)
-                        setDwellTimeData(prev => { 
-                          const newBanks = [...prev];
-                          const newBank = newBanks[bankIndex].slice();
-                          newBank[col] = value;
-                          newBanks[bankIndex] = newBank;
-                          return newBanks;
-                        });
-                        break;
-                      case 8: // idleLimit (1D)
-                        setIdleLimitData(prev => { 
-                          const newBanks = [...prev];
-                          const newBank = newBanks[bankIndex].slice();
-                          newBank[col] = value;
-                          newBanks[bankIndex] = newBank;
-                          return newBanks;
-                        });
                         break;
                       default:
                         break;
@@ -844,6 +979,7 @@ const App: React.FC = () => {
               <option>{t.mapTable_rawValue}</option>
             </select>
           </div>
+          )}
           <div className="flex gap-2 ml-auto shrink-0 pointer-events-auto">
             <button 
               onClick={() => setActiveTable(1)}
@@ -866,7 +1002,7 @@ const App: React.FC = () => {
               {t.mapTable_table2}
             </button>
             <div className="flex gap-1 ml-2">
-              {![5, 6, 7].includes(activeTabIndex) && [1, 2, 3, 4].map((num) => (
+              {(isMapTable || activeTabIndex === 8) && ![5, 6, 7].includes(activeTabIndex) && [1, 2, 3, 4].map((num) => (
                 <button
                   key={num}
                   onClick={() => setActiveSubTable(num as 1 | 2 | 3 | 4)}
@@ -1068,8 +1204,15 @@ const App: React.FC = () => {
                         <select 
                           className="w-full bg-[#16181c] text-gray-300 text-xs border border-gray-600 rounded pl-2 pr-7 py-1 appearance-none outline-none focus:border-blue-500 cursor-pointer"
                           onClick={(e) => e.stopPropagation()}
+                          value={selectedPort}
+                          onChange={(e) => handleConnectPort(e.target.value)}
                         >
-                           <option value=""></option>
+                           <option value="">{t.menu_selectPort}</option>
+                           {ports.map((p) => (
+                             <option key={p.path} value={p.path}>
+                               {p.path}
+                             </option>
+                           ))}
                         </select>
                         <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
                      </div>
@@ -1106,7 +1249,7 @@ const App: React.FC = () => {
                <UploadCloud size={18} className="text-yellow-300" />
                <span className="text-xs font-medium">{t.data_readCurrent}</span>
             </button>
-            <button className="flex items-center gap-1.5 px-2 py-1 hover:bg-gray-700 rounded text-gray-300 hover:text-white transition-colors">
+            <button className="flex items-center gap-1.5 px-2 py-1 hover:bg-gray-700 rounded text-gray-300 hover:text-white transition-colors" onClick={handleSendCurrentData}>
                <DownloadCloud size={18} className="text-green-400" />
                <span className="text-xs font-medium">{t.data_sendCurrent}</span>
             </button>
@@ -1171,7 +1314,7 @@ const App: React.FC = () => {
                   <ToggleSwitch
                     checked={masterSwitch}
                     onChange={setMasterSwitch}
-                    size="sm"
+                    size="md"
                   />
                   <button 
                     onClick={() => {
@@ -1183,15 +1326,15 @@ const App: React.FC = () => {
                     className="ml-2 px-2 py-1 flex items-center gap-1 rounded hover:bg-gray-700 text-gray-400 hover:text-white transition-colors"
                     title={t.common_reset}
                   >
-                    <RotateCcw size={12} />
-                    <span className="text-[12px] font-bold">{t.common_reset}</span>
+                    <RotateCcw size={15} />
+                    <span className="text-[15px] font-bold">{t.common_reset}</span>
                   </button>
                   <span className={`text-[10px] font-bold ${masterSwitch ? 'text-white' : 'text-gray-600'}`}>
                     {masterSwitch ? t.controllers_enabled : t.controllers_disabled}
                   </span>
                </div>
 
-               <div className="flex-1 grid grid-cols-4 grid-rows-1 gap-2 min-h-0">
+               <div className="flex-1 grid grid-cols-[1.3fr_1fr_1fr_0.7fr] grid-rows-1 gap-2 min-h-0">
                   <ControllerBlock 
                     label={t.controllers_idleControl} 
                     value={idleValue} 
@@ -1201,6 +1344,7 @@ const App: React.FC = () => {
                     decimals={0}
                     min={500}
                     max={2000}
+                    disabled={!masterSwitch}
                   />
                   <ControllerBlock 
                     label={t.controllers_ignitionControl} 
@@ -1211,6 +1355,7 @@ const App: React.FC = () => {
                     decimals={1}
                     min={0}
                     max={60}
+                    disabled={!masterSwitch}
                   />
                   <ControllerBlock 
                     label={t.controllers_fuelControl} 
@@ -1221,6 +1366,7 @@ const App: React.FC = () => {
                     decimals={1}
                     min={-50}
                     max={50}
+                    disabled={!masterSwitch}
                   />
                   <ControllerBlock 
                     label={t.controllers_modeSelect} 
@@ -1230,6 +1376,7 @@ const App: React.FC = () => {
                     decimals={0}
                     min={0}
                     max={5}
+                    disabled={!masterSwitch}
                   />
                </div>
             </div>

@@ -18,7 +18,7 @@ export const ToggleSwitch: React.FC<ToggleSwitchProps> = ({
 }) => {
   const sizeClasses = size === 'sm' 
     ? { container: 'w-8 h-4', toggle: 'w-3 h-3', translate: 'translate-x-4' }
-    : { container: 'w-10 h-5', toggle: 'w-4 h-4', translate: 'translate-x-5' };
+    : { container: 'w-16 h-5', toggle: 'w-4 h-4', translate: 'translate-x-11' };
 
   return (
     <div 

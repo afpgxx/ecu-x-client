@@ -5,6 +5,7 @@ import {
     ECT_COMP_RPM_POINTS, 
     IDLE_LIMIT_RPM_POINTS 
 } from '../constants';
+import { IdleLimitState } from '../types';
 
 // Generate a realistic-looking VE (Volumetric Efficiency) Map
 export const generateMapData = (randomize = false) => {
@@ -102,7 +103,25 @@ export const generateMapCompData = () => {
   return data;
 };
 
-// 生成怠速/限转数据（1D表格）
-export const generateIdleLimitData = () => {
-  return IDLE_LIMIT_RPM_POINTS.map((_, i) => Number((850 + i * 50).toFixed(0)));
-};
+// 生成怠速/限转数据（复杂对象）
+export const generateIdleLimitState = (): IdleLimitState => ({
+  idleRpmCold: 1500,
+  idleReturnCold: 1800,
+  idleRpmHot: 1300,
+  idleReturnHot: 1600,
+  enterExitSensitivity: 5,
+  accelEnrichPercent: 10,
+  maxRpm: 12000,
+  vvtOpenRpm: 6000,
+  autoClutchInjVe: false,
+  autoClutchIgnDegree: false,
+  autoClutchData: Array(8).fill(0),
+  spareData: Array(9).fill(0),
+  limitNoInj: true,
+  limitNoIgn: false,
+  spare1: false,
+  spare2: false,
+  spare3: false,
+  spare4: false
+});
+

@@ -4,6 +4,8 @@ import { MapTable1D } from './MapTable1D';
 import { OtherOptionsView } from './OtherOptionsView';
 import { SettingsView } from './SettingsView';
 import { ParametersView } from './ParametersView';
+import { IdleLimitView } from './IdleLimitView';
+import { IdleLimitState } from '../types';
 
 // Props 类型
 interface TabContentViewProps {
@@ -26,8 +28,8 @@ interface TabContentViewProps {
   setEctCompIgnData: React.Dispatch<React.SetStateAction<number[][]>>;
   mapCompData: number[][];
   setMapCompData: React.Dispatch<React.SetStateAction<number[][]>>;
-  idleLimitData: number[];
-  setIdleLimitData: React.Dispatch<React.SetStateAction<number[]>>;
+  idleLimitData: IdleLimitState;
+  setIdleLimitData: React.Dispatch<React.SetStateAction<IdleLimitState>>;
   otherOptionsParams: any;
   setOtherOptionsParams: React.Dispatch<React.SetStateAction<any>>;
   otherOptionsGrids: any;
@@ -47,8 +49,7 @@ import {
   LOAD_POINTS, 
   DWELL_RPM_POINTS, 
   ECT_COMP_TEMP_POINTS, 
-  ECT_COMP_RPM_POINTS, 
-  IDLE_LIMIT_RPM_POINTS 
+  ECT_COMP_RPM_POINTS
 } from '../constants';
 
 export const TabContentView: React.FC<TabContentViewProps> = ({
@@ -323,21 +324,12 @@ export const TabContentView: React.FC<TabContentViewProps> = ({
   // 怠速/限转
   if (activeTab === t.tabs_idleLimit) {
     return (
-      <MapTable1D 
-        key="idleLimit"
-        headers={IDLE_LIMIT_RPM_POINTS}
+      <IdleLimitView
         data={idleLimitData}
-        activeValue={engineState.rpm} 
-        xLabel="RPM"
-        yLabel="LIMIT"
-        colorMode="dark"
-        onCellChange={handle1DCellChange(setIdleLimitData)}
-        onBulkChange={handle1DBulkChange(setIdleLimitData)}
+        onChange={setIdleLimitData}
         onEditingChange={onEditingChange}
         forceEditing={onForceEditing}
         suppressBlur={suppressBlur}
-        // @ts-ignore
-        recentToolbarUpdatesRef={recentToolbarUpdatesRef}
       />
     );
   }

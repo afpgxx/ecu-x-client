@@ -10,6 +10,7 @@ interface ControllerBlockProps {
   decimals?: number;
   min?: number;
   max?: number;
+  disabled?: boolean;
 }
 
 export const ControllerBlock: React.FC<ControllerBlockProps> = ({ 
@@ -20,7 +21,8 @@ export const ControllerBlock: React.FC<ControllerBlockProps> = ({
   step = 1, 
   decimals = 0,
   min,
-  max
+  max,
+  disabled = false
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [inputValue, setInputValue] = useState(value.toFixed(decimals));
@@ -31,6 +33,7 @@ export const ControllerBlock: React.FC<ControllerBlockProps> = ({
   }, [value, decimals]);
 
   const handleIncrement = () => {
+    if (disabled) return;
     const newVal = value + step;
     if (max === undefined || newVal <= max) {
       onChange(Number(newVal.toFixed(decimals)));
@@ -38,6 +41,7 @@ export const ControllerBlock: React.FC<ControllerBlockProps> = ({
   };
 
   const handleDecrement = () => {
+    if (disabled) return;
     const newVal = value - step;
     if (min === undefined || newVal >= min) {
       onChange(Number(newVal.toFixed(decimals)));
@@ -45,6 +49,7 @@ export const ControllerBlock: React.FC<ControllerBlockProps> = ({
   };
 
   const handleWheel = (e: React.WheelEvent) => {
+    if (disabled) return;
     e.preventDefault();
     if (e.deltaY < 0) {
       handleIncrement();
@@ -81,13 +86,18 @@ export const ControllerBlock: React.FC<ControllerBlockProps> = ({
 
   return (
     <div 
-      className="flex flex-col items-center h-full py-2 select-none"
+      className={`flex flex-col items-center h-full py-2 select-none ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
       onWheel={handleWheel}
     >
       {/* Top Button */}
       <button 
         onClick={handleIncrement}
-        className="w-6 h-6 rounded-full bg-gradient-to-b from-[#6b7280] to-[#374151] hover:from-[#7f8896] hover:to-[#4b5563] flex items-center justify-center text-black shadow-lg active:scale-95 transition-transform border border-gray-600 mb-2"
+        disabled={disabled}
+        className={`w-6 h-6 rounded-full flex items-center justify-center text-black shadow-lg border border-gray-600 mb-2 transition-transform ${
+          disabled 
+            ? 'bg-gray-600 cursor-not-allowed opacity-50' 
+            : 'bg-gradient-to-b from-[#6b7280] to-[#374151] hover:from-[#7f8896] hover:to-[#4b5563] active:scale-95'
+        }`}
       >
         <Plus size={12} strokeWidth={3} />
       </button>
@@ -95,7 +105,7 @@ export const ControllerBlock: React.FC<ControllerBlockProps> = ({
       {/* Digital Screen */}
       <div className="flex-1 w-full bg-[#b8bcbf] rounded border-1 border-[#1f2937] shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)] flex items-center justify-center relative overflow-hidden mx-1 min-h-[72px]">
         <div className="flex items-baseline z-0 w-full justify-center px-1">
-          {isEditing ? (
+          {isEditing && !disabled ? (
             <input
               ref={inputRef}
               type="text"
@@ -104,26 +114,31 @@ export const ControllerBlock: React.FC<ControllerBlockProps> = ({
               onBlur={handleInputBlur}
               onKeyDown={handleInputKeyDown}
               className="font-digital text-black tracking-normal bg-transparent border-none outline-none text-center w-full"
-              style={{ fontSize: 'clamp(3.5rem, 3vw, 2.5rem)' }}
+              style={{ fontSize: 'clamp(3.5rem, 2vw, 2.5rem)' }}
               autoFocus
             />
           ) : (
             <span 
-                className="font-digital text-black tracking-normal cursor-pointer w-full text-center"
+                className={`font-digital text-black tracking-normal w-full text-center ${!disabled ? 'cursor-pointer' : ''}`}
                 style={{ fontSize: 'clamp(1.5rem, 10vw, 2.5rem)' }}
-                onClick={() => setIsEditing(true)}
+                onClick={() => !disabled && setIsEditing(true)}
             >
-              {unit === '%' ? (value >= 0 ? '+' : '') : ''}{value.toFixed(decimals)}
+              {disabled ? '-' : `${unit === '%' ? (value >= 0 ? '+' : '') : ''}${value.toFixed(decimals)}`}
             </span>
           )}
-          {unit && !isEditing && <span className="text-gray-800 text-[10px] font-bold absolute top-0.5 right-1 font-sans">{unit}</span>}
+          {unit && !isEditing && !disabled && <span className="text-gray-800 text-[10px] font-bold absolute top-0.5 right-1 font-sans">{unit}</span>}
         </div>
       </div>
 
       {/* Bottom Button */}
       <button 
         onClick={handleDecrement}
-        className="w-6 h-6 rounded-full bg-gradient-to-b from-[#6b7280] to-[#374151] hover:from-[#7f8896] hover:to-[#4b5563] flex items-center justify-center text-black shadow-lg active:scale-95 transition-transform border border-gray-600 mt-2"
+        disabled={disabled}
+        className={`w-6 h-6 rounded-full flex items-center justify-center text-black shadow-lg border border-gray-600 mt-2 transition-transform ${
+          disabled 
+            ? 'bg-gray-600 cursor-not-allowed opacity-50' 
+            : 'bg-gradient-to-b from-[#6b7280] to-[#374151] hover:from-[#7f8896] hover:to-[#4b5563] active:scale-95'
+        }`}
       >
         <Minus size={12} strokeWidth={3} />
       </button>
