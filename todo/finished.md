@@ -29,3 +29,8 @@
 - [x] **LED Font Update**: Updated the digital font to be bold. (2025-11-26)
 - [x] **Tab Labels**: Added "Table 1" and "Table 2" labels to "Other Options", "Parameters", and "Settings" tabs. (2025-11-26)
 - [x] **Idle & Limit View Redesign**: Completely refactored the "Idle & Limit" tab to match the reference image, including Top Grid, Auto Clutch table, Spare table, and Config Bits. Implemented complex state management and i18n support. (2025-11-26)
+- [x] **Table Editing Shortcuts**: Implemented A/Z, S/X, D/C shortcuts for incrementing/decrementing cell values in MapTable and MapTable1D. (2025-11-26)
+- [x] **Decimal Formatting**: Updated table display to show up to 2 decimal places dynamically. (2025-11-26)
+- [x] **Menu Logic**: Updated conditional rendering for No.1-No.4 submenus. (2025-11-26)
+- [x] **工具栏快捷键**：实现了读取当前(Ctrl+E)、发送当前(Enter)、读取全部(Ctrl+R)、发送全部(Ctrl+T)的快捷键功能，并绑定了工具栏按钮事件。解决了 Enter 键与表格编辑的冲突。(2025-11-26)
+- [x] **退出确认**：在关闭窗口时增加了确认提示框，防止误操作。已更新所有 9 种语言的翻译文件。(2025-11-26)

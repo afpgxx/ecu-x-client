@@ -139,7 +139,7 @@ const App: React.FC = () => {
   const [showLanguageMenu, setShowLanguageMenu] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
-  const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
   const [isMaximized, setIsMaximized] = useState(false);
   
   // Serial Port State
@@ -156,7 +156,7 @@ const App: React.FC = () => {
 
   const simInterval = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const showNotification = (message: string, type: 'success' | 'error' = 'success') => {
+  const showNotification = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
     setNotification({ message, type });
     setTimeout(() => {
       setNotification(null);
@@ -347,6 +347,12 @@ const App: React.FC = () => {
 
   // Helper to handle Electron window controls
   const handleWindowControl = (action: string) => {
+    if (action === 'window-close') {
+      if (!window.confirm(t.common_confirmExit)) {
+        return;
+      }
+    }
+
     if ((window as any).require) {
       try {
         const { ipcRenderer } = (window as any).require('electron');
@@ -500,6 +506,79 @@ const App: React.FC = () => {
       showNotification('发送失败，请检查连接', 'error');
     }
   };
+
+  // Read Current Data
+  const handleReadCurrentData = async () => {
+    try {
+      const { ipcRenderer } = (window as any).require('electron');
+      const command = { 
+        type: 'READ_CURRENT', 
+        tabIndex: activeTabIndex, 
+        subTable: activeSubTable 
+      };
+      await ipcRenderer.invoke('serial-write', JSON.stringify(command));
+      showNotification('正在读取当前数据...', 'info');
+    } catch (err) {
+      showNotification('读取失败，请检查连接', 'error');
+    }
+  };
+
+  // Read All Data
+  const handleReadAllData = async () => {
+    try {
+      const { ipcRenderer } = (window as any).require('electron');
+      await ipcRenderer.invoke('serial-write', JSON.stringify({ type: 'READ_ALL' }));
+      showNotification('正在读取所有数据...', 'info');
+    } catch (err) {
+      showNotification('读取失败，请检查连接', 'error');
+    }
+  };
+
+  // Send All Data
+  const handleSendAllData = async () => {
+    try {
+      const { ipcRenderer } = (window as any).require('electron');
+      await ipcRenderer.invoke('serial-write', JSON.stringify({ type: 'SEND_ALL_DATA' }));
+      showNotification('正在发送所有数据...', 'info');
+    } catch (err) {
+      showNotification('发送失败，请检查连接', 'error');
+    }
+  };
+
+  // Keyboard Shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      const isInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA';
+
+      // Enter - Send Current (Only if not in input and not handled by child components like MapTable)
+      if (e.key === 'Enter' && !isInput && !e.defaultPrevented) {
+        e.preventDefault();
+        handleSendCurrentData();
+      }
+
+      // Ctrl + E - Read Current
+      if (e.ctrlKey && (e.key === 'e' || e.key === 'E')) {
+        e.preventDefault();
+        handleReadCurrentData();
+      }
+
+      // Ctrl + R - Read All
+      if (e.ctrlKey && (e.key === 'r' || e.key === 'R')) {
+        e.preventDefault();
+        handleReadAllData();
+      }
+
+      // Ctrl + T - Send All
+      if (e.ctrlKey && (e.key === 't' || e.key === 'T')) {
+        e.preventDefault();
+        handleSendAllData();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }); // Re-bind on every render to capture latest state/functions
 
   // Sim loop with Jitter
   useEffect(() => {
@@ -1121,37 +1200,70 @@ const App: React.FC = () => {
                         <ChevronRight size={12} />
                       </button>
                       <div className="absolute left-full top-0 ml-0.5 bg-[#2d323a] border border-gray-600 rounded shadow-lg min-w-[160px] py-1 hidden group-hover:block">
-                        {[1, 2, 3, 4].map(num => (
+                        {/* 只有前5个tab (0-4) 有多张子表 (No.1-No.4) */}
+                        {activeTabIndex <= 4 ? (
+                          [1, 2, 3, 4].map(num => (
+                            <button 
+                              key={num}
+                              className="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-700 transition-colors text-gray-300 hover:text-white"
+                              onClick={() => {
+                                setActiveMenu(null);
+                              }}
+                            >
+                              {activeTab} No.{num}
+                            </button>
+                          ))
+                        ) : (
                           <button 
-                            key={num}
                             className="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-700 transition-colors text-gray-300 hover:text-white"
                             onClick={() => {
                               setActiveMenu(null);
                             }}
                           >
-                            {activeTab} No.{num}
+                            {activeTab}
                           </button>
-                        ))}
+                        )}
                       </div>
                     </div>
                   </>
                 )}
                 {item.key === 'data' && (
                   <>
-                    <button className="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-700 transition-colors text-gray-300 hover:text-white" onClick={() => setActiveMenu(null)}>{t.data_readCurrent}</button>
-                    <button className="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-700 transition-colors text-gray-300 hover:text-white" onClick={() => setActiveMenu(null)}>{t.data_sendCurrent}</button>
-                    <button className="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-700 transition-colors text-gray-300 hover:text-white" onClick={() => setActiveMenu(null)}>{t.data_readAll}</button>
-                    <button className="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-700 transition-colors text-gray-300 hover:text-white" onClick={() => setActiveMenu(null)}>{t.data_sendAll}</button>
+                    <button className="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-700 transition-colors text-gray-300 hover:text-white" onClick={() => { handleReadCurrentData(); setActiveMenu(null); }}>{t.data_readCurrent}</button>
+                    <button className="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-700 transition-colors text-gray-300 hover:text-white" onClick={() => { handleSendCurrentData(); setActiveMenu(null); }}>{t.data_sendCurrent}</button>
+                    <button className="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-700 transition-colors text-gray-300 hover:text-white" onClick={() => { handleReadAllData(); setActiveMenu(null); }}>{t.data_readAll}</button>
+                    <button className="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-700 transition-colors text-gray-300 hover:text-white" onClick={() => { handleSendAllData(); setActiveMenu(null); }}>{t.data_sendAll}</button>
                     <button className="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-700 transition-colors text-gray-300 hover:text-white" onClick={() => setActiveMenu(null)}>{t.data_restoreFactory}</button>
                     <div className="h-[1px] bg-gray-600 my-1 mx-2"></div>
-                    <button className="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-700 transition-colors text-gray-300 hover:text-white" onClick={() => setActiveMenu(null)}>{t.data_add1}</button>
-                    <button className="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-700 transition-colors text-gray-300 hover:text-white" onClick={() => setActiveMenu(null)}>{t.data_sub1}</button>
-                    <button className="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-700 transition-colors text-gray-300 hover:text-white" onClick={() => setActiveMenu(null)}>{t.data_add01}</button>
-                    <button className="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-700 transition-colors text-gray-300 hover:text-white" onClick={() => setActiveMenu(null)}>{t.data_sub01}</button>
-                    <button className="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-700 transition-colors text-gray-300 hover:text-white" onClick={() => setActiveMenu(null)}>{t.data_add001}</button>
-                    <button className="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-700 transition-colors text-gray-300 hover:text-white" onClick={() => setActiveMenu(null)}>{t.data_sub001}</button>
+                    <button className="w-full flex justify-between items-center px-3 py-1.5 text-xs hover:bg-gray-700 transition-colors text-gray-300 hover:text-white" onClick={() => setActiveMenu(null)}>
+                      <span>{t.data_add1}</span>
+                      <span className="text-gray-500">A</span>
+                    </button>
+                    <button className="w-full flex justify-between items-center px-3 py-1.5 text-xs hover:bg-gray-700 transition-colors text-gray-300 hover:text-white" onClick={() => setActiveMenu(null)}>
+                      <span>{t.data_sub1}</span>
+                      <span className="text-gray-500">Z</span>
+                    </button>
+                    <button className="w-full flex justify-between items-center px-3 py-1.5 text-xs hover:bg-gray-700 transition-colors text-gray-300 hover:text-white" onClick={() => setActiveMenu(null)}>
+                      <span>{t.data_add01}</span>
+                      <span className="text-gray-500">S</span>
+                    </button>
+                    <button className="w-full flex justify-between items-center px-3 py-1.5 text-xs hover:bg-gray-700 transition-colors text-gray-300 hover:text-white" onClick={() => setActiveMenu(null)}>
+                      <span>{t.data_sub01}</span>
+                      <span className="text-gray-500">X</span>
+                    </button>
+                    <button className="w-full flex justify-between items-center px-3 py-1.5 text-xs hover:bg-gray-700 transition-colors text-gray-300 hover:text-white" onClick={() => setActiveMenu(null)}>
+                      <span>{t.data_add001}</span>
+                      <span className="text-gray-500">D</span>
+                    </button>
+                    <button className="w-full flex justify-between items-center px-3 py-1.5 text-xs hover:bg-gray-700 transition-colors text-gray-300 hover:text-white" onClick={() => setActiveMenu(null)}>
+                      <span>{t.data_sub001}</span>
+                      <span className="text-gray-500">C</span>
+                    </button>
                     <div className="h-[1px] bg-gray-600 my-1 mx-2"></div>
-                    <button className="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-700 transition-colors text-gray-300 hover:text-white" onClick={() => setActiveMenu(null)}>{t.data_autoSmooth}</button>
+                    <button className="w-full flex justify-between items-center px-3 py-1.5 text-xs hover:bg-gray-700 transition-colors text-gray-300 hover:text-white" onClick={() => setActiveMenu(null)}>
+                      <span>{t.data_autoSmooth}</span>
+                      <span className="text-gray-500">I</span>
+                    </button>
                   </>
                 )}
                 {item.key === 'copyDataTo' && (
@@ -1245,7 +1357,7 @@ const App: React.FC = () => {
           />
          </div>
          <div className="flex items-center gap-1 pr-3 border-r border-gray-700">
-            <button className="flex items-center gap-1.5 px-2 py-1 hover:bg-gray-700 rounded text-gray-300 hover:text-white transition-colors">
+            <button className="flex items-center gap-1.5 px-2 py-1 hover:bg-gray-700 rounded text-gray-300 hover:text-white transition-colors" onClick={handleReadCurrentData}>
                <UploadCloud size={18} className="text-yellow-300" />
                <span className="text-xs font-medium">{t.data_readCurrent}</span>
             </button>
@@ -1253,11 +1365,11 @@ const App: React.FC = () => {
                <DownloadCloud size={18} className="text-green-400" />
                <span className="text-xs font-medium">{t.data_sendCurrent}</span>
             </button>
-            <button className="flex items-center gap-1.5 px-2 py-1 hover:bg-gray-700 rounded text-gray-300 hover:text-white transition-colors">
+            <button className="flex items-center gap-1.5 px-2 py-1 hover:bg-gray-700 rounded text-gray-300 hover:text-white transition-colors" onClick={handleReadAllData}>
                <UploadCloud size={18} className="text-pink-300" />
                <span className="text-xs font-medium">{t.data_readAll}</span>
             </button>
-            <button className="flex items-center gap-1.5 px-2 py-1 hover:bg-gray-700 rounded text-gray-300 hover:text-white transition-colors">
+            <button className="flex items-center gap-1.5 px-2 py-1 hover:bg-gray-700 rounded text-gray-300 hover:text-white transition-colors" onClick={handleSendAllData}>
                <DownloadCloud size={18} className="text-red-400" />
                <span className="text-xs font-medium">{t.data_sendAll}</span>
             </button>
@@ -1470,9 +1582,9 @@ const App: React.FC = () => {
       {/* Notification Toast */}
       {notification && (
         <div className={`fixed top-10 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded shadow-lg z-[100] flex items-center gap-3 border animate-in fade-in slide-in-from-top-4 duration-200
-          ${notification.type === 'success' ? 'bg-emerald-900/90 border-emerald-500 text-emerald-100' : 'bg-red-900/90 border-red-500 text-red-100'}`}
+          ${notification.type === 'success' ? 'bg-emerald-900/90 border-emerald-500 text-emerald-100' : notification.type === 'info' ? 'bg-blue-900/90 border-blue-500 text-blue-100' : 'bg-red-900/90 border-red-500 text-red-100'}`}
         >
-          <div className={`w-2 h-2 rounded-full ${notification.type === 'success' ? 'bg-emerald-400' : 'bg-red-400'}`}></div>
+          <div className={`w-2 h-2 rounded-full ${notification.type === 'success' ? 'bg-emerald-400' : notification.type === 'info' ? 'bg-blue-400' : 'bg-red-400'}`}></div>
           <span className="text-sm font-medium whitespace-pre-line">{notification.message}</span>
         </div>
       )}

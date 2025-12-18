@@ -79,14 +79,14 @@ export const MapTable1D: React.FC<MapTable1DProps> = ({
   useEffect(() => {
     if (forceEditing && (forceEditing.col !== undefined)) {
       setEditingIndex(forceEditing.col);
-      setInputValue(String(data[forceEditing.col]));
+      setInputValue(Number(data[forceEditing.col].toFixed(2)).toString());
     }
   }, [forceEditing, data]);
 
   // 当数据更新时，如果当前有激活编辑单元格，保持输入框中显示的值与数据同步（除非用户正在输入）
   useEffect(() => {
     if (editingIndex !== null) {
-      setInputValue(String(data[editingIndex]));
+      setInputValue(Number(data[editingIndex].toFixed(2)).toString());
     }
   }, [data]);
 
@@ -141,7 +141,7 @@ export const MapTable1D: React.FC<MapTable1DProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [selection, editingIndex, data, colorMode, min, max, onBulkChange, headers.length]);
 
-  const handleCommit = (index: number, val: number) => {
+  const saveChange = (index: number, val: number) => {
       let finalVal = val;
       if (isNaN(finalVal)) finalVal = data[index];
       if (min !== undefined) finalVal = Math.max(min, finalVal);
@@ -161,6 +161,10 @@ export const MapTable1D: React.FC<MapTable1DProps> = ({
             onCellChange(0, index, finalVal);
           }
       }
+  };
+
+  const handleCommit = (index: number, val: number) => {
+      saveChange(index, val);
       if (!suppressBlur) setEditingIndex(null);
   };
 
@@ -202,7 +206,7 @@ export const MapTable1D: React.FC<MapTable1DProps> = ({
               onClick={() => {
                 setSelection('all');
                 setEditingIndex(0);
-                setInputValue(data[0].toString());
+                setInputValue(Number(data[0].toFixed(2)).toString());
               }}
             >
               {yLabel}
@@ -231,7 +235,7 @@ export const MapTable1D: React.FC<MapTable1DProps> = ({
                     onClick={() => {
                       setSelection(null);
                       setEditingIndex(i);
-                      setInputValue(cellValue.toString());
+                      setInputValue(Number(cellValue.toFixed(2)).toString());
                       setOriginalValue(cellValue);
                     }}
                   >
@@ -248,16 +252,72 @@ export const MapTable1D: React.FC<MapTable1DProps> = ({
                         onKeyDown={e => {
                           if (e.key === 'Enter') {
                             handleCommit(i, parseFloat(inputValue));
+                          } else if (e.key === 'Tab') {
+                            e.preventDefault();
+                            saveChange(i, parseFloat(inputValue));
+                            const nextIndex = i + 1;
+                            if (nextIndex < headers.length) {
+                                setEditingIndex(nextIndex);
+                                setInputValue(Number(data[nextIndex].toFixed(2)).toString());
+                                setOriginalValue(data[nextIndex]);
+                            } else {
+                                setEditingIndex(null);
+                            }
                           } else if (e.key === 'Escape') {
                             // 按ESC时不保存，直接退出编辑
                             setEditingIndex(null);
+                          } else if (['ArrowLeft', 'ArrowRight'].includes(e.key)) {
+                            // Directional Navigation
+                            e.preventDefault();
+                            saveChange(i, parseFloat(inputValue));
+                            
+                            let nextIndex = i;
+                            if (e.key === 'ArrowLeft') nextIndex = Math.max(0, i - 1);
+                            if (e.key === 'ArrowRight') nextIndex = Math.min(headers.length - 1, i + 1);
+
+                            if (nextIndex !== i) {
+                              setEditingIndex(nextIndex);
+                              setInputValue(Number(data[nextIndex].toFixed(2)).toString());
+                              setOriginalValue(data[nextIndex]);
+                            }
+                          }
+
+                          // Shortcuts
+                          if (!e.ctrlKey && !e.metaKey && !e.altKey) {
+                            const key = e.key.toUpperCase();
+                            let delta = 0;
+                            if (key === 'A') delta = 1;
+                            else if (key === 'Z') delta = -1;
+                            else if (key === 'S') delta = 0.1;
+                            else if (key === 'X') delta = -0.1;
+                            else if (key === 'D') delta = 0.01;
+                            else if (key === 'C') delta = -0.01;
+
+                            if (delta !== 0) {
+                               e.preventDefault();
+                               const currentVal = parseFloat(inputValue);
+                               if (!isNaN(currentVal)) {
+                                   let newVal = currentVal + delta;
+                                   if (min !== undefined) newVal = Math.max(min, newVal);
+                                   if (max !== undefined) newVal = Math.min(max, newVal);
+                                   newVal = Number(newVal.toFixed(2));
+                                   setInputValue(newVal.toString());
+                                   
+                                   if (selection === 'all' && onBulkChange) {
+                                      const changes = headers.map((_, idx) => ({ col: idx, value: newVal }));
+                                      onBulkChange(changes);
+                                   } else {
+                                      onCellChange(0, i, newVal);
+                                   }
+                               }
+                            }
                           }
                         }}
                         className="w-full h-full px-0.5 py-0.5 rounded-md border-2 border-blue-500 focus:border-orange-500 text-right text-base font-mono text-blue-200 shadow-inner outline-none transition-all duration-150 select-all ring-0 focus:bg-[#23272e] focus:text-white-300"
                         style={{ fontSize : 17, backgroundColor: bg, textAlign: 'center', fontVariantNumeric: 'tabular-nums' }}
                       />
                     ) : (
-                      cellValue.toFixed(2)
+                      Number(cellValue.toFixed(2)).toString()
                     )}
                   </div>
                 );

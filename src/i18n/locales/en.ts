@@ -14,6 +14,7 @@ export default {
   common_search: 'Search',
   common_reset: 'Reset',
   common_settings: 'Settings',
+  common_confirmExit: 'Are you sure you want to close the application?',
   
   // About
   about_description: 'Professional ECU Injection Management System for engine tuning and real-time monitoring. Supports multiple tuning maps, sensor calibration, and data visualization.',

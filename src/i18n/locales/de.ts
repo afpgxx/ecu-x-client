@@ -14,6 +14,7 @@ export default {
   common_search: 'Suchen',
   common_reset: 'Zurücksetzen',
   common_settings: 'Einstellungen',
+  common_confirmExit: 'Möchten Sie die Anwendung wirklich schließen?',
   
   // Über
   about_description: 'Professionelles ECU-Einspritzverwaltungssystem für Motor-Tuning und Echtzeit-Überwachung. Unterstützt mehrere Tuning-Karten, Sensorkalibrierung und Datenvisualisierung.',

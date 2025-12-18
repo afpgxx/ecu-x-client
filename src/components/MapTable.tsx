@@ -132,25 +132,8 @@ export const MapTable: React.FC<MapTableProps> = ({
     }
   };
 
-  const handleInputBlur = () => {
-    // 如果外部要求 suppress blur 写入，则直接退出编辑，不写回数据
-    // 该场景用于工具栏修改与 blur 的互斥情况
-    // @ts-ignore
-    if (typeof suppressBlur !== 'undefined' && suppressBlur) {
-      // 如果 suppressBlur 生效，跳过 blur 时的写回和退出编辑
-      return;
-    }
-      // 如果最近 toolbar 已对该单元格进行了写入（避免 race），则跳过 blur 的写回
-      try {
-        if (editingCell && recentToolbarUpdatesRef && recentToolbarUpdatesRef.current) {
-          const key = `${editingCell.row},${editingCell.col}`;
-          const t = recentToolbarUpdatesRef.current.get(key);
-          if (t && (Date.now() - t) < 500) {
-              // 最近由 toolbar 更新，忽略 blur 写回并保持编辑（让 forceEditing 恢复）
-              return;
-            }
-        }
-      } catch (e) { /* ignore */ }
+  const saveCurrentEdit = () => {
+    if (!editingCell) return;
     const parsed = parseFloat(inputValue);
     let newVal = parsed;
     if (!isNaN(parsed)) {
@@ -158,7 +141,7 @@ export const MapTable: React.FC<MapTableProps> = ({
       if (max !== undefined) newVal = Math.min(max, newVal);
       
       // Check for bulk update
-      if (selection && onBulkChange && editingCell) {
+      if (selection && onBulkChange) {
         const changes: {row: number, col: number, value: number}[] = [];
         
         if (selection.type === 'row' && selection.index === editingCell.row) {
@@ -199,24 +182,122 @@ export const MapTable: React.FC<MapTableProps> = ({
         }
       } else {
         // Single cell update
-        onCellChange(editingCell!.row, editingCell!.col, newVal);
+        onCellChange(editingCell.row, editingCell.col, newVal);
       }
-      
-      setInputValue(newVal.toFixed(decimals));
     } else {
-      setInputValue(value.toFixed(decimals));
-      onCellChange(editingCell!.row, editingCell!.col, value);
+      // Invalid input, revert
+      onCellChange(editingCell.row, editingCell.col, (data && data[editingCell.row] && data[editingCell.row][editingCell.col]) || 0);
     }
+  };
+
+  const handleInputBlur = () => {
+    // 如果外部要求 suppress blur 写入，则直接退出编辑，不写回数据
+    // 该场景用于工具栏修改与 blur 的互斥情况
+    // @ts-ignore
+    if (typeof suppressBlur !== 'undefined' && suppressBlur) {
+      // 如果 suppressBlur 生效，跳过 blur 时的写回和退出编辑
+      return;
+    }
+      // 如果最近 toolbar 已对该单元格进行了写入（避免 race），则跳过 blur 的写回
+      try {
+        if (editingCell && recentToolbarUpdatesRef && recentToolbarUpdatesRef.current) {
+          const key = `${editingCell.row},${editingCell.col}`;
+          const t = recentToolbarUpdatesRef.current.get(key);
+          if (t && (Date.now() - t) < 500) {
+              // 最近由 toolbar 更新，忽略 blur 写回并保持编辑（让 forceEditing 恢复）
+              return;
+            }
+        }
+      } catch (e) { /* ignore */ }
+    
+    saveCurrentEdit();
     setEditingCell(null);
   };
 
   const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
-      handleInputBlur();
+      e.preventDefault();
+      saveCurrentEdit();
+      // Move Down
+      if (editingCell) {
+          const nextRow = editingCell.row + 1;
+          if (nextRow < loadPoints.length) {
+              setEditingCell({ row: nextRow, col: editingCell.col });
+              setInputValue(Number(data[nextRow][editingCell.col].toFixed(2)).toString());
+          } else {
+              setEditingCell(null);
+          }
+      }
+    } else if (e.key === 'Tab') {
+      e.preventDefault();
+      saveCurrentEdit();
+      // Move Right
+      if (editingCell) {
+          const nextCol = editingCell.col + 1;
+          if (nextCol < rpmPoints.length) {
+              setEditingCell({ row: editingCell.row, col: nextCol });
+              setInputValue(Number(data[editingCell.row][nextCol].toFixed(2)).toString());
+          } else {
+              // Wrap to next row
+              const nextRow = editingCell.row + 1;
+              if (nextRow < loadPoints.length) {
+                  setEditingCell({ row: nextRow, col: 0 });
+                  setInputValue(Number(data[nextRow][0].toFixed(2)).toString());
+              } else {
+                  setEditingCell(null);
+              }
+          }
+      }
     } else if (e.key === 'Escape') {
       // @ts-ignore
       if (typeof suppressBlur !== 'undefined' && suppressBlur) return;
       setEditingCell(null);
+    } else if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+      // Directional Navigation
+      if (editingCell) {
+        e.preventDefault();
+        saveCurrentEdit();
+        
+        let nextRow = editingCell.row;
+        let nextCol = editingCell.col;
+
+        if (e.key === 'ArrowUp') nextRow = Math.max(0, nextRow - 1);
+        if (e.key === 'ArrowDown') nextRow = Math.min(loadPoints.length - 1, nextRow + 1);
+        if (e.key === 'ArrowLeft') nextCol = Math.max(0, nextCol - 1);
+        if (e.key === 'ArrowRight') nextCol = Math.min(rpmPoints.length - 1, nextCol + 1);
+
+        if (nextRow !== editingCell.row || nextCol !== editingCell.col) {
+          setEditingCell({ row: nextRow, col: nextCol });
+          setInputValue(Number(data[nextRow][nextCol].toFixed(2)).toString());
+        }
+      }
+    }
+
+    // Shortcuts for single cell editing
+    if (!e.ctrlKey && !e.metaKey && !e.altKey) {
+        const key = e.key.toUpperCase();
+        let delta = 0;
+        if (key === 'A') delta = 1;
+        else if (key === 'Z') delta = -1;
+        else if (key === 'S') delta = 0.1;
+        else if (key === 'X') delta = -0.1;
+        else if (key === 'D') delta = 0.01;
+        else if (key === 'C') delta = -0.01;
+
+        if (delta !== 0) {
+           e.preventDefault();
+           const currentVal = parseFloat(inputValue);
+           if (!isNaN(currentVal)) {
+               let newVal = currentVal + delta;
+               if (min !== undefined) newVal = Math.max(min, newVal);
+               if (max !== undefined) newVal = Math.min(max, newVal);
+               newVal = Number(newVal.toFixed(Math.max(decimals, 2)));
+               setInputValue(Number(newVal.toFixed(2)).toString());
+               if (editingCell) {
+                   onCellChange(editingCell.row, editingCell.col, newVal);
+               }
+           }
+        }
     }
   };
   // Find closest indices for highlighting
@@ -264,7 +345,7 @@ export const MapTable: React.FC<MapTableProps> = ({
       
       if (r >= 0 && c >= 0 && r < loadPoints.length && c < rpmPoints.length) {
         setEditingCell({ row: r, col: c });
-        setInputValue(val.toFixed(decimals));
+        setInputValue(Number(val.toFixed(2)).toString());
       }
     }
   }, [forceEditing, data, decimals, loadPoints.length, rpmPoints.length]);
@@ -275,7 +356,7 @@ export const MapTable: React.FC<MapTableProps> = ({
     const r = editingCell.row;
     const c = editingCell.col;
     const val = (data && data[r] && typeof data[r][c] === 'number') ? data[r][c] : 0;
-    const formatted = val.toFixed(decimals);
+    const formatted = Number(val.toFixed(2)).toString();
     // 如果用户正在输入，则不要覆盖输入（避免打字时被重置）
     if (!isTypingRef.current && inputValue !== formatted) {
       setInputValue(formatted);
@@ -385,6 +466,57 @@ export const MapTable: React.FC<MapTableProps> = ({
         }
       }
 
+      // Shortcuts: A/Z (+/- 1), S/X (+/- 0.1), D/C (+/- 0.01)
+      if (!editingCell && selection && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        const key = e.key.toUpperCase();
+        let delta = 0;
+        if (key === 'A') delta = 1;
+        else if (key === 'Z') delta = -1;
+        else if (key === 'S') delta = 0.1;
+        else if (key === 'X') delta = -0.1;
+        else if (key === 'D') delta = 0.01;
+        else if (key === 'C') delta = -0.01;
+
+        if (delta !== 0) {
+           e.preventDefault();
+           const changes: {row: number, col: number, value: number}[] = [];
+           
+           const applyDelta = (r: number, c: number) => {
+              if (r >= 0 && r < data.length && c >= 0 && c < data[0].length) {
+                 let val = data[r][c] + delta;
+                 if (min !== undefined) val = Math.max(min, val);
+                 if (max !== undefined) val = Math.min(max, val);
+                 val = Number(val.toFixed(Math.max(decimals, 2))); 
+                 changes.push({ row: r, col: c, value: val });
+              }
+           };
+
+           if (selection.type === 'row') {
+              for (let c = 0; c < data[0].length; c++) applyDelta(selection.index, c);
+           } else if (selection.type === 'col') {
+              for (let r = 0; r < data.length; r++) applyDelta(r, selection.index);
+           } else if (selection.type === 'range') {
+              const minR = Math.min(selection.startRow, selection.endRow);
+              const maxR = Math.max(selection.startRow, selection.endRow);
+              const minC = Math.min(selection.startCol, selection.endCol);
+              const maxC = Math.max(selection.startCol, selection.endCol);
+              for (let r = minR; r <= maxR; r++) {
+                 for (let c = minC; c <= maxC; c++) {
+                    applyDelta(r, c);
+                 }
+              }
+           }
+
+           if (changes.length > 0) {
+              if (onBulkChange) {
+                  onBulkChange(changes);
+              } else if (changes.length === 1 && onCellChange) {
+                  onCellChange(changes[0].row, changes[0].col, changes[0].value);
+              }
+           }
+        }
+      }
+
       // Enter to Edit
       if (e.key === 'Enter' && !editingCell) {
           e.preventDefault();
@@ -398,7 +530,7 @@ export const MapTable: React.FC<MapTableProps> = ({
           
           if (r !== undefined && c !== undefined) {
              setEditingCell({ row: r, col: c });
-             setInputValue(data[r][c].toFixed(decimals));
+             setInputValue(Number(data[r][c].toFixed(2)).toString());
           }
       }
 
@@ -547,10 +679,10 @@ export const MapTable: React.FC<MapTableProps> = ({
                                 if (justFinishedDrag.current) return;
                                 setSelection(null);
                                 setEditingCell({ row: rIdx, col: cIdx });
-                                setInputValue(cellValue.toFixed(decimals));
+                                setInputValue(Number(cellValue.toFixed(2)).toString());
                               }}
                             >
-                              {cellValue.toFixed(decimals)}
+                              {Number(cellValue.toFixed(2)).toString()}
                             </span>
                           )}
                         </div>

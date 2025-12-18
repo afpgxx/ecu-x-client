@@ -14,6 +14,7 @@ export default {
   common_search: 'Rechercher',
   common_reset: 'Réinitialiser',
   common_settings: 'Paramètres',
+  common_confirmExit: 'Êtes-vous sûr de vouloir fermer l\'application ?',
   
   // À propos
   about_description: 'Système professionnel de gestion d\'injection ECU pour le réglage moteur et la surveillance en temps réel. Prend en charge plusieurs cartes de réglage, l\'étalonnage des capteurs et la visualisation des données.',

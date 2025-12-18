@@ -14,6 +14,7 @@ export default {
   common_search: '検索',
   common_reset: 'リセット',
   common_settings: '設定',
+  common_confirmExit: 'アプリケーションを終了してもよろしいですか？',
   
   // について
   about_description: 'エンジンチューニングとリアルタイム監視のためのプロフェッショナルECU噴射管理システム。複数のチューニングマップ、センサー校正、データ可視化をサポート。',
