@@ -11,11 +11,9 @@ interface GaugeProps {
 }
 
 export const Gauge: React.FC<GaugeProps> = ({
-  label,
   value,
   min,
   max,
-  unit,
   variant = 'rpm'
 }) => {
   // Gauge configuration based on variant

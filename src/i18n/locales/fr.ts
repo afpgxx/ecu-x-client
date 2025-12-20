@@ -97,6 +97,7 @@ export default {
   controllers_title: 'Contrôle en temps réel',
   controllers_enabled: 'Activé',
   controllers_disabled: 'Désactivé',
+  controllers_tableDisabledMsg: 'La modification du tableau est désactivée lorsque les contrôleurs sont actifs',
   controllers_idleControl: 'Contrôle du ralenti',
   controllers_ignitionControl: 'Contrôle de l\'angle d\'allumage',
   controllers_fuelControl: 'Contrôle de la quantité de carburant',

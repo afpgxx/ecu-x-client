@@ -97,6 +97,7 @@ export default {
   controllers_title: '실시간 조정 제어',
   controllers_enabled: '활성화됨',
   controllers_disabled: '비활성화됨',
+  controllers_tableDisabledMsg: '컨트롤러가 활성화되어 있으면 테이블 편집이 비활성화됩니다',
   controllers_idleControl: '공회전 조정',
   controllers_ignitionControl: '점화각 조정',
   controllers_fuelControl: '연료분사량 조정',

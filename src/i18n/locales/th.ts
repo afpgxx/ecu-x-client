@@ -97,6 +97,7 @@ export default {
   controllers_title: 'การควบคุมแบบเรียลไทม์',
   controllers_enabled: 'เปิดใช้งาน',
   controllers_disabled: 'ปิดใช้งาน',
+  controllers_tableDisabledMsg: 'การแก้ไขตารางถูกปิดใช้งานเมื่อตัวควบคุมทำงาน',
   controllers_idleControl: 'ควบคุมรอบเดินเบา',
   controllers_ignitionControl: 'ควบคุมมุมจุดระเบิด',
   controllers_fuelControl: 'ควบคุมปริมาณเชื้อเพลิง',
