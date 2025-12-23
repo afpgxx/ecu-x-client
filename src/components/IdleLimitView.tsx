@@ -1,6 +1,7 @@
 import React from 'react';
 import { useI18n } from '../i18n/I18nContext';
 import { IdleLimitState } from '../types';
+import { MapTable1D } from './MapTable1D';
 
 interface IdleLimitViewProps {
   data: IdleLimitState;
@@ -10,10 +11,98 @@ interface IdleLimitViewProps {
   suppressBlur?: boolean;
 }
 
+interface TopGridRowProps {
+  label1: string; unit1: string; field1: keyof IdleLimitState; col1: number;
+  label2: string; unit2: string; field2: keyof IdleLimitState; col2: number;
+  data: IdleLimitState;
+  onUpdate: <K extends keyof IdleLimitState>(key: K, value: IdleLimitState[K]) => void;
+  onEditingChange?: (cell: {row:number;col:number;value:number} | null) => void;
+  forceEditing?: { row: number; col: number } | null;
+}
+
+const TopGridRow: React.FC<TopGridRowProps> = ({ 
+  label1, unit1, field1, col1,
+  label2, unit2, field2, col2,
+  data, onUpdate, onEditingChange, forceEditing
+}) => {
+  const input1Ref = React.useRef<HTMLInputElement>(null);
+  const input2Ref = React.useRef<HTMLInputElement>(null);
+  const [val1, setVal1] = React.useState(data[field1]?.toString() || '0');
+  const [val2, setVal2] = React.useState(data[field2]?.toString() || '0');
+
+  React.useEffect(() => {
+    setVal1(data[field1]?.toString() || '0');
+  }, [data[field1]]);
+
+  React.useEffect(() => {
+    setVal2(data[field2]?.toString() || '0');
+  }, [data[field2]]);
+
+  React.useEffect(() => {
+    if (forceEditing?.row === 0) {
+      if (forceEditing.col === col1) input1Ref.current?.focus();
+      if (forceEditing.col === col2) input2Ref.current?.focus();
+    }
+  }, [forceEditing, col1, col2]);
+
+  const handleBlur = (field: keyof IdleLimitState, val: string, setVal: (v: string) => void) => {
+    const num = parseFloat(val);
+    if (!isNaN(num)) {
+      onUpdate(field, num);
+      setVal(num.toString());
+    } else {
+      setVal(data[field]?.toString() || '0');
+    }
+  };
+
+  return (
+  <tr className="bg-[#2d323a]">
+    <td className="border border-gray-600 px-2 py-0 text-gray-300 text-center text-xs whitespace-nowrap w-[6%]">{label1}</td>
+    <td className="border border-gray-600 p-0 w-[5%]">
+      <input 
+        ref={input1Ref}
+        type="text" 
+        className="w-full h-full bg-white text-gray-600 text-center outline-none text-xs py-1"
+        value={val1}
+        onChange={(e) => setVal1(e.target.value)}
+        onBlur={() => handleBlur(field1, val1, setVal1)}
+        onKeyDown={(e) => { if(e.key === 'Enter') input1Ref.current?.blur(); }}
+        onFocus={e => {
+          e.target.select();
+          onEditingChange?.({ row: 0, col: col1, value: data[field1] as number });
+        }}
+      />
+    </td>
+    <td className="border border-gray-600 px-2 py-0 text-gray-300 text-center text-xs w-[3%]">{unit1}</td>
+    
+    <td className="border border-gray-600 px-2 py-0 text-gray-300 text-center text-xs whitespace-nowrap w-[6%]">{label2}</td>
+    <td className="border border-gray-600 p-0 w-[5%]">
+      <input 
+        ref={input2Ref}
+        type="text" 
+        className="w-full h-full bg-white text-gray-600 text-center outline-none text-xs py-0"
+        value={val2}
+        onChange={(e) => setVal2(e.target.value)}
+        onBlur={() => handleBlur(field2, val2, setVal2)}
+        onKeyDown={(e) => { if(e.key === 'Enter') input2Ref.current?.blur(); }}
+        onFocus={() => onEditingChange?.({ row: 0, col: col2, value: data[field2] as number })}
+      />
+    </td>
+    <td className="border border-gray-600 px-2 py-0 text-gray-300 text-center text-xs w-[3%]">{unit2}</td>
+    
+    <td className="border border-gray-600 px-2 py-0 text-center text-xs w-[6%]">0</td>
+    <td className="border border-gray-600 px-2 py-0 text-center text-xs w-[5%]">0</td>
+    <td className="border border-gray-600 px-2 py-0 text-center text-xs w-[3%]">0</td>
+  </tr>
+  );
+};
+
 export const IdleLimitView: React.FC<IdleLimitViewProps> = ({ 
   data, 
   onChange,
-  onEditingChange
+  onEditingChange,
+  forceEditing,
+  suppressBlur
 }) => {
   const { t } = useI18n();
   
@@ -22,75 +111,37 @@ export const IdleLimitView: React.FC<IdleLimitViewProps> = ({
   };
 
   const updateArray = (key: 'autoClutchData' | 'spareData', index: number, value: number) => {
-    const newArray = [...data[key]];
+    const currentArray = data[key] || (key === 'autoClutchData' ? Array(8).fill(0) : Array(9).fill(0));
+    const newArray = [...currentArray];
     newArray[index] = value;
     onChange({ ...data, [key]: newArray });
   };
 
-  // Helper for Top Grid Cells
-  const TopGridRow = ({ 
-    label1, unit1, field1, col1,
-    label2, unit2, field2, col2
-  }: { 
-    label1: string, unit1: string, field1: keyof IdleLimitState, col1: number,
-    label2: string, unit2: string, field2: keyof IdleLimitState, col2: number
-  }) => (
-    <tr className="bg-[#2d323a]">
-      <td className="border border-gray-600 px-2 py-1 text-gray-300 text-center text-xs whitespace-nowrap w-[6%]">{label1}</td>
-      <td className="border border-gray-600 p-0 w-[5%]">
-        <input 
-          type="number" 
-          className="w-full h-full bg-white text-gray-600 text-center outline-none text-xs py-1"
-          value={data[field1] as number}
-          onChange={(e) => updateField(field1, Number(e.target.value))}
-          onFocus={() => onEditingChange?.({ row: 0, col: col1, value: data[field1] as number })}
-        />
-      </td>
-      <td className="border border-gray-600 px-2 py-1 text-gray-300 text-center text-xs w-[3%]">{unit1}</td>
-      
-      <td className="border border-gray-600 px-2 py-1 text-gray-300 text-center text-xs whitespace-nowrap w-[6%]">{label2}</td>
-      <td className="border border-gray-600 p-0 w-[5%]">
-        <input 
-          type="number" 
-          className="w-full h-full bg-white text-gray-600 text-center outline-none text-xs py-1"
-          value={data[field2] as number}
-          onChange={(e) => updateField(field2, Number(e.target.value))}
-          onFocus={() => onEditingChange?.({ row: 0, col: col2, value: data[field2] as number })}
-        />
-      </td>
-      <td className="border border-gray-600 px-2 py-1 text-gray-300 text-center text-xs w-[3%]">{unit2}</td>
-      
-      <td className="border border-gray-600 px-2 py-1 text-center text-xs w-[6%]">0</td>
-      <td className="border border-gray-600 px-2 py-1 text-center text-xs w-[5%]">0</td>
-      <td className="border border-gray-600 px-2 py-1 text-center text-xs w-[3%]">0</td>
-    </tr>
-  );
-
   return (
-    <div className="flex flex-col h-full overflow-hidden bg-[#1a1d21]">
-      
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto p-2 flex flex-col gap-1">
-      
+    <div className="flex flex-col bg-[#1a1d21] p-2 gap-1">
       {/* Top Grid Section - Table Layout */}
-      <div className="border border-gray-700 rounded overflow-hidden mb-1">
+      <div className="border border-gray-700 rounded overflow-x-auto mb-1">
         <table className="w-full border-collapse">
           <tbody>
             <TopGridRow 
               label1={t.idleLimit_idleRpmCold} unit1="RPM" field1="idleRpmCold" col1={0}
               label2={t.idleLimit_idleReturnCold} unit2="RPM" field2="idleReturnCold" col2={1}
+              data={data} onUpdate={updateField} onEditingChange={onEditingChange} forceEditing={forceEditing}
             />
             <TopGridRow 
               label1={t.idleLimit_idleRpmHot} unit1="RPM" field1="idleRpmHot" col1={2}
               label2={t.idleLimit_idleReturnHot} unit2="RPM" field2="idleReturnHot" col2={3}
+              data={data} onUpdate={updateField} onEditingChange={onEditingChange} forceEditing={forceEditing}
             />
             <TopGridRow 
               label1={t.idleLimit_enterExitSensitivity} unit1="Level" field1="enterExitSensitivity" col1={4}
               label2={t.idleLimit_accelEnrichPercent} unit2="%" field2="accelEnrichPercent" col2={5}
+              data={data} onUpdate={updateField} onEditingChange={onEditingChange} forceEditing={forceEditing}
             />
             <TopGridRow 
               label1={t.idleLimit_maxRpm} unit1="RPM" field1="maxRpm" col1={6}
               label2={t.idleLimit_vvtOpenRpm} unit2="RPM" field2="vvtOpenRpm" col2={7}
+              data={data} onUpdate={updateField} onEditingChange={onEditingChange} forceEditing={forceEditing}
             />
           </tbody>
         </table>
@@ -111,38 +162,18 @@ export const IdleLimitView: React.FC<IdleLimitViewProps> = ({
             </label>
           </div>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-center text-xs border-collapse">
-            <thead>
-              <tr className="bg-[#2d323a] text-gray-400">
-                <th className="p-1 border border-gray-600 font-normal whitespace-nowrap">Name</th>
-                <th className="p-1 border border-gray-600 font-normal whitespace-nowrap">Strt RPM</th>
-                <th className="p-1 border border-gray-600 font-normal whitespace-nowrap">Inj Ve Adj(PCT)</th>
-                <th className="p-1 border border-gray-600 font-normal whitespace-nowrap">Ign Ingle Adj(°)</th>
-                <th className="p-1 border border-gray-600 font-normal whitespace-nowrap">RPM 4000(Some)</th>
-                <th className="p-1 border border-gray-600 font-normal whitespace-nowrap">RPM 6000(Some)</th>
-                <th className="p-1 border border-gray-600 font-normal whitespace-nowrap">RPM 8000(Some)</th>
-                <th className="p-1 border border-gray-600 font-normal whitespace-nowrap">RPM 10000(Some)</th>
-                <th className="p-1 border border-gray-600 font-normal whitespace-nowrap">RPM 12000(Some)</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr className="bg-[#1a1d21]">
-                <td className="p-1 border border-gray-600 text-gray-400">Data</td>
-                {data.autoClutchData.map((val, idx) => (
-                  <td key={idx} className="p-0 border border-gray-600">
-                    <input 
-                      type="number" 
-                      className="w-full h-full bg-white text-gray-600 text-center outline-none py-1"
-                      value={val}
-                      onChange={e => updateArray('autoClutchData', idx, Number(e.target.value))}
-                      onFocus={() => onEditingChange?.({ row: 1, col: idx, value: val })}
-                    />
-                  </td>
-                ))}
-              </tr>
-            </tbody>
-          </table>
+        <div className="min-h-14 max-h-14 overflow-auto">
+          <MapTable1D
+            headers={['Strt RPM', 'Inj Ve Adj(PCT)', 'Ign Ingle Adj(°)', 'RPM 4000(Some)', 'RPM 6000(Some)', 'RPM 8000(Some)', 'RPM 10000(Some)', 'RPM 12000(Some)']}
+            data={data.autoClutchData || Array(8).fill(0)}
+            xLabel="Name"
+            yLabel="Data"
+            colorMode="dark"
+            onCellChange={(_, col, val) => updateArray('autoClutchData', col, val)}
+            onEditingChange={(cell) => onEditingChange?.(cell ? { ...cell, row: 1 } : null)}
+            forceEditing={forceEditing && forceEditing.row === 1 ? forceEditing : null}
+            suppressBlur={suppressBlur}
+          />
         </div>
       </div>
 
@@ -151,39 +182,18 @@ export const IdleLimitView: React.FC<IdleLimitViewProps> = ({
         <div className="bg-[#2d323a] px-2 py-0.5 border-b border-gray-700 h-7 flex items-center">
           <span className="text-xs font-bold text-gray-300">{t.idleLimit_spare}</span>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-center text-xs border-collapse">
-            <thead>
-              <tr className="bg-[#2d323a] text-gray-400">
-                <th className="p-1 border border-gray-600 font-normal whitespace-nowrap">Name</th>
-                <th className="p-1 border border-gray-600 font-normal whitespace-nowrap">1000</th>
-                <th className="p-1 border border-gray-600 font-normal whitespace-nowrap">1500</th>
-                <th className="p-1 border border-gray-600 font-normal whitespace-nowrap">2000</th>
-                <th className="p-1 border border-gray-600 font-normal whitespace-nowrap">2500</th>
-                <th className="p-1 border border-gray-600 font-normal whitespace-nowrap">3000</th>
-                <th className="p-1 border border-gray-600 font-normal whitespace-nowrap">3500</th>
-                <th className="p-1 border border-gray-600 font-normal whitespace-nowrap">4000</th>
-                <th className="p-1 border border-gray-600 font-normal whitespace-nowrap">4500</th>
-                <th className="p-1 border border-gray-600 font-normal whitespace-nowrap">5000</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr className="bg-[#1a1d21]">
-                <td className="p-1 border border-gray-600 text-gray-400">Dat</td>
-                {data.spareData.map((val, idx) => (
-                  <td key={idx} className="p-0 border border-gray-600">
-                    <input 
-                      type="number" 
-                      className="w-full h-full bg-white text-gray-600 text-center outline-none py-1"
-                      value={val}
-                      onChange={e => updateArray('spareData', idx, Number(e.target.value))}
-                      onFocus={() => onEditingChange?.({ row: 2, col: idx, value: val })}
-                    />
-                  </td>
-                ))}
-              </tr>
-            </tbody>
-          </table>
+        <div className="min-h-14 max-h-14 overflow-auto">
+          <MapTable1D
+            headers={[1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000]}
+            data={data.spareData || Array(9).fill(0)}
+            xLabel="Name"
+            yLabel="Dat"
+            colorMode="dark"
+            onCellChange={(_, col, val) => updateArray('spareData', col, val)}
+            onEditingChange={(cell) => onEditingChange?.(cell ? { ...cell, row: 2 } : null)}
+            forceEditing={forceEditing && forceEditing.row === 2 ? forceEditing : null}
+            suppressBlur={suppressBlur}
+          />
         </div>
       </div>
 
@@ -234,8 +244,6 @@ export const IdleLimitView: React.FC<IdleLimitViewProps> = ({
           </div>
         </div>
       </div>
-
-    </div>
     </div>
   );
 };

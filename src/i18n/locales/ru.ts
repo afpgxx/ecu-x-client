@@ -97,6 +97,7 @@ export default {
   controllers_title: 'Управление в реальном времени',
   controllers_enabled: 'Включено',
   controllers_disabled: 'Отключено',
+  controllers_tableDisabledMsg: 'Редактирование таблицы отключено, пока активны контроллеры',
   controllers_idleControl: 'Регулировка холостого хода',
   controllers_ignitionControl: 'Регулировка угла зажигания',
   controllers_fuelControl: 'Регулировка количества топлива',
@@ -204,6 +205,12 @@ export default {
   lang_ru: 'Русский',
   lang_de: 'Deutsch',
   lang_fr: 'Français',
+  lang_es: 'Español',
+  lang_pt: 'Português',
+  lang_id: 'Bahasa Indonesia',
+  lang_vi: 'Tiếng Việt',
+  lang_tr: 'Türkçe',
+  lang_ar: 'العربية',
 
   // Other Options Page
   otherOptions_throttleMin: 'Throttle Voltage (Min)',

@@ -13,7 +13,7 @@ export const I18nProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [language, setLanguage] = useState<Language>(() => {
     const saved = localStorage.getItem('ecu-language');
     // 验证保存的语言是否有效
-    const validLanguages: Language[] = ['zh-CN', 'zh-TW', 'en', 'ja', 'th', 'ko', 'ru', 'de', 'fr'];
+    const validLanguages: Language[] = ['zh-CN', 'zh-TW', 'en', 'ja', 'th', 'ko', 'ru', 'de', 'fr', 'es', 'pt', 'id', 'vi', 'tr', 'ar'];
     if (saved && validLanguages.includes(saved as Language)) {
       return saved as Language;
     }

@@ -37,6 +37,7 @@
     "wait-on": "^7.2.0"
   },
   "build": {
+    "npmRebuild": false,
     "appId": "com.ecu.injection.management",
     "productName": "ECU电喷管理系统",
     "directories": {

@@ -7,8 +7,14 @@ import ko from './locales/ko';
 import ru from './locales/ru';
 import de from './locales/de';
 import fr from './locales/fr';
+import es from './locales/es';
+import pt from './locales/pt';
+import id from './locales/id';
+import vi from './locales/vi';
+import tr from './locales/tr';
+import ar from './locales/ar';
 
-export type Language = 'zh-CN' | 'zh-TW' | 'en' | 'ja' | 'th' | 'ko' | 'ru' | 'de' | 'fr';
+export type Language = 'zh-CN' | 'zh-TW' | 'en' | 'ja' | 'th' | 'ko' | 'ru' | 'de' | 'fr' | 'es' | 'pt' | 'id' | 'vi' | 'tr' | 'ar';
 
 export const translations = {
   'zh-CN': zhCN,
@@ -20,6 +26,12 @@ export const translations = {
   'ru': ru,
   'de': de,
   'fr': fr,
+  'es': es,
+  'pt': pt,
+  'id': id,
+  'vi': vi,
+  'tr': tr,
+  'ar': ar,
 };
 
 export type TranslationKeys = typeof zhCN;

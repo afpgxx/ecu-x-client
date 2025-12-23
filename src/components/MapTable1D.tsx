@@ -1,9 +1,9 @@
 import React, { useEffect, useRef , useState } from 'react';
 
 interface MapTable1DProps {
-  headers: number[]; // X轴值（例如 RPM）
+  headers: (number | string)[]; // X轴值（例如 RPM）
   data: number[];    // 行数据值
-  activeValue: number; // 当前高亮值（例如当前 RPM）
+  activeValue?: number; // 当前高亮值（例如当前 RPM）
   xLabel: string;    // X轴标签
   yLabel: string;    // 行头标签
   colorMode?: 'heatmap' | 'dark'; // 颜色模式：热力图 或 深色统一样式
@@ -51,9 +51,16 @@ export const MapTable1D: React.FC<MapTable1DProps> = ({
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Find active column index based on closest value
-  const activeColIndex = headers.reduce((prev, curr, i) => 
-    Math.abs(curr - activeValue) < Math.abs(headers[prev] - activeValue) ? i : prev, 0
-  );
+  const activeColIndex = React.useMemo(() => {
+    if (activeValue === undefined) return -1;
+    // Only consider numeric headers for active value tracking
+    return headers.reduce((prev, curr, i) => {
+      if (typeof curr !== 'number') return prev;
+      const prevVal = headers[prev];
+      if (typeof prevVal !== 'number') return i; // First numeric header found
+      return Math.abs(curr - activeValue) < Math.abs(prevVal - activeValue) ? i : prev;
+    }, 0);
+  }, [headers, activeValue]);
 
   // Auto-scroll to active cell
   useEffect(() => {
@@ -206,7 +213,8 @@ export const MapTable1D: React.FC<MapTable1DProps> = ({
               onClick={() => {
                 setSelection('all');
                 setEditingIndex(0);
-                setInputValue(Number(data[0].toFixed(2)).toString());
+                const val = (data && data.length > 0 && typeof data[0] === 'number') ? data[0] : 0;
+                setInputValue(Number(val.toFixed(2)).toString());
               }}
             >
               {yLabel}
@@ -218,7 +226,7 @@ export const MapTable1D: React.FC<MapTable1DProps> = ({
                 const isActive = i === activeColIndex;
                 const isSelected = selection === 'all';
                 const bg = colorMode === 'heatmap'
-                  ? getHeatmapColor(cellValue, min, max)
+                  ? getHeatmapColor(cellValue || 0, min, max)
                   : 'var(--bg-cell)';
                 return (
                   <div
@@ -235,8 +243,9 @@ export const MapTable1D: React.FC<MapTable1DProps> = ({
                     onClick={() => {
                       setSelection(null);
                       setEditingIndex(i);
-                      setInputValue(Number(cellValue.toFixed(2)).toString());
-                      setOriginalValue(cellValue);
+                      const val = typeof cellValue === 'number' ? cellValue : 0;
+                      setInputValue(Number(val.toFixed(2)).toString());
+                      setOriginalValue(val);
                     }}
                   >
                     {isActive && <div className="absolute inset-0 border-2 border-white pointer-events-none"></div>}
@@ -258,8 +267,9 @@ export const MapTable1D: React.FC<MapTable1DProps> = ({
                             const nextIndex = i + 1;
                             if (nextIndex < headers.length) {
                                 setEditingIndex(nextIndex);
-                                setInputValue(Number(data[nextIndex].toFixed(2)).toString());
-                                setOriginalValue(data[nextIndex]);
+                                const nextVal = typeof data[nextIndex] === 'number' ? data[nextIndex] : 0;
+                                setInputValue(Number(nextVal.toFixed(2)).toString());
+                                setOriginalValue(nextVal);
                             } else {
                                 setEditingIndex(null);
                             }
@@ -277,8 +287,9 @@ export const MapTable1D: React.FC<MapTable1DProps> = ({
 
                             if (nextIndex !== i) {
                               setEditingIndex(nextIndex);
-                              setInputValue(Number(data[nextIndex].toFixed(2)).toString());
-                              setOriginalValue(data[nextIndex]);
+                              const nextVal = typeof data[nextIndex] === 'number' ? data[nextIndex] : 0;
+                              setInputValue(Number(nextVal.toFixed(2)).toString());
+                              setOriginalValue(nextVal);
                             }
                           }
 
@@ -317,7 +328,7 @@ export const MapTable1D: React.FC<MapTable1DProps> = ({
                         style={{ fontSize : 17, backgroundColor: bg, textAlign: 'center', fontVariantNumeric: 'tabular-nums' }}
                       />
                     ) : (
-                      Number(cellValue.toFixed(2)).toString()
+                      Number((cellValue || 0).toFixed(2)).toString()
                     )}
                   </div>
                 );

@@ -97,6 +97,7 @@ export default {
   controllers_title: 'การควบคุมแบบเรียลไทม์',
   controllers_enabled: 'เปิดใช้งาน',
   controllers_disabled: 'ปิดใช้งาน',
+  controllers_tableDisabledMsg: 'การแก้ไขตารางถูกปิดใช้งานในขณะที่คอนโทรลเลอร์ทำงานอยู่',
   controllers_idleControl: 'ควบคุมรอบเดินเบา',
   controllers_ignitionControl: 'ควบคุมมุมจุดระเบิด',
   controllers_fuelControl: 'ควบคุมปริมาณเชื้อเพลิง',
@@ -230,6 +231,12 @@ export default {
   lang_ru: 'Русский',
   lang_de: 'Deutsch',
   lang_fr: 'Français',
+  lang_es: 'Español',
+  lang_pt: 'Português',
+  lang_id: 'Bahasa Indonesia',
+  lang_vi: 'Tiếng Việt',
+  lang_tr: 'Türkçe',
+  lang_ar: 'العربية',
 
   // Other Options Grid Rows
   otherOptions_row_stepTime: 'Step/Time',

@@ -97,6 +97,7 @@ export default {
   controllers_title: 'リアルタイム調整制御',
   controllers_enabled: '有効',
   controllers_disabled: '無効',
+  controllers_tableDisabledMsg: 'コントローラーがアクティブな間、テーブル編集は無効です',
   controllers_idleControl: 'アイドル調整',
   controllers_ignitionControl: '点火角度調整',
   controllers_fuelControl: '燃料噴射量調整',
@@ -204,6 +205,12 @@ export default {
   lang_ru: 'Русский',
   lang_de: 'Deutsch',
   lang_fr: 'Français',
+  lang_es: 'Español',
+  lang_pt: 'Português',
+  lang_id: 'Bahasa Indonesia',
+  lang_vi: 'Tiếng Việt',
+  lang_tr: 'Türkçe',
+  lang_ar: 'العربية',
 
   // Other Options Page
   otherOptions_throttleMin: 'Throttle Voltage (Min)',

@@ -3,7 +3,6 @@ import {
     RPM_POINTS, 
     ECT_COMP_TEMP_POINTS, 
     ECT_COMP_RPM_POINTS, 
-    IDLE_LIMIT_RPM_POINTS 
 } from '../constants';
 import { IdleLimitState } from '../types';
 

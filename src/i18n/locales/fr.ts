@@ -97,6 +97,7 @@ export default {
   controllers_title: 'Contrôle en temps réel',
   controllers_enabled: 'Activé',
   controllers_disabled: 'Désactivé',
+  controllers_tableDisabledMsg: 'La modification de tableau est désactivée lorsque les contrôleurs sont actifs',
   controllers_idleControl: 'Contrôle du ralenti',
   controllers_ignitionControl: 'Contrôle de l\'angle d\'allumage',
   controllers_fuelControl: 'Contrôle de la quantité de carburant',
@@ -204,6 +205,12 @@ export default {
   lang_ru: 'Русский',
   lang_de: 'Deutsch',
   lang_fr: 'Français',
+  lang_es: 'Español',
+  lang_pt: 'Português',
+  lang_id: 'Bahasa Indonesia',
+  lang_vi: 'Tiếng Việt',
+  lang_tr: 'Türkçe',
+  lang_ar: 'العربية',
 
   // Other Options Page
   otherOptions_throttleMin: 'Throttle Voltage (Min)',

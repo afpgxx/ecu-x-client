@@ -97,6 +97,7 @@ export default {
   controllers_title: '即時調節控制',
   controllers_enabled: '已啟用',
   controllers_disabled: '已停用',
+  controllers_tableDisabledMsg: '控制器啟用時，表格編輯已禁用',
   controllers_idleControl: '怠速調節',
   controllers_ignitionControl: '點火角度調節',
   controllers_fuelControl: '噴油量調節',
@@ -230,6 +231,12 @@ export default {
   lang_ru: 'Русский',
   lang_de: 'Deutsch',
   lang_fr: 'Français',
+  lang_es: 'Español',
+  lang_pt: 'Português',
+  lang_id: 'Bahasa Indonesia',
+  lang_vi: 'Tiếng Việt',
+  lang_tr: 'Türkçe',
+  lang_ar: 'العربية',
   
   // 其它選項 - 表格列
   otherOptions_row_stepTime: 'Step/Time',

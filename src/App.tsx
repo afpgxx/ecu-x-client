@@ -36,6 +36,16 @@ import {
 const App: React.FC = () => {
   const { language, setLanguage, t } = useI18n();
   
+  // 动态获取基准分辨率（当前窗口的初始尺寸）
+  // const [baseSize, setBaseSize] = useState({ width: window.innerWidth, height: window.innerHeight });
+  // const BASE_ASPECT_RATIO = baseSize.width / baseSize.height;
+  const DESIGN_WIDTH = 1463;
+  const DESIGN_HEIGHT = 867;
+  
+  // 窗口尺寸和缩放比例状态
+  const [, setWindowSize] = useState({ width: window.innerWidth, height: window.innerHeight });
+  const [scale, setScale] = useState(1);
+  
   // 辅助函数：获取语言名称
   const getLangName = (lang: Language): string => {
     const key = `lang_${lang.replace('-', '_')}` as keyof typeof t;
@@ -142,6 +152,15 @@ const App: React.FC = () => {
   const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
   const [isMaximized, setIsMaximized] = useState(false);
   
+  // Remote Tuning State
+  const [showRemoteConnect, setShowRemoteConnect] = useState(false);
+  const [remoteRole, setRemoteRole] = useState<'ecu' | 'expert'>('ecu');
+  const [remoteServerUrl, setRemoteServerUrl] = useState('ws://localhost:8765');
+  const [remoteRoomId, setRemoteRoomId] = useState('1234');
+  const [remoteConnected, setRemoteConnected] = useState(false);
+  const [connectionType, setConnectionType] = useState<'serial' | 'remote'>('serial');
+  const wsRef = useRef<WebSocket | null>(null);
+
   // Serial Port State
   const [ports, setPorts] = useState<any[]>([]);
   const [selectedPort, setSelectedPort] = useState<string>('');
@@ -241,21 +260,76 @@ const App: React.FC = () => {
         const ensureNumber2DArray = (arr: any[][]): number[][] => {
           return arr.map(row => ensureNumberArray(row));
         };
+
+        const ensureNumber3DArray = (arr: any[][][]): number[][][] => {
+          return arr.map(bank => ensureNumber2DArray(bank));
+        };
         
         // 检查是否为新格式（包含所有数据）
         if (data.maps && typeof data.maps === 'object') {
           // 新格式：导入所有数据（创建深拷贝并确保数字类型）
+          // 注意：导出时已经包含了所有Bank的数据，所以导入时不需要再次createBanks，除非数据维度不对
+          
           if (data.maps.fuelMap) {
-            setFuelMapData(createBanks(ensureNumber2DArray(JSON.parse(JSON.stringify(data.maps.fuelMap)))));
+            const mapData = JSON.parse(JSON.stringify(data.maps.fuelMap));
+            // 检查是否为3D数组 (Banks -> Rows -> Cols)
+            if (Array.isArray(mapData) && mapData.length > 0 && Array.isArray(mapData[0]) && Array.isArray(mapData[0][0])) {
+               setFuelMapData(ensureNumber3DArray(mapData));
+            } else {
+               // 兼容旧数据或单Bank数据
+               setFuelMapData(createBanks(ensureNumber2DArray(mapData)));
+            }
           }
-          if (data.maps.fuelAdvance) setFuelAdvanceData(createBanks(ensureNumber2DArray(JSON.parse(JSON.stringify(data.maps.fuelAdvance)))));
-          if (data.maps.ignitionAngle) setIgnitionAngleData(createBanks(ensureNumber2DArray(JSON.parse(JSON.stringify(data.maps.ignitionAngle)))));
-          if (data.maps.dwellTime) setDwellTimeData(createBanks(ensureNumberArray(JSON.parse(JSON.stringify(data.maps.dwellTime)))));
-          if (data.maps.afrTarget) setAfrTargetData(createBanks(ensureNumber2DArray(JSON.parse(JSON.stringify(data.maps.afrTarget)))));
+
+          if (data.maps.fuelAdvance) {
+            const mapData = JSON.parse(JSON.stringify(data.maps.fuelAdvance));
+            if (Array.isArray(mapData) && mapData.length > 0 && Array.isArray(mapData[0]) && Array.isArray(mapData[0][0])) {
+              setFuelAdvanceData(ensureNumber3DArray(mapData));
+            } else {
+              setFuelAdvanceData(createBanks(ensureNumber2DArray(mapData)));
+            }
+          }
+
+          if (data.maps.ignitionAngle) {
+            const mapData = JSON.parse(JSON.stringify(data.maps.ignitionAngle));
+            if (Array.isArray(mapData) && mapData.length > 0 && Array.isArray(mapData[0]) && Array.isArray(mapData[0][0])) {
+              setIgnitionAngleData(ensureNumber3DArray(mapData));
+            } else {
+              setIgnitionAngleData(createBanks(ensureNumber2DArray(mapData)));
+            }
+          }
+
+          if (data.maps.dwellTime) {
+             const mapData = JSON.parse(JSON.stringify(data.maps.dwellTime));
+             // DwellTime is 2D (Banks -> Values)
+             if (Array.isArray(mapData) && mapData.length > 0 && Array.isArray(mapData[0])) {
+                setDwellTimeData(ensureNumber2DArray(mapData));
+             } else {
+                setDwellTimeData(createBanks(ensureNumberArray(mapData)));
+             }
+          }
+
+          if (data.maps.afrTarget) {
+            const mapData = JSON.parse(JSON.stringify(data.maps.afrTarget));
+            if (Array.isArray(mapData) && mapData.length > 0 && Array.isArray(mapData[0]) && Array.isArray(mapData[0][0])) {
+              setAfrTargetData(ensureNumber3DArray(mapData));
+            } else {
+              setAfrTargetData(createBanks(ensureNumber2DArray(mapData)));
+            }
+          }
+
           if (data.maps.ectCompFuel) setEctCompFuelData(ensureNumber2DArray(JSON.parse(JSON.stringify(data.maps.ectCompFuel))));
           if (data.maps.ectCompIgn) setEctCompIgnData(ensureNumber2DArray(JSON.parse(JSON.stringify(data.maps.ectCompIgn))));
           if (data.maps.mapComp) setMapCompData(ensureNumber2DArray(JSON.parse(JSON.stringify(data.maps.mapComp))));
-          if (data.maps.idleLimit) setIdleLimitData(createBanks(JSON.parse(JSON.stringify(data.maps.idleLimit))));
+          
+          if (data.maps.idleLimit) {
+             const mapData = JSON.parse(JSON.stringify(data.maps.idleLimit));
+             if (Array.isArray(mapData) && mapData.length === 4) {
+                setIdleLimitData(mapData);
+             } else {
+                setIdleLimitData(createBanks(mapData));
+             }
+          }
           
           // 导入控制器参数
           if (data.controllers) {
@@ -353,10 +427,11 @@ const App: React.FC = () => {
       }
     }
 
-    if ((window as any).require) {
+    if (window.electronAPI) {
       try {
-        const { ipcRenderer } = (window as any).require('electron');
-        ipcRenderer.send(action);
+        if (action === 'window-minimize') window.electronAPI.minimizeWindow();
+        else if (action === 'window-maximize') window.electronAPI.maximizeWindow();
+        else if (action === 'window-close') window.electronAPI.closeWindow();
       } catch (error) {
         console.log('Electron IPC not available');
       }
@@ -420,20 +495,49 @@ const App: React.FC = () => {
     }, 1000);
   };
 
-  // Listen for window state changes from Electron
+  // 独立处理窗口缩放逻辑，确保不受其他副作用影响
   useEffect(() => {
-    if ((window as any).require) {
+    const handleResize = () => {
+      const newWidth = window.innerWidth;
+      const newHeight = window.innerHeight;
+      setWindowSize({ width: newWidth, height: newHeight });
+      
+      // 强制使用 1463x867 作为基准
+      const targetW = 1463;
+      const targetH = 867;
+      
+      const scaleX = newWidth / targetW;
+      const scaleY = newHeight / targetH;
+      
+      // 取较小值以确保内容完全放入窗口 (Fit)
+      const newScale = Math.min(scaleX, scaleY);
+      
+      setScale(newScale); 
+    };
+
+    window.addEventListener('resize', handleResize);
+    handleResize(); // 初始化调用
+    
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Listen for window state changes from Electron (IPC & Serial)
+  useEffect(() => {
+    if (window.electronAPI) {
       try {
-        const { ipcRenderer } = (window as any).require('electron');
-        const handleWindowStateChange = (_event: any, state: string) => {
+        const removeWindowStateListener = window.electronAPI.onWindowStateChange((state: string) => {
           setIsMaximized(state === 'maximized');
-        };
-        ipcRenderer.on('window-state-change', handleWindowStateChange);
+        });
 
         // Serial Data Listener
-        const handleSerialData = (_event: any, dataString: string) => {
+        const removeSerialDataListener = window.electronAPI.onSerialData((dataString: any) => {
           try {
-            const data = JSON.parse(dataString);
+            // If in Remote ECU mode, forward data to WebSocket
+            if (remoteConnected && remoteRole === 'ecu' && wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+              wsRef.current.send(typeof dataString === 'string' ? dataString : JSON.stringify(dataString));
+            }
+
+            const data = typeof dataString === 'string' ? JSON.parse(dataString) : dataString;
             // Update engine state from serial data if not simulating
             if (!isSimulating) {
               setEngineState(prev => ({ ...prev, ...data }));
@@ -441,44 +545,119 @@ const App: React.FC = () => {
           } catch (e) {
             console.error('Failed to parse serial data:', e);
           }
-        };
-        ipcRenderer.on('serial-data', handleSerialData);
+        });
 
         // Get initial ports
-        ipcRenderer.invoke('serial-list').then((portList: any[]) => {
+        window.electronAPI.listPorts().then((portList: any[]) => {
           setPorts(portList);
         });
 
         return () => {
-          ipcRenderer.removeListener('window-state-change', handleWindowStateChange);
-          ipcRenderer.removeListener('serial-data', handleSerialData);
+          removeWindowStateListener();
+          removeSerialDataListener();
         };
       } catch (error) {
         console.error('Failed to setup IPC listener', error);
       }
     }
-  }, [isSimulating]);
+  }, [isSimulating, remoteConnected, remoteRole]); // Added dependencies for remote state
+
+  // Refresh Ports
+  const refreshPorts = async () => {
+    if (window.electronAPI) {
+      try {
+        const portList = await window.electronAPI.listPorts();
+        setPorts(portList);
+      } catch (error) {
+        console.error('Failed to list ports', error);
+      }
+    }
+  };
 
   // Connect Port
   const handleConnectPort = async (portPath: string) => {
     if (!portPath) return;
     try {
-      const { ipcRenderer } = (window as any).require('electron');
-      await ipcRenderer.invoke('serial-open', portPath, 115200);
-      setSelectedPort(portPath);
-      setEcuConnected(true);
-      showNotification(`已连接到 ${portPath}`, 'success');
+      if (window.electronAPI) {
+        await window.electronAPI.openPort(portPath, 115200);
+        setSelectedPort(portPath);
+        setEcuConnected(true);
+        showNotification(`已连接到 ${portPath}`, 'success');
+      }
     } catch (err) {
       setEcuConnected(false);
       showNotification(`连接失败: ${err}`, 'error');
     }
   };
 
+  // Connect Remote
+  const handleConnectRemote = () => {
+    try {
+      const ws = new WebSocket(remoteServerUrl);
+      
+      ws.onopen = () => {
+        setRemoteConnected(true);
+        showNotification('已连接到远程服务器', 'success');
+        // Send Join Message
+        ws.send(JSON.stringify({
+          type: 'join',
+          room: remoteRoomId,
+          role: remoteRole
+        }));
+      };
+
+      ws.onmessage = (event) => {
+        try {
+          const msg = JSON.parse(event.data);
+          
+          if (msg.type === 'system') {
+            showNotification(`系统消息: ${msg.message}`, 'info');
+          } else {
+            // Handle Data Packet
+            if (remoteRole === 'ecu') {
+              // ECU Mode: Received command from Expert -> Write to Serial
+              if (window.electronAPI) {
+                window.electronAPI.writeSerial(typeof msg === 'string' ? msg : JSON.stringify(msg));
+              }
+            } else {
+              // Expert Mode: Received data from ECU -> Update UI
+              if (!isSimulating) {
+                setEngineState(prev => ({ ...prev, ...msg }));
+              }
+            }
+          }
+        } catch (e) {
+          console.error('Failed to parse WS message:', e);
+        }
+      };
+
+      ws.onclose = () => {
+        setRemoteConnected(false);
+        showNotification('远程连接已断开', 'info');
+        wsRef.current = null;
+      };
+
+      ws.onerror = (err) => {
+        console.error('WS Error:', err);
+        showNotification('远程连接错误', 'error');
+      };
+
+      wsRef.current = ws;
+      setShowRemoteConnect(false);
+    } catch (e) {
+      showNotification(`连接失败: ${e}`, 'error');
+    }
+  };
+
+  const handleDisconnectRemote = () => {
+    if (wsRef.current) {
+      wsRef.current.close();
+    }
+  };
+
   // Send Current Data
   const handleSendCurrentData = async () => {
     try {
-      const { ipcRenderer } = (window as any).require('electron');
-      
       // Determine data to send based on active tab
       let dataToSend: any = null;
       const bankIndex = activeSubTable - 1;
@@ -499,8 +678,17 @@ const App: React.FC = () => {
       }
 
       if (dataToSend) {
-        await ipcRenderer.invoke('serial-write', JSON.stringify(dataToSend));
-        showNotification('数据发送成功', 'success');
+        const payload = JSON.stringify(dataToSend);
+        
+        if (remoteConnected && remoteRole === 'expert' && wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+          // Expert Mode: Send to WebSocket
+          wsRef.current.send(payload);
+          showNotification('数据已发送 (远程)', 'success');
+        } else if (window.electronAPI) {
+          // Local Mode: Send to Serial
+          await window.electronAPI.writeSerial(payload);
+          showNotification('数据发送成功', 'success');
+        }
       }
     } catch (err) {
       showNotification('发送失败，请检查连接', 'error');
@@ -510,14 +698,20 @@ const App: React.FC = () => {
   // Read Current Data
   const handleReadCurrentData = async () => {
     try {
-      const { ipcRenderer } = (window as any).require('electron');
       const command = { 
         type: 'READ_CURRENT', 
         tabIndex: activeTabIndex, 
         subTable: activeSubTable 
       };
-      await ipcRenderer.invoke('serial-write', JSON.stringify(command));
-      showNotification('正在读取当前数据...', 'info');
+      const payload = JSON.stringify(command);
+
+      if (remoteConnected && remoteRole === 'expert' && wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+        wsRef.current.send(payload);
+        showNotification('正在读取当前数据... (远程)', 'info');
+      } else if (window.electronAPI) {
+        await window.electronAPI.writeSerial(payload);
+        showNotification('正在读取当前数据...', 'info');
+      }
     } catch (err) {
       showNotification('读取失败，请检查连接', 'error');
     }
@@ -526,9 +720,15 @@ const App: React.FC = () => {
   // Read All Data
   const handleReadAllData = async () => {
     try {
-      const { ipcRenderer } = (window as any).require('electron');
-      await ipcRenderer.invoke('serial-write', JSON.stringify({ type: 'READ_ALL' }));
-      showNotification('正在读取所有数据...', 'info');
+      const payload = JSON.stringify({ type: 'READ_ALL' });
+
+      if (remoteConnected && remoteRole === 'expert' && wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+        wsRef.current.send(payload);
+        showNotification('正在读取所有数据... (远程)', 'info');
+      } else if (window.electronAPI) {
+        await window.electronAPI.writeSerial(payload);
+        showNotification('正在读取所有数据...', 'info');
+      }
     } catch (err) {
       showNotification('读取失败，请检查连接', 'error');
     }
@@ -537,9 +737,41 @@ const App: React.FC = () => {
   // Send All Data
   const handleSendAllData = async () => {
     try {
-      const { ipcRenderer } = (window as any).require('electron');
-      await ipcRenderer.invoke('serial-write', JSON.stringify({ type: 'SEND_ALL_DATA' }));
-      showNotification('正在发送所有数据...', 'info');
+      const allData = {
+        maps: {
+          fuelMap: fuelMapData,
+          fuelAdvance: fuelAdvanceData,
+          ignitionAngle: ignitionAngleData,
+          dwellTime: dwellTimeData,
+          afrTarget: afrTargetData,
+          ectCompFuel: ectCompFuelData,
+          ectCompIgn: ectCompIgnData,
+          mapComp: mapCompData,
+          idleLimit: idleLimitData,
+        },
+        controllers: {
+          idleValue,
+          ignitionValue,
+          fuelValue,
+          modeValue,
+        },
+        otherOptions: {
+          params: otherOptionsParams,
+          grids: otherOptionsGrids
+        },
+        parameters: parametersData,
+        settings: settingsData
+      };
+
+      const payload = JSON.stringify({ type: 'SEND_ALL_DATA', data: allData });
+
+      if (remoteConnected && remoteRole === 'expert' && wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+        wsRef.current.send(payload);
+        showNotification('正在发送所有数据... (远程)', 'info');
+      } else if (window.electronAPI) {
+        await window.electronAPI.writeSerial(payload);
+        showNotification('正在发送所有数据...', 'info');
+      }
     } catch (err) {
       showNotification('发送失败，请检查连接', 'error');
     }
@@ -1103,10 +1335,20 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col h-screen w-screen bg-[#1a1d21] text-gray-300 font-sans overflow-hidden">
+    <div className="w-screen h-screen bg-black flex items-center justify-center overflow-hidden">
+      <div 
+        className="bg-[#1a1d21] text-gray-300 font-sans overflow-hidden shadow-2xl"
+        style={{ 
+          // 使用固定设计尺寸，通过 zoom 让所有子元素按 scale 比例缩放
+          width: DESIGN_WIDTH,
+          height: DESIGN_HEIGHT,
+          zoom: scale,
+        }}
+      >
+        <div className="flex flex-col h-full w-full">
       
-      {/* --- Title Bar --- */}
-      <div className="h-8 bg-[#111316] flex items-center justify-between px-4 border-b border-gray-800 select-none shrink-0" style={{ WebkitAppRegion: 'drag' } as any}>
+          {/* --- Title Bar --- */}
+          <div className="h-8 bg-[#111316] flex items-center justify-between px-4 border-b border-gray-800 select-none shrink-0" style={{ WebkitAppRegion: 'drag' } as any}>
         <div className="flex items-center gap-3">
           <Logo size={16} className="text-orange-500" />
           <span className="text-xs font-medium text-gray-400 tracking-wide">{t.titleBar_appName} {APP_VERSION}</span>
@@ -1128,7 +1370,7 @@ const App: React.FC = () => {
               </button>
               {showLanguageMenu && (
                 <div className="absolute top-full right-0 mt-1 bg-[#2d323a] border border-gray-600 rounded shadow-lg z-50 min-w-[140px]">
-                  {(['zh-CN', 'zh-TW', 'en', 'ja', 'th', 'ko', 'ru', 'de', 'fr'] as Language[]).map((lang) => (
+                  {(['zh-CN', 'zh-TW', 'en', 'ja', 'th', 'ko', 'ru', 'de', 'fr', 'es', 'pt', 'id', 'vi', 'tr', 'ar'] as Language[]).map((lang) => (
                     <button
                       key={lang}
                       onClick={() => { setLanguage(lang); setShowLanguageMenu(false); }}
@@ -1164,6 +1406,7 @@ const App: React.FC = () => {
           { key: 'learnTps', label: t.menu_learnTps },
           { key: 'copyDataTo', label: t.menu_copyDataTo },
           { key: 'testInjector', label: t.menu_testInjector },
+          { key: 'remote', label: '远程联调' },
           { key: 'afr', label: t.menu_afr },
           { key: 'help', label: t.menu_help },
         ].map((item) => (
@@ -1176,6 +1419,9 @@ const App: React.FC = () => {
               }`}
               onClick={(e) => {
                 e.stopPropagation();
+                if (item.key === 'selectPort' && activeMenu !== 'selectPort') {
+                  refreshPorts();
+                }
                 setActiveMenu(activeMenu === item.key ? null : item.key);
               }}
             >
@@ -1295,6 +1541,14 @@ const App: React.FC = () => {
                     </button>
                   </>
                 )}
+                {item.key === 'remote' && (
+                  <button 
+                    className="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-700 transition-colors text-gray-300 hover:text-white"
+                    onClick={() => { setShowRemoteConnect(true); setActiveMenu(null); }}
+                  >
+                    {remoteConnected ? '断开连接' : '连接服务器...'}
+                  </button>
+                )}
                 {item.key === 'afr' && (
                   <>
                     <button className="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-700 transition-colors text-gray-300 hover:text-white" onClick={() => setActiveMenu(null)}>{t.menu_afr_record}</button>
@@ -1311,23 +1565,73 @@ const App: React.FC = () => {
                   </>
                 )}
                 {item.key === 'selectPort' && (
-                  <div className="p-1.5 min-w-[112px]">
-                     <div className="relative">
-                        <select 
-                          className="w-full bg-[#16181c] text-gray-300 text-xs border border-gray-600 rounded pl-2 pr-7 py-1 appearance-none outline-none focus:border-blue-500 cursor-pointer"
-                          onClick={(e) => e.stopPropagation()}
-                          value={selectedPort}
-                          onChange={(e) => handleConnectPort(e.target.value)}
-                        >
-                           <option value="">{t.menu_selectPort}</option>
-                           {ports.map((p) => (
-                             <option key={p.path} value={p.path}>
-                               {p.path}
-                             </option>
-                           ))}
-                        </select>
-                        <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                  <div className="p-2 min-w-[160px]">
+                     {/* Connection Type Selector */}
+                     <div className="mb-2">
+                        <div className="text-[10px] text-gray-500 mb-1">Connection Type</div>
+                        <div className="relative">
+                          <select 
+                            className="w-full bg-[#16181c] text-gray-300 text-xs border border-gray-600 rounded pl-2 pr-7 py-1 appearance-none outline-none focus:border-blue-500 cursor-pointer"
+                            onClick={(e) => e.stopPropagation()}
+                            value={connectionType}
+                            onChange={(e) => setConnectionType(e.target.value as 'serial' | 'remote')}
+                          >
+                             <option value="serial">Serial Port</option>
+                             <option value="remote">Remote WebSocket</option>
+                          </select>
+                          <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                        </div>
                      </div>
+
+                     <div className="border-t border-gray-600 my-2"></div>
+
+                     {connectionType === 'serial' ? (
+                       <>
+                         <div className="relative mb-2">
+                            <select 
+                              className="w-full bg-[#16181c] text-gray-300 text-xs border border-gray-600 rounded pl-2 pr-7 py-1 appearance-none outline-none focus:border-blue-500 cursor-pointer"
+                              onClick={(e) => e.stopPropagation()}
+                              value={selectedPort}
+                              onChange={(e) => handleConnectPort(e.target.value)}
+                            >
+                               <option value="">{t.menu_selectPort}</option>
+                               {ports.map((p) => (
+                                 <option key={p.path} value={p.path}>
+                                   {p.path}
+                                 </option>
+                               ))}
+                            </select>
+                            <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                         </div>
+                         <div className="text-[10px] text-gray-500 mb-1">Manual Input (e.g. COM1)</div>
+                         <input 
+                            type="text" 
+                            className="w-full bg-[#16181c] text-gray-300 text-xs border border-gray-600 rounded px-2 py-1 outline-none focus:border-blue-500"
+                            placeholder="COM1"
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                handleConnectPort(e.currentTarget.value);
+                                setActiveMenu(null);
+                              }
+                            }}
+                          />
+                       </>
+                     ) : (
+                       <div className="flex flex-col gap-2">
+                          <button 
+                            className="w-full py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded transition-colors"
+                            onClick={() => {
+                              setShowRemoteConnect(true);
+                              setActiveMenu(null);
+                            }}
+                          >
+                            Open Remote Settings
+                          </button>
+                          <div className="text-[10px] text-gray-500">
+                            {remoteConnected ? 'Status: Connected' : 'Status: Disconnected'}
+                          </div>
+                       </div>
+                     )}
                   </div>
                 )}
                 {item.key !== 'file' && item.key !== 'data' && item.key !== 'help' && item.key !== 'selectPort' && item.key !== 'copyDataTo' && item.key !== 'afr' && (
@@ -1457,6 +1761,7 @@ const App: React.FC = () => {
                     min={500}
                     max={2000}
                     disabled={!masterSwitch}
+                    digitWidth={4}
                   />
                   <ControllerBlock 
                     label={t.controllers_ignitionControl} 
@@ -1468,17 +1773,19 @@ const App: React.FC = () => {
                     min={0}
                     max={60}
                     disabled={!masterSwitch}
+                    digitWidth={3}
                   />
                   <ControllerBlock 
                     label={t.controllers_fuelControl} 
                     value={fuelValue} 
                     onChange={setFuelValue}
                     unit="%" 
-                    step={0.5}
-                    decimals={1}
+                    step={1}
+                    decimals={0}
                     min={-50}
                     max={50}
                     disabled={!masterSwitch}
+                    digitWidth={2}
                   />
                   <ControllerBlock 
                     label={t.controllers_modeSelect} 
@@ -1489,6 +1796,7 @@ const App: React.FC = () => {
                     min={0}
                     max={5}
                     disabled={!masterSwitch}
+                    digitWidth={1}
                   />
                </div>
             </div>
@@ -1551,6 +1859,77 @@ const App: React.FC = () => {
 
       </div>
 
+      {/* Remote Connection Dialog */}
+      {showRemoteConnect && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50" onClick={() => setShowRemoteConnect(false)}>
+          <div className="bg-[#2d323a] rounded-lg border border-gray-600 shadow-2xl p-6 max-w-sm w-full mx-4" onClick={(e) => e.stopPropagation()}>
+            <h2 className="text-lg font-bold text-white mb-4">远程联调连接</h2>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs text-gray-400 mb-1">服务器地址</label>
+                <input 
+                  className="w-full bg-[#1a1d21] border border-gray-600 rounded px-2 py-1.5 text-sm text-white focus:border-blue-500 outline-none"
+                  value={remoteServerUrl}
+                  onChange={(e) => setRemoteServerUrl(e.target.value)}
+                />
+              </div>
+              
+              <div>
+                <label className="block text-xs text-gray-400 mb-1">房间号 (Session ID)</label>
+                <input 
+                  className="w-full bg-[#1a1d21] border border-gray-600 rounded px-2 py-1.5 text-sm text-white focus:border-blue-500 outline-none"
+                  value={remoteRoomId}
+                  onChange={(e) => setRemoteRoomId(e.target.value)}
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs text-gray-400 mb-1">角色</label>
+                <div className="flex gap-2">
+                  <button 
+                    className={`flex-1 py-1.5 text-xs rounded border ${remoteRole === 'ecu' ? 'bg-blue-600 border-blue-500 text-white' : 'bg-[#1a1d21] border-gray-600 text-gray-400'}`}
+                    onClick={() => setRemoteRole('ecu')}
+                  >
+                    ECU 端 (现场)
+                  </button>
+                  <button 
+                    className={`flex-1 py-1.5 text-xs rounded border ${remoteRole === 'expert' ? 'bg-purple-600 border-purple-500 text-white' : 'bg-[#1a1d21] border-gray-600 text-gray-400'}`}
+                    onClick={() => setRemoteRole('expert')}
+                  >
+                    专家端 (远程)
+                  </button>
+                </div>
+              </div>
+
+              <div className="pt-2 flex gap-2">
+                {remoteConnected ? (
+                  <button 
+                    onClick={handleDisconnectRemote}
+                    className="flex-1 py-2 bg-red-600 hover:bg-red-700 text-white rounded font-medium transition-colors text-sm"
+                  >
+                    断开连接
+                  </button>
+                ) : (
+                  <button 
+                    onClick={handleConnectRemote}
+                    className="flex-1 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded font-medium transition-colors text-sm"
+                  >
+                    连接
+                  </button>
+                )}
+                <button 
+                  onClick={() => setShowRemoteConnect(false)}
+                  className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded font-medium transition-colors text-sm"
+                >
+                  取消
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 关于弹窗 */}
       {showAbout && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50" onClick={() => setShowAbout(false)}>
@@ -1588,6 +1967,8 @@ const App: React.FC = () => {
           <span className="text-sm font-medium whitespace-pre-line">{notification.message}</span>
         </div>
       )}
+        </div>
+      </div>
     </div>
   );
 };

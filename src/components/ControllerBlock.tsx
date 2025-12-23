@@ -11,6 +11,7 @@ interface ControllerBlockProps {
   min?: number;
   max?: number;
   disabled?: boolean;
+  digitWidth?: number; // 固定显示宽度（ch单位）
 }
 
 export const ControllerBlock: React.FC<ControllerBlockProps> = ({ 
@@ -22,7 +23,8 @@ export const ControllerBlock: React.FC<ControllerBlockProps> = ({
   decimals = 0,
   min,
   max,
-  disabled = false
+  disabled = false,
+  digitWidth
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [inputValue, setInputValue] = useState(value.toFixed(decimals));
@@ -50,7 +52,7 @@ export const ControllerBlock: React.FC<ControllerBlockProps> = ({
 
   const handleWheel = (e: React.WheelEvent) => {
     if (disabled) return;
-    e.preventDefault();
+    // e.preventDefault();
     if (e.deltaY < 0) {
       handleIncrement();
     } else {
@@ -84,6 +86,36 @@ export const ControllerBlock: React.FC<ControllerBlockProps> = ({
     }
   };
 
+  // 生成数码管显示字符串：符号单独显示，前导零透明占位（不显示但占位）
+  function renderDigitalString() {
+    if (disabled) return '-';
+    // 原始字符串（含小数点）
+    let raw = value.toFixed(decimals);
+    let sign = '';
+      if (raw.startsWith('-')) {
+      sign = '-';
+      raw = raw.slice(1);
+    } else if (unit === '%' && value >= 0) {
+      // 当为百分号时，正数显示加号
+      sign = '+';
+    }
+
+    // raw 为数字主体（如 "850" 或 "2.5"），长度为 visibleLen
+    let visibleLen = raw.length;
+    if (raw.includes('.') && !sign) visibleLen -= 1; // 不计小数点长度
+    const targetLen = digitWidth ?? visibleLen;
+    const padCount = Math.max(0, targetLen - visibleLen);
+    const padZeros = padCount > 0 ? '0'.repeat(padCount) : '';
+
+    return (
+      <>
+        {sign ? <span className="text-[2rem]" style={{marginLeft:'-0.5ch'}}>{sign}</span> : null}
+        {padZeros && <span style={{ color: 'transparent', userSelect: 'none' }}>{padZeros}</span>}
+        <span>{raw}</span>
+      </>
+    );
+  }
+
   return (
     <div 
       className={`flex flex-col items-center h-full py-2 select-none ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
@@ -114,16 +146,16 @@ export const ControllerBlock: React.FC<ControllerBlockProps> = ({
               onBlur={handleInputBlur}
               onKeyDown={handleInputKeyDown}
               className="font-digital text-black tracking-normal bg-transparent border-none outline-none text-center w-full"
-              style={{ fontSize: 'clamp(3.5rem, 2vw, 2.5rem)' }}
+              style={{ fontSize: 'clamp(2.5rem, 2vw, 2.5rem)', minWidth: digitWidth ? `${digitWidth}ch` : undefined, maxWidth: digitWidth ? `${digitWidth}ch` : undefined }}
               autoFocus
             />
           ) : (
             <span 
                 className={`font-digital text-black tracking-normal w-full text-center ${!disabled ? 'cursor-pointer' : ''}`}
-                style={{ fontSize: 'clamp(1.5rem, 10vw, 2.5rem)' }}
+                style={{ fontSize: 'clamp(1.5rem, 10vw, 2.5rem)', minWidth: digitWidth ? `${digitWidth}ch` : undefined, maxWidth: digitWidth ? `${digitWidth}ch` : undefined, display: 'inline-block' }}
                 onClick={() => !disabled && setIsEditing(true)}
             >
-              {disabled ? '-' : `${unit === '%' ? (value >= 0 ? '+' : '') : ''}${value.toFixed(decimals)}`}
+              {renderDigitalString()}
             </span>
           )}
           {unit && !isEditing && !disabled && <span className="text-gray-800 text-[10px] font-bold absolute top-0.5 right-1 font-sans">{unit}</span>}

@@ -97,6 +97,7 @@ export default {
   controllers_title: 'Echtzeitsteuerung',
   controllers_enabled: 'Aktiviert',
   controllers_disabled: 'Deaktiviert',
+  controllers_tableDisabledMsg: 'Tabellenbearbeitung ist deaktiviert, während Controller aktiv sind',
   controllers_idleControl: 'Leerlaufsteuerung',
   controllers_ignitionControl: 'Zündwinkelsteuerung',
   controllers_fuelControl: 'Kraftstoffmengensteuerung',
@@ -204,6 +205,12 @@ export default {
   lang_ru: 'Русский',
   lang_de: 'Deutsch',
   lang_fr: 'Français',
+  lang_es: 'Español',
+  lang_pt: 'Português',
+  lang_id: 'Bahasa Indonesia',
+  lang_vi: 'Tiếng Việt',
+  lang_tr: 'Türkçe',
+  lang_ar: 'العربية',
 
   // Other Options Page
   otherOptions_throttleMin: 'Throttle Voltage (Min)',
