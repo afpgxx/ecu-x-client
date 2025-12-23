@@ -1,6 +1,6 @@
 {
   "name": "ecu-injection-management-system",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "ECU电喷管理系统",
   "main": "electron/main.js",
   "author": "ECU Team",

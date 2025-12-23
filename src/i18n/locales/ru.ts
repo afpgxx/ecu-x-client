@@ -97,7 +97,7 @@ export default {
   controllers_title: 'Управление в реальном времени',
   controllers_enabled: 'Включено',
   controllers_disabled: 'Отключено',
-  controllers_tableDisabledMsg: 'Редактирование таблицы отключено, пока активны контроллеры',
+  controllers_tableDisabledMsg: 'Редактирование таблицы отключено при активных контроллерах',
   controllers_idleControl: 'Регулировка холостого хода',
   controllers_ignitionControl: 'Регулировка угла зажигания',
   controllers_fuelControl: 'Регулировка количества топлива',

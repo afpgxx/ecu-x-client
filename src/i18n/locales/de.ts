@@ -97,7 +97,6 @@ export default {
   controllers_title: 'Echtzeitsteuerung',
   controllers_enabled: 'Aktiviert',
   controllers_disabled: 'Deaktiviert',
-  controllers_tableDisabledMsg: 'Tabellenbearbeitung ist deaktiviert, während Controller aktiv sind',
   controllers_idleControl: 'Leerlaufsteuerung',
   controllers_ignitionControl: 'Zündwinkelsteuerung',
   controllers_fuelControl: 'Kraftstoffmengensteuerung',

@@ -2,6 +2,7 @@ import {
     LOAD_POINTS, 
     RPM_POINTS, 
     ECT_COMP_TEMP_POINTS, 
+    ECT_COMP_RPM_POINTS
     ECT_COMP_RPM_POINTS, 
 } from '../constants';
 import { IdleLimitState } from '../types';
