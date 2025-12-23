@@ -262,4 +262,20 @@ export default {
   params_tab_pressureVoltage: 'Отношение MAP-Напряжение',
   params_tab_tpsSettings: 'Настройки TPS',
   params_tab_rpmSettings: 'Настройки RPM',
+  
+  // Удаленная настройка
+  menu_remote: 'Удаленная настройка',
+  remote_title: 'Подключение удаленной настройки',
+  remote_serverAddress: 'Адрес сервера',
+  remote_roomId: 'ID комнаты (Session ID)',
+  remote_role: 'Роль',
+  remote_ecuRole: 'ECU (на месте)',
+  remote_expertRole: 'Эксперт (удаленно)',
+  remote_connect: 'Подключить',
+  remote_disconnect: 'Отключить',
+  remote_status_connected: 'Статус: Подключено',
+  remote_status_disconnected: 'Статус: Не подключено',
+  remote_connectionFailed: 'Ошибка удаленного подключения',
+  remote_connectedSuccess: 'Подключено к удаленному серверу',
+  remote_disconnectedNotify: 'Удаленное подключение разорвано',
 };

@@ -597,7 +597,7 @@ const App: React.FC = () => {
       
       ws.onopen = () => {
         setRemoteConnected(true);
-        showNotification('已连接到远程服务器', 'success');
+        showNotification(t.remote_connectedSuccess, 'success');
         // Send Join Message
         ws.send(JSON.stringify({
           type: 'join',
@@ -633,13 +633,13 @@ const App: React.FC = () => {
 
       ws.onclose = () => {
         setRemoteConnected(false);
-        showNotification('远程连接已断开', 'info');
+        showNotification(t.remote_disconnectedNotify, 'info');
         wsRef.current = null;
       };
 
       ws.onerror = (err) => {
         console.error('WS Error:', err);
-        showNotification('远程连接错误', 'error');
+        showNotification(t.remote_connectionFailed, 'error');
       };
 
       wsRef.current = ws;
@@ -1406,7 +1406,7 @@ const App: React.FC = () => {
           { key: 'learnTps', label: t.menu_learnTps },
           { key: 'copyDataTo', label: t.menu_copyDataTo },
           { key: 'testInjector', label: t.menu_testInjector },
-          { key: 'remote', label: '远程联调' },
+          { key: 'remote', label: t.menu_remote },
           { key: 'afr', label: t.menu_afr },
           { key: 'help', label: t.menu_help },
         ].map((item) => (
@@ -1546,7 +1546,7 @@ const App: React.FC = () => {
                     className="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-700 transition-colors text-gray-300 hover:text-white"
                     onClick={() => { setShowRemoteConnect(true); setActiveMenu(null); }}
                   >
-                    {remoteConnected ? '断开连接' : '连接服务器...'}
+                    {remoteConnected ? t.remote_disconnect : t.remote_connect}
                   </button>
                 )}
                 {item.key === 'afr' && (
@@ -1628,7 +1628,7 @@ const App: React.FC = () => {
                             Open Remote Settings
                           </button>
                           <div className="text-[10px] text-gray-500">
-                            {remoteConnected ? 'Status: Connected' : 'Status: Disconnected'}
+                            {remoteConnected ? t.remote_status_connected : t.remote_status_disconnected}
                           </div>
                        </div>
                      )}
@@ -1863,11 +1863,11 @@ const App: React.FC = () => {
       {showRemoteConnect && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50" onClick={() => setShowRemoteConnect(false)}>
           <div className="bg-[#2d323a] rounded-lg border border-gray-600 shadow-2xl p-6 max-w-sm w-full mx-4" onClick={(e) => e.stopPropagation()}>
-            <h2 className="text-lg font-bold text-white mb-4">远程联调连接</h2>
+            <h2 className="text-lg font-bold text-white mb-4">{t.remote_title}</h2>
             
             <div className="space-y-4">
               <div>
-                <label className="block text-xs text-gray-400 mb-1">服务器地址</label>
+                <label className="block text-xs text-gray-400 mb-1">{t.remote_serverAddress}</label>
                 <input 
                   className="w-full bg-[#1a1d21] border border-gray-600 rounded px-2 py-1.5 text-sm text-white focus:border-blue-500 outline-none"
                   value={remoteServerUrl}
@@ -1876,7 +1876,7 @@ const App: React.FC = () => {
               </div>
               
               <div>
-                <label className="block text-xs text-gray-400 mb-1">房间号 (Session ID)</label>
+                <label className="block text-xs text-gray-400 mb-1">{t.remote_roomId}</label>
                 <input 
                   className="w-full bg-[#1a1d21] border border-gray-600 rounded px-2 py-1.5 text-sm text-white focus:border-blue-500 outline-none"
                   value={remoteRoomId}
@@ -1885,19 +1885,19 @@ const App: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-xs text-gray-400 mb-1">角色</label>
+                <label className="block text-xs text-gray-400 mb-1">{t.remote_role}</label>
                 <div className="flex gap-2">
                   <button 
                     className={`flex-1 py-1.5 text-xs rounded border ${remoteRole === 'ecu' ? 'bg-blue-600 border-blue-500 text-white' : 'bg-[#1a1d21] border-gray-600 text-gray-400'}`}
                     onClick={() => setRemoteRole('ecu')}
                   >
-                    ECU 端 (现场)
+                    {t.remote_ecuRole}
                   </button>
                   <button 
                     className={`flex-1 py-1.5 text-xs rounded border ${remoteRole === 'expert' ? 'bg-purple-600 border-purple-500 text-white' : 'bg-[#1a1d21] border-gray-600 text-gray-400'}`}
                     onClick={() => setRemoteRole('expert')}
                   >
-                    专家端 (远程)
+                    {t.remote_expertRole}
                   </button>
                 </div>
               </div>
@@ -1908,21 +1908,21 @@ const App: React.FC = () => {
                     onClick={handleDisconnectRemote}
                     className="flex-1 py-2 bg-red-600 hover:bg-red-700 text-white rounded font-medium transition-colors text-sm"
                   >
-                    断开连接
+                    {t.remote_disconnect}
                   </button>
                 ) : (
                   <button 
                     onClick={handleConnectRemote}
                     className="flex-1 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded font-medium transition-colors text-sm"
                   >
-                    连接
+                    {t.remote_connect}
                   </button>
                 )}
                 <button 
                   onClick={() => setShowRemoteConnect(false)}
                   className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded font-medium transition-colors text-sm"
                 >
-                  取消
+                  {t.common_cancel}
                 </button>
               </div>
             </div>

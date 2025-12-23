@@ -262,4 +262,20 @@ export default {
   params_tab_pressureVoltage: 'MAP-Voltaj İlişkisi',
   params_tab_tpsSettings: 'TPS Ayarları',
   params_tab_rpmSettings: 'RPM Ayarları',
+  
+  // Remote Tuning
+  menu_remote: 'Uzaktan Ayarlama',
+  remote_title: 'Uzaktan Ayarlama Bağlantısı',
+  remote_serverAddress: 'Sunucu Adresi',
+  remote_roomId: 'Oda Kimliği (Session ID)',
+  remote_role: 'Rol',
+  remote_ecuRole: 'ECU (Sahadaki)',
+  remote_expertRole: 'Uzman (Uzaktan)',
+  remote_connect: 'Bağlan',
+  remote_disconnect: 'Bağlantıyı Kes',
+  remote_status_connected: 'Durum: Bağlı',
+  remote_status_disconnected: 'Durum: Bağlı Değil',
+  remote_connectionFailed: 'Uzaktan Bağlantı Hatası',
+  remote_connectedSuccess: 'Uzak sunucuya bağlandı',
+  remote_disconnectedNotify: 'Uzaktan bağlantı kesildi',
 };

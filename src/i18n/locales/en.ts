@@ -262,4 +262,20 @@ export default {
   params_tab_pressureVoltage: 'MAP-Voltage Relationship',
   params_tab_tpsSettings: 'TPS Settings',
   params_tab_rpmSettings: 'RPM Settings',
+  
+  // Remote Tuning
+  menu_remote: 'Remote Tuning',
+  remote_title: 'Remote Tuning Connection',
+  remote_serverAddress: 'Server Address',
+  remote_roomId: 'Room ID (Session ID)',
+  remote_role: 'Role',
+  remote_ecuRole: 'ECU (On-site)',
+  remote_expertRole: 'Expert (Remote)',
+  remote_connect: 'Connect',
+  remote_disconnect: 'Disconnect',
+  remote_status_connected: 'Status: Connected',
+  remote_status_disconnected: 'Status: Disconnected',
+  remote_connectionFailed: 'Remote Connection Error',
+  remote_connectedSuccess: 'Connected to remote server',
+  remote_disconnectedNotify: 'Remote connection disconnected',
 };

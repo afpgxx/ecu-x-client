@@ -262,4 +262,20 @@ export default {
   params_tab_pressureVoltage: 'MAP-Voltage Relationship',
   params_tab_tpsSettings: 'TPS Settings',
   params_tab_rpmSettings: 'RPM Settings',
+  
+  // Remote Tuning
+  menu_remote: 'Điều Chỉnh Từ Xa',
+  remote_title: 'Kết Nối Điều Chỉnh Từ Xa',
+  remote_serverAddress: 'Địa Chỉ Máy Chủ',
+  remote_roomId: 'ID Phòng (Session ID)',
+  remote_role: 'Vai Trò',
+  remote_ecuRole: 'ECU (Tại Chỗ)',
+  remote_expertRole: 'Chuyên Gia (Từ Xa)',
+  remote_connect: 'Kết Nối',
+  remote_disconnect: 'Ngắt Kết Nối',
+  remote_status_connected: 'Trạng Thái: Đã Kết Nối',
+  remote_status_disconnected: 'Trạng Thái: Chưa Kết Nối',
+  remote_connectionFailed: 'Lỗi Kết Nối Từ Xa',
+  remote_connectedSuccess: 'Đã kết nối với máy chủ từ xa',
+  remote_disconnectedNotify: 'Kết nối từ xa đã bị ngắt',
 };

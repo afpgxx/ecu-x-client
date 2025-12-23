@@ -263,4 +263,20 @@ export default {
   params_tab_pressureVoltage: 'MAP-Spannungs-Beziehung',
   params_tab_tpsSettings: 'TPS-Einstellungen',
   params_tab_rpmSettings: 'RPM-Einstellungen',
+  
+  // Fernabstimmung
+  menu_remote: 'Fernabstimmung',
+  remote_title: 'Verbindung zur Fernabstimmung',
+  remote_serverAddress: 'Serveradresse',
+  remote_roomId: 'Raum-ID (Session ID)',
+  remote_role: 'Rolle',
+  remote_ecuRole: 'ECU (vor Ort)',
+  remote_expertRole: 'Experte (Fern)',
+  remote_connect: 'Verbinden',
+  remote_disconnect: 'Trennen',
+  remote_status_connected: 'Status: Verbunden',
+  remote_status_disconnected: 'Status: Nicht verbunden',
+  remote_connectionFailed: 'Fehler bei Fernverbindung',
+  remote_connectedSuccess: 'Mit Fernserver verbunden',
+  remote_disconnectedNotify: 'Fernverbindung getrennt',
 };

@@ -262,4 +262,20 @@ export default {
   params_tab_pressureVoltage: 'Relation MAP-Tension',
   params_tab_tpsSettings: 'Paramètres TPS',
   params_tab_rpmSettings: 'Paramètres RPM',
+  
+  // Réglage à distance
+  menu_remote: 'Réglage à distance',
+  remote_title: 'Connexion de réglage à distance',
+  remote_serverAddress: 'Adresse du serveur',
+  remote_roomId: 'ID de salle (Session ID)',
+  remote_role: 'Rôle',
+  remote_ecuRole: 'ECU (sur site)',
+  remote_expertRole: 'Expert (à distance)',
+  remote_connect: 'Connecter',
+  remote_disconnect: 'Déconnecter',
+  remote_status_connected: 'Statut : Connecté',
+  remote_status_disconnected: 'Statut : Déconnecté',
+  remote_connectionFailed: 'Erreur de connexion à distance',
+  remote_connectedSuccess: 'Connecté au serveur distant',
+  remote_disconnectedNotify: 'Connexion à distance déconnectée',
 };

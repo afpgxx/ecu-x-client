@@ -262,4 +262,20 @@ export default {
   params_tab_pressureVoltage: 'MAP-Voltage Relationship',
   params_tab_tpsSettings: 'TPS Settings',
   params_tab_rpmSettings: 'RPM Settings',
+  
+  // Remote Tuning
+  menu_remote: 'الضبط البعيد',
+  remote_title: 'اتصال الضبط البعيد',
+  remote_serverAddress: 'عنوان الخادم',
+  remote_roomId: 'معرّف الغرفة (معرّف الجلسة)',
+  remote_role: 'الدور',
+  remote_ecuRole: 'وحدة التحكم (في الموقع)',
+  remote_expertRole: 'خبير (بعيد)',
+  remote_connect: 'الاتصال',
+  remote_disconnect: 'قطع الاتصال',
+  remote_status_connected: 'الحالة: متصل',
+  remote_status_disconnected: 'الحالة: غير متصل',
+  remote_connectionFailed: 'خطأ في الاتصال البعيد',
+  remote_connectedSuccess: 'متصل بخادم بعيد',
+  remote_disconnectedNotify: 'تم قطع الاتصال البعيد',
 };

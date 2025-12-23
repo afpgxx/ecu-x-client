@@ -262,4 +262,20 @@ export default {
   params_tab_pressureVoltage: '进气压力-电压关系',
   params_tab_tpsSettings: 'TPS设置',
   params_tab_rpmSettings: 'RPM设置',
+  
+  // 远程联调
+  menu_remote: '远程联调',
+  remote_title: '远程联调连接',
+  remote_serverAddress: '服务器地址',
+  remote_roomId: '房间号 (Session ID)',
+  remote_role: '角色',
+  remote_ecuRole: 'ECU 端 (现场)',
+  remote_expertRole: '专家端 (远程)',
+  remote_connect: '连接',
+  remote_disconnect: '断开连接',
+  remote_status_connected: '状态：已连接',
+  remote_status_disconnected: '状态：未连接',
+  remote_connectionFailed: '远程连接错误',
+  remote_connectedSuccess: '已连接到远程服务器',
+  remote_disconnectedNotify: '远程连接已断开',
 };

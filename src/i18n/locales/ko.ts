@@ -262,4 +262,20 @@ export default {
   params_tab_pressureVoltage: 'MAP-전압 관계',
   params_tab_tpsSettings: 'TPS 설정',
   params_tab_rpmSettings: 'RPM 설정',
+  
+  // 원격 튜닝
+  menu_remote: '원격 튜닝',
+  remote_title: '원격 튜닝 연결',
+  remote_serverAddress: '서버 주소',
+  remote_roomId: '룸 ID (Session ID)',
+  remote_role: '역할',
+  remote_ecuRole: 'ECU (현장)',
+  remote_expertRole: '전문가 (원격)',
+  remote_connect: '연결',
+  remote_disconnect: '연결 끊기',
+  remote_status_connected: '상태: 연결됨',
+  remote_status_disconnected: '상태: 연결 안됨',
+  remote_connectionFailed: '원격 연결 오류',
+  remote_connectedSuccess: '원격 서버에 연결됨',
+  remote_disconnectedNotify: '원격 연결 끊김',
 };

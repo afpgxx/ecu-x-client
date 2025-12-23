@@ -262,4 +262,20 @@ export default {
   params_tab_pressureVoltage: 'MAP-Voltage Relationship',
   params_tab_tpsSettings: 'TPS Settings',
   params_tab_rpmSettings: 'RPM Settings',
+  
+  // Remote Tuning
+  menu_remote: 'Penyetelan Jarak Jauh',
+  remote_title: 'Koneksi Penyetelan Jarak Jauh',
+  remote_serverAddress: 'Alamat Server',
+  remote_roomId: 'ID Ruangan (Session ID)',
+  remote_role: 'Peran',
+  remote_ecuRole: 'ECU (Di Lapangan)',
+  remote_expertRole: 'Ahli (Jarak Jauh)',
+  remote_connect: 'Hubungkan',
+  remote_disconnect: 'Putuskan',
+  remote_status_connected: 'Status: Terhubung',
+  remote_status_disconnected: 'Status: Tidak Terhubung',
+  remote_connectionFailed: 'Kesalahan Koneksi Jarak Jauh',
+  remote_connectedSuccess: 'Terhubung ke server jarak jauh',
+  remote_disconnectedNotify: 'Koneksi jarak jauh terputus',
 };

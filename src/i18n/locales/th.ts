@@ -262,4 +262,20 @@ export default {
   params_tab_pressureVoltage: 'ความสัมพันธ์ MAP-แรงดัน',
   params_tab_tpsSettings: 'การตั้งค่า TPS',
   params_tab_rpmSettings: 'การตั้งค่า RPM',
+  
+  // การปรับแต่งระยะไกล
+  menu_remote: 'การปรับแต่งระยะไกล',
+  remote_title: 'การเชื่อมต่อการปรับแต่งระยะไกล',
+  remote_serverAddress: 'ที่อยู่เซิร์ฟเวอร์',
+  remote_roomId: 'ID ห้อง (Session ID)',
+  remote_role: 'บทบาท',
+  remote_ecuRole: 'ECU (ระบบจริง)',
+  remote_expertRole: 'ผู้เชี่ยวชาญ (ระยะไกล)',
+  remote_connect: 'เชื่อมต่อ',
+  remote_disconnect: 'ยกเลิกการเชื่อมต่อ',
+  remote_status_connected: 'สถานะ: เชื่อมต่อแล้ว',
+  remote_status_disconnected: 'สถานะ: ไม่ได้เชื่อมต่อ',
+  remote_connectionFailed: 'ข้อผิดพลาดการเชื่อมต่อระยะไกล',
+  remote_connectedSuccess: 'เชื่อมต่อกับเซิร์ฟเวอร์ระยะไกลแล้ว',
+  remote_disconnectedNotify: 'การเชื่อมต่อระยะไกลขาด',
 };

@@ -262,4 +262,20 @@ export default {
   params_tab_pressureVoltage: '進氣壓力-電壓關係',
   params_tab_tpsSettings: 'TPS設定',
   params_tab_rpmSettings: 'RPM設定',
+  
+  // 遠程調試
+  menu_remote: '遠程調試',
+  remote_title: '遠程調試連接',
+  remote_serverAddress: '服務器地址',
+  remote_roomId: '房間號 (Session ID)',
+  remote_role: '角色',
+  remote_ecuRole: 'ECU 端 (現場)',
+  remote_expertRole: '專家端 (遠程)',
+  remote_connect: '連接',
+  remote_disconnect: '斷開連接',
+  remote_status_connected: '狀態：已連接',
+  remote_status_disconnected: '狀態：未連接',
+  remote_connectionFailed: '遠程連接錯誤',
+  remote_connectedSuccess: '已連接到遠程服務器',
+  remote_disconnectedNotify: '遠程連接已斷開',
 };

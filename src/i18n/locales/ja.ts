@@ -262,4 +262,20 @@ export default {
   params_tab_pressureVoltage: '吸気圧力-電圧関係',
   params_tab_tpsSettings: 'TPS設定',
   params_tab_rpmSettings: 'RPM設定',
+  
+  // リモートチューニング
+  menu_remote: 'リモートチューニング',
+  remote_title: 'リモートチューニング接続',
+  remote_serverAddress: 'サーバーアドレス',
+  remote_roomId: 'ルームID (Session ID)',
+  remote_role: 'ロール',
+  remote_ecuRole: 'ECU (オンサイト)',
+  remote_expertRole: 'エキスパート (リモート)',
+  remote_connect: '接続',
+  remote_disconnect: '切断',
+  remote_status_connected: 'ステータス：接続済み',
+  remote_status_disconnected: 'ステータス：未接続',
+  remote_connectionFailed: 'リモート接続エラー',
+  remote_connectedSuccess: 'リモートサーバーに接続しました',
+  remote_disconnectedNotify: 'リモート接続が切断されました',
 };

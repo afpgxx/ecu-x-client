@@ -262,4 +262,20 @@ export default {
   params_tab_pressureVoltage: 'MAP-Voltage Relationship',
   params_tab_tpsSettings: 'TPS Settings',
   params_tab_rpmSettings: 'RPM Settings',
+  
+  // Remote Tuning
+  menu_remote: 'Sintonia Remota',
+  remote_title: 'Conexão de Sintonia Remota',
+  remote_serverAddress: 'Endereço do Servidor',
+  remote_roomId: 'ID da Sala (Session ID)',
+  remote_role: 'Função',
+  remote_ecuRole: 'ECU (No Local)',
+  remote_expertRole: 'Especialista (Remoto)',
+  remote_connect: 'Conectar',
+  remote_disconnect: 'Desconectar',
+  remote_status_connected: 'Status: Conectado',
+  remote_status_disconnected: 'Status: Desconectado',
+  remote_connectionFailed: 'Erro de Conexão Remota',
+  remote_connectedSuccess: 'Conectado ao servidor remoto',
+  remote_disconnectedNotify: 'Conexão remota desconectada',
 };
