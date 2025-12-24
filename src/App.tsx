@@ -155,7 +155,7 @@ const App: React.FC = () => {
   // Remote Tuning State
   const [showRemoteConnect, setShowRemoteConnect] = useState(false);
   const [remoteRole, setRemoteRole] = useState<'ecu' | 'expert'>('ecu');
-  const [remoteServerUrl, setRemoteServerUrl] = useState('ws://localhost:8765');
+  const [remoteServerUrl, setRemoteServerUrl] = useState('ws://8.217.211.137:8765');
   const [remoteRoomId, setRemoteRoomId] = useState('1234');
   const [remoteConnected, setRemoteConnected] = useState(false);
   const [connectionType, setConnectionType] = useState<'serial' | 'remote'>('serial');
