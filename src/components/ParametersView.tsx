@@ -19,6 +19,8 @@ export const ParametersView: React.FC<ParametersViewProps> = ({ data, onDataChan
     const [activeTab, setActiveTab] = useState(0);
     const [editingCell, setEditingCell] = useState<{row: number, col: number} | null>(null);
     const inputRef = React.useRef<HTMLInputElement>(null);
+    const headerScrollRef = React.useRef<HTMLDivElement>(null);
+    const dataScrollRef = React.useRef<HTMLDivElement>(null);
 
     // 当数据变化时重置编辑状态（例如导入新数据后）
     React.useEffect(() => {
@@ -32,6 +34,19 @@ export const ParametersView: React.FC<ParametersViewProps> = ({ data, onDataChan
         inputRef.current.select();
       }
     }, [editingCell]);
+
+    // 同步坐标轴和数据行的滚动
+    const handleHeaderScroll = () => {
+      if (headerScrollRef.current && dataScrollRef.current) {
+        dataScrollRef.current.scrollLeft = headerScrollRef.current.scrollLeft;
+      }
+    };
+
+    const handleDataScroll = () => {
+      if (dataScrollRef.current && headerScrollRef.current) {
+        headerScrollRef.current.scrollLeft = dataScrollRef.current.scrollLeft;
+      }
+    };
 
     // 子标签定义
     const tabs = [
@@ -120,7 +135,7 @@ export const ParametersView: React.FC<ParametersViewProps> = ({ data, onDataChan
                     <div className="w-32 flex-shrink-0 p-1 flex items-center justify-center border-r border-gray-700 bg-[#1e2126] text-gray-400 font-bold">
                         {xLabel}
                     </div>
-                    <div className="flex-1 overflow-x-auto scrollbar-thin">
+                    <div className={`flex-1 ${activeTab !== 5 ? 'overflow-x-auto scrollbar-thin' : 'overflow-hidden'}`} ref={headerScrollRef} onScroll={handleHeaderScroll}>
                         <div className="flex h-full">
                             {headers.map((val, i) => (
                                 <div
@@ -133,10 +148,12 @@ export const ParametersView: React.FC<ParametersViewProps> = ({ data, onDataChan
                                       : `${val}°C`}
                                 </div>
                             ))}
-                            {/* Oem Datum 列 */}
-                            <div className="w-24 flex-shrink-0 flex items-center justify-center font-bold bg-[#1e2126] text-gray-400 border-l border-gray-700 py-1">
-                                Oem Datum
-                            </div>
+                            {/* OEM Datum 列 - 仅在 AFR 表格时显示 */}
+                            {activeTab === 0 && (
+                              <div className="w-24 flex-shrink-0 flex items-center justify-center font-bold bg-[#1e2126] text-gray-400 border-l border-gray-700 py-1">
+                                  Oem Datum
+                              </div>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -146,7 +163,7 @@ export const ParametersView: React.FC<ParametersViewProps> = ({ data, onDataChan
                     <div className="w-32 flex-shrink-0 flex items-center justify-center border-r border-gray-700 bg-[#2d323a] text-gray-300 font-bold h-10">
                         {yLabel}
                     </div>
-                    <div className="flex-1 overflow-x-auto scrollbar-thin">
+                    <div className="flex-1 overflow-x-auto scrollbar-thin" ref={dataScrollRef} onScroll={handleDataScroll}>
                         <div className="flex h-full">
                             {tableData.map((cellValue: number, i: number) => {
                                 const isEditing = editingCell && editingCell.row === 0 && editingCell.col === i;
@@ -154,7 +171,9 @@ export const ParametersView: React.FC<ParametersViewProps> = ({ data, onDataChan
                                 return (
                                 <div
                                     key={i}
-                                    className="flex-1 min-w-[64px] flex items-center justify-center bg-[#111316] text-white font-bold border-r border-gray-700 last:border-0 h-10"
+                                    className={`flex-1 min-w-[64px] flex items-center justify-center text-white font-bold border-r border-gray-700 last:border-0 h-10 ${
+                                      isEditing ? 'bg-orange-600' : 'bg-[#111316]'
+                                    }`}
                                     style={{ position: 'relative', cursor: isEditing ? 'text' : 'pointer' }}
                                     onClick={(e) => {
                                         if (!isEditing) {
@@ -170,7 +189,7 @@ export const ParametersView: React.FC<ParametersViewProps> = ({ data, onDataChan
                                             type="text"
                                             defaultValue={cellValue.toString()}
                                             autoFocus
-                                            className="w-full h-full bg-blue-600 text-white text-center outline-none font-bold px-0.5"
+                                            className="w-full h-full bg-orange-600 text-white text-center outline-none font-bold px-0.5"
                                             onBlur={(e) => {
                                                 const value = e.target.value;
                                                 const parsed = parseFloat(value);
@@ -201,10 +220,12 @@ export const ParametersView: React.FC<ParametersViewProps> = ({ data, onDataChan
                                 </div>
                                 );
                             })}
-                            {/* Oem Datum 数据 */}
-                            <div className="w-24 flex-shrink-0 flex items-center justify-center bg-[#111316] text-gray-500 font-bold border-l border-gray-700 h-10">
-                                0
-                            </div>
+                            {/* OEM Datum 数据 - 仅在 AFR 表格时显示 */}
+                            {activeTab === 0 && (
+                              <div className="w-24 flex-shrink-0 flex items-center justify-center bg-[#111316] text-gray-500 font-bold border-l border-gray-700 h-10">
+                                  0
+                              </div>
+                            )}
                         </div>
                     </div>
                 </div>

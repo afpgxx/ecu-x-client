@@ -54,7 +54,7 @@ export const MapTable1D: React.FC<MapTable1DProps> = ({
   const activeColIndex = React.useMemo(() => {
     if (activeValue === undefined) return -1;
     // Only consider numeric headers for active value tracking
-    return headers.reduce((prev, curr, i) => {
+    return headers.reduce<number>((prev, curr, i) => {
       if (typeof curr !== 'number') return prev;
       const prevVal = headers[prev];
       if (typeof prevVal !== 'number') return i; // First numeric header found
@@ -182,7 +182,14 @@ export const MapTable1D: React.FC<MapTable1DProps> = ({
       <div className="flex w-full theme-bg-header theme-border border-b">
         <div 
           className="w-24 flex-shrink-0 p-1 flex items-center justify-center font-bold theme-bg-panel-alt theme-text-muted theme-border border-r cursor-pointer"
-          onClick={() => setSelection(null)}
+          onClick={() => {
+            setSelection(null);
+            setEditingIndex(null);
+          }}
+          onDoubleClick={() => {
+            setSelection(null);
+            setEditingIndex(null);
+          }}
         >
           {xLabel}
         </div>
@@ -216,6 +223,10 @@ export const MapTable1D: React.FC<MapTable1DProps> = ({
                 const val = (data && data.length > 0 && typeof data[0] === 'number') ? data[0] : 0;
                 setInputValue(Number(val.toFixed(2)).toString());
               }}
+              onDoubleClick={() => {
+                setSelection(null);
+                setEditingIndex(null);
+              }}
             >
               {yLabel}
            </div>
@@ -225,9 +236,11 @@ export const MapTable1D: React.FC<MapTable1DProps> = ({
                 {data.map((cellValue, i) => {
                 const isActive = i === activeColIndex;
                 const isSelected = selection === 'all';
+                const isEditing = editingIndex === i;
                 const bg = colorMode === 'heatmap'
                   ? getHeatmapColor(cellValue || 0, min, max)
                   : 'var(--bg-cell)';
+                const displayBg = isEditing ? '#ff8800' : bg;
                 return (
                   <div
                     key={i}
@@ -236,7 +249,7 @@ export const MapTable1D: React.FC<MapTable1DProps> = ({
                       isActive ? 'z-10 shadow-lg' : ''
                     } ${colorMode === 'dark' ? 'theme-text-primary' : ''}`}
                     style={{
-                      backgroundColor: bg,
+                      backgroundColor: displayBg,
                       color: colorMode === 'heatmap' ? '#000' : undefined,
                       fontSize: 15,
                     }}

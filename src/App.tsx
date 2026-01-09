@@ -20,7 +20,8 @@ import { ControllerBlock } from './components/ControllerBlock';
 import { 
   SECRET_KEY, 
   DWELL_DATA_POINTS, 
-  ECT_COMP_2D_DATA
+  ECT_COMP_2D_DATA,
+  RPM_POINTS
 } from './constants';
 import { 
   generateMapData, 
@@ -120,7 +121,7 @@ const App: React.FC = () => {
     ectVoltage: Array(11).fill(0),
     pressureVoltage: Array(11).fill(0),
     tpsSettings: [0,0.5,3,6,12,20,30,40,50,60,70,80,90,100],
-    rpmSettings: [500,1000,1500,2000,2500,3000,3500,4000,4500,5000,5500,6000,6500,7000,7500,8000,8500,9000,9500,10000,10500,11000,11500,12000,12500,13000,13500,14000,14500,15000]
+    rpmSettings: RPM_POINTS
   });
 
   // SettingsView 数据状态
@@ -1285,9 +1286,9 @@ const App: React.FC = () => {
                 }}><Plus size={12}/></button>
             </div>
             <div className="h-4 w-[1px] bg-gray-700"></div>
-            <select className="bg-[#2d323a] text-xs text-gray-300 border border-gray-600 rounded px-2 py-0.5 outline-none h-6" value={editMode === 'percentage' ? t.mapTable_percentage : t.mapTable_rawValue} onChange={(e) => setEditMode(e.target.value === t.mapTable_percentage ? 'percentage' : 'raw')}>
-              <option>{t.mapTable_percentage}</option>
-              <option>{t.mapTable_rawValue}</option>
+            <select className="bg-[#2d323a] text-xs text-gray-300 border border-gray-600 rounded px-2 py-0.5 outline-none h-6" value={editMode} onChange={e => setEditMode(e.target.value === 'percentage' ? 'percentage' : 'raw')}>
+              <option value="percentage">%</option>
+              <option value="raw">Unit</option>
             </select>
           </div>
           )}
@@ -1335,7 +1336,7 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="w-screen h-screen bg-black flex items-center justify-center overflow-hidden">
+    <div className="w-screen h-screen bg-black flex items-center justify-center overflow-hidden select-none">
       <div 
         className="bg-[#1a1d21] text-gray-300 font-sans overflow-hidden shadow-2xl"
         style={{ 

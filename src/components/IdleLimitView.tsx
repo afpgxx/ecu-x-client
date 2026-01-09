@@ -62,12 +62,12 @@ const TopGridRow: React.FC<TopGridRowProps> = ({
       <input 
         ref={input1Ref}
         type="text" 
-        className="w-full h-full bg-white text-gray-600 text-center outline-none text-xs py-1"
+        className="w-full h-full bg-white text-gray-600 text-center font-bold outline-none text-xs py-1"
         value={val1}
         onChange={(e) => setVal1(e.target.value)}
         onBlur={() => handleBlur(field1, val1, setVal1)}
         onKeyDown={(e) => { if(e.key === 'Enter') input1Ref.current?.blur(); }}
-        onFocus={e => {
+        onFocus={(e) => {
           e.target.select();
           onEditingChange?.({ row: 0, col: col1, value: data[field1] as number });
         }}
@@ -80,12 +80,15 @@ const TopGridRow: React.FC<TopGridRowProps> = ({
       <input 
         ref={input2Ref}
         type="text" 
-        className="w-full h-full bg-white text-gray-600 text-center outline-none text-xs py-0"
+        className="w-full h-full bg-white text-gray-600 text-center font-bold outline-none text-xs py-1"
         value={val2}
         onChange={(e) => setVal2(e.target.value)}
         onBlur={() => handleBlur(field2, val2, setVal2)}
         onKeyDown={(e) => { if(e.key === 'Enter') input2Ref.current?.blur(); }}
-        onFocus={() => onEditingChange?.({ row: 0, col: col2, value: data[field2] as number })}
+        onFocus={(e) => {
+          e.target.select();
+          onEditingChange?.({ row: 0, col: col2, value: data[field2] as number });
+        }}
       />
     </td>
     <td className="border border-gray-600 px-2 py-0 text-gray-300 text-center text-xs w-[3%]">{unit2}</td>

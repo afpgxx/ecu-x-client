@@ -49,7 +49,8 @@ import {
   LOAD_POINTS, 
   DWELL_RPM_POINTS, 
   ECT_COMP_TEMP_POINTS, 
-  ECT_COMP_RPM_POINTS
+  ECT_COMP_RPM_POINTS,
+  MAP_COMP_KPA_POINTS
 } from '../constants';
 
 export const TabContentView: React.FC<TabContentViewProps> = ({
@@ -136,6 +137,7 @@ export const TabContentView: React.FC<TabContentViewProps> = ({
           activeRpm={engineState.rpm}
           activeLoad={engineState.tps}
           cornerLabel="TPS"
+          yAxisUnit="%"
           value={0}
           onCellChange={handle2DCellChange(setFuelMapData)}
           onBulkChange={handle2DBulkChange(setFuelMapData)}
@@ -161,6 +163,7 @@ export const TabContentView: React.FC<TabContentViewProps> = ({
           activeRpm={engineState.rpm}
           activeLoad={engineState.tps}
           cornerLabel="TPS"
+          yAxisUnit="%"
           value={0}
           onCellChange={handle2DCellChange(setFuelAdvanceData)}
           onBulkChange={handle2DBulkChange(setFuelAdvanceData)}
@@ -186,6 +189,7 @@ export const TabContentView: React.FC<TabContentViewProps> = ({
           activeRpm={engineState.rpm}
           activeLoad={engineState.tps}
           cornerLabel="TPS"
+          yAxisUnit="%"
           value={0}
           onCellChange={handle2DCellChange(setIgnitionAngleData)}
           onBulkChange={handle2DBulkChange(setIgnitionAngleData)}
@@ -232,6 +236,7 @@ export const TabContentView: React.FC<TabContentViewProps> = ({
           data={afrTargetData}
           activeRpm={engineState.rpm}
           activeLoad={engineState.tps}
+          yAxisUnit="%"
           value={0}
           onCellChange={handle2DCellChange(setAfrTargetData)}
           onBulkChange={handle2DBulkChange(setAfrTargetData)}
@@ -256,8 +261,8 @@ export const TabContentView: React.FC<TabContentViewProps> = ({
           data={ectCompFuelData}
           activeRpm={engineState.rpm}
           activeLoad={engineState.ect}
-          yAxisUnit="°C"
-          cornerLabel="± 2°"
+          yAxisUnit="℃"
+          cornerLabel="+%PCT"
           value={0}
           onCellChange={handle2DCellChange(setEctCompFuelData)}
           onBulkChange={handle2DBulkChange(setEctCompFuelData)}
@@ -282,8 +287,8 @@ export const TabContentView: React.FC<TabContentViewProps> = ({
           data={ectCompIgnData}
           activeRpm={engineState.rpm}
           activeLoad={engineState.ect}
-          yAxisUnit="°C"
-          cornerLabel="± 2°"
+          yAxisUnit="℃"
+          cornerLabel={"±∠°"}
           value={0}
           onCellChange={handle2DCellChange(setEctCompIgnData)}
           onBulkChange={handle2DBulkChange(setEctCompIgnData)}
@@ -304,11 +309,13 @@ export const TabContentView: React.FC<TabContentViewProps> = ({
         <MapTable 
           key="mapComp"
           rpmPoints={RPM_POINTS}
-          loadPoints={LOAD_POINTS}
+          loadPoints={MAP_COMP_KPA_POINTS}
           data={mapCompData}
           activeRpm={engineState.rpm}
           activeLoad={engineState.tps}
           value={0}
+          cornerLabel="KPa"
+          yAxisUnit="KPa"
           onCellChange={handle2DCellChange(setMapCompData)}
           onBulkChange={handle2DBulkChange(setMapCompData)}
           onEditingChange={onEditingChange}

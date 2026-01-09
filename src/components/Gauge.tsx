@@ -82,10 +82,6 @@ export const Gauge: React.FC<GaugeProps> = ({
   const baseRightX = center + needleBaseWidth;
   const baseRightY = center;
 
-  // 计算精灵图裁剪位置
-  // 精灵图共8个表盘横排，每个表盘占 12.5%
-  const spriteOffset = currentConfig.spriteIndex * 12.5;
-
   return (
     <div className="flex flex-col items-center justify-between w-full h-full select-none">
       {/* Gauge Area */}

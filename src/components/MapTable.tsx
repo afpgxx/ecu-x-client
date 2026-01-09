@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 
 interface MapTableProps {
   rpmPoints: number[];
-  loadPoints: number[]; // This represents the Y-axis rows (could be Load, TPS, or Temp)
+  loadPoints: (number|null)[]; // This represents the Y-axis rows (could be Load, TPS, or Temp or IDLE)
   data: number[][];
   activeRpm: number;
   activeLoad: number; // This represents the Y-axis active value
@@ -46,7 +46,7 @@ export const MapTable: React.FC<MapTableProps> = ({
   data,
   activeRpm,
   activeLoad,
-  yAxisUnit = '%',
+  yAxisUnit,
   cornerLabel = 'TPS',
   decimals = 1,
   value = 0,
@@ -307,9 +307,21 @@ export const MapTable: React.FC<MapTableProps> = ({
   );
 
   // For Y-axis (Load/Temp/etc)
-  const activeRowIndex = loadPoints.reduce((prev, curr, i) => 
-    Math.abs(curr - activeLoad) < Math.abs(loadPoints[prev] - activeLoad) ? i : prev, 0
-  );
+  const activeRowIndex = React.useMemo(() => {
+    if (activeLoad === undefined) return -1;
+    let minDiff = Infinity;
+    let minIdx = -1;
+    for (let i = 0; i < loadPoints.length; i++) {
+      const val = loadPoints[i];
+      if (typeof val !== 'number') continue;
+      const diff = Math.abs(val - activeLoad);
+      if (diff < minDiff) {
+        minDiff = diff;
+        minIdx = i;
+      }
+    }
+    return minIdx;
+  }, [loadPoints, activeLoad]);
 
   // Auto-scroll logic
   useEffect(() => {
@@ -564,7 +576,7 @@ export const MapTable: React.FC<MapTableProps> = ({
       <div className="flex w-full border-b border-gray-700 bg-gray-800">
         {/* Corner Label */}
         <div 
-          className="w-16 flex-shrink-0 p-1 flex items-center justify-center border-r border-gray-700 bg-gray-800 text-gray-500 font-bold text-[17px] leading-tight text-center cursor-pointer"
+          className="w-12 flex-shrink-0 p-1 flex items-center justify-center border-r border-gray-700 bg-gray-800 text-gray-500 font-bold text-[14px] leading-tight text-center cursor-pointer"
           onClick={() => {
             setSelection({ type: 'range', startRow: 0, startCol: 0, endRow: loadPoints.length - 1, endCol: rpmPoints.length - 1 });
             setEditingCell({ row: 0, col: 0 });
@@ -584,8 +596,9 @@ export const MapTable: React.FC<MapTableProps> = ({
                         key={i} 
                         className={`flex-1 min-w-[42px] flex items-center justify-center font-bold transition-colors duration-150 border-r border-gray-700 last:border-0 cursor-pointer hover:bg-gray-700
                         ${i === activeColIndex ? 'bg-red-600 text-white' : isSelected ? 'bg-blue-900/50 text-blue-200' : 'bg-gray-800 text-gray-400'}`}
-                        style={{ fontSize: 16 }}
+                        style={{ fontSize: 14 }}
                         onClick={() => setSelection(prev => (prev?.type === 'col' && prev.index === i) ? null : { type: 'col', index: i })}
+                        onDoubleClick={() => setSelection(null)}
                     >
                         {rpm}
                     </div>
@@ -599,17 +612,39 @@ export const MapTable: React.FC<MapTableProps> = ({
       <div className="flex-1 flex overflow-y-auto overflow-x-hidden scrollbar-thin">
         
         {/* Y-Axis Column */}
-        <div className="flex flex-col w-16 flex-shrink-0 border-r border-gray-700 bg-gray-800">
+        <div className="flex flex-col w-12 flex-shrink-0 border-r border-gray-700 bg-gray-800">
           {loadPoints.map((val, i) => {
             const isSelected = selection?.type === 'row' && selection.index === i;
+            let label = '';
+            // MAP补偿表（KPa）不加百分号，且0.5显示为0
+            if (yAxisUnit === 'KPa') {
+              if (typeof val === 'number' && val === 0.5) label = '0';
+              else if (typeof val === 'number') label = `${val}`;
+              else label = '';
+            } else if (yAxisUnit === '℃') {
+              // 温度补偿表，温度值+℃
+              if (typeof val === 'number') label = `${val}℃`;
+              else label = '';
+            } else if (yAxisUnit === '%') {
+              // TPS/负荷表，显示%或IDLE
+              if (val === null || val === undefined) label = 'IDLE';
+              else if (typeof val === 'number' && val <= 0.5) label = '0.5%';
+              else if (typeof val === 'number') label = `${val}%`;
+            } else {
+              // 没有指定unit时，显示IDLE（用于未来扩展）
+              if (val === null || val === undefined) label = 'IDLE';
+              else if (typeof val === 'number' && val <= 0.5) label = '0.5%';
+              else if (typeof val === 'number') label = `${val}%`;
+            }
             return (
               <div 
                 key={i} 
-                className={`flex-1 min-h-[24px] flex items-center justify-center font-bold transition-colors duration-150 border-b border-gray-700 text-[16px] cursor-pointer hover:bg-gray-700
+                className={`flex-1 min-h-[24px] flex items-center justify-center font-bold transition-colors duration-150 border-b border-gray-700 text-[14px] cursor-pointer hover:bg-gray-700
                 ${i === activeRowIndex ? 'bg-red-600 text-white' : isSelected ? 'bg-blue-900/50 text-blue-200' : 'text-gray-400'}`}
                 onClick={() => setSelection(prev => (prev?.type === 'row' && prev.index === i) ? null : { type: 'row', index: i })}
+                onDoubleClick={() => setSelection(null)}
               >
-                {val}{yAxisUnit}
+                {label}
               </div>
             );
           })}
@@ -641,6 +676,7 @@ export const MapTable: React.FC<MapTableProps> = ({
                     }
                     
                     const bg = getHeatmapColor(cellValue, min, max);
+                    const isEditing = editingCell && editingCell.row === rIdx && editingCell.col === cIdx;
                     
                     return (
                         <div
@@ -648,7 +684,7 @@ export const MapTable: React.FC<MapTableProps> = ({
                             ref={isActive ? activeRef : null}
                             className={`flex-1 min-w-[42px] flex items-center justify-center text-gray-900 font-bold border-r border-b border-black/10 cursor-pointer relative
                             ${isActive ? 'z-10' : 'opacity-90 hover:opacity-100'}`}
-                            style={{ backgroundColor: bg }}
+                            style={{ backgroundColor: isEditing ? '#ff8800' : bg }}
                             onMouseDown={(e) => handleCellMouseDown(rIdx, cIdx, e)}
                             onMouseEnter={() => handleCellMouseEnter(rIdx, cIdx)}
                         >
@@ -667,14 +703,14 @@ export const MapTable: React.FC<MapTableProps> = ({
                                 onBlur={handleInputBlur}
                                 onKeyDown={handleInputKeyDown}
                                 autoFocus
-                                className="w-full h-full px-0.5 py-0.5 rounded-md border-2 border-blue-500 focus:border-orange-500 text-right text-base font-mono text-blue-200 shadow-inner outline-none transition-all duration-150 select-all ring-0 focus:bg-[#23272e] focus:text-orange-300"
-                                style={{ fontSize: 15, color: 'black', minWidth: 42, textAlign: 'center', fontVariantNumeric: 'tabular-nums', backgroundColor: bg }}
+                                className="w-full h-full font-bold px-0.5 py-0.5 rounded-md border-2 border-blue-500 focus:border-orange-500 text-right text-base font-mono text-blue-200 shadow-inner outline-none transition-all duration-150 select-all ring-0 focus:bg-[#23272e] focus:text-orange-300"
+                                style={{ fontSize: 14, color: 'black', minWidth: 42, textAlign: 'center', fontVariantNumeric: 'tabular-nums', backgroundColor: bg }}
                               />
                           ) : (
                             <span 
                               className={`flex-1 min-w-[42px] flex items-center justify-center text-gray-900 font-bold border-r border-black/10 cursor-pointer relative
                                 ${isActive ? 'z-10' : 'opacity-90 hover:opacity-100'}`}
-                              style={{ fontSize: 17 }}
+                              style={{ fontSize: 14 }}
                               onClick={() => {
                                 if (justFinishedDrag.current) return;
                                 setSelection(null);

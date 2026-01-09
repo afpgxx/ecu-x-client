@@ -51,12 +51,12 @@ export default {
   data_restoreFactory: 'Restore Factory Data',
 
   // Idle & Limit
-  idleLimit_idleRpmCold: 'Idle RPM Cold',
-  idleLimit_idleReturnCold: 'Idle Return Cold',
-  idleLimit_idleRpmHot: 'Idle RPM Hot',
-  idleLimit_idleReturnHot: 'Idle Return Hot',
-  idleLimit_enterExitSensitivity: 'Enter/Exit Sensitivity',
-  idleLimit_accelEnrichPercent: 'Accel Enrich %',
+  idleLimit_idleRpmCold: 'Idle RPM (Cold)',
+  idleLimit_idleReturnCold: 'Idle Return (Cold)',
+  idleLimit_idleRpmHot: 'Idle RPM (Hot)',
+  idleLimit_idleReturnHot: 'Idle Return (Hot)',
+  idleLimit_enterExitSensitivity: 'Idle Entry/Exit Sensitivity',
+  idleLimit_accelEnrichPercent: 'Accel Enrichment %',
   idleLimit_maxRpm: 'Max RPM',
   idleLimit_vvtOpenRpm: 'VVT Open RPM',
   idleLimit_autoClutch: 'Auto Clutch',

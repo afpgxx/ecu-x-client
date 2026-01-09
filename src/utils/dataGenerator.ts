@@ -11,8 +11,16 @@ export const generateMapData = (randomize = false) => {
   const data: number[][] = [];
   for (let i = 0; i < LOAD_POINTS.length; i++) {
     const row: number[] = [];
-    const loadFactor = LOAD_POINTS[i] / 100; // 1.0 to 0.0
-    
+    // null 代表 IDLE 行，直接填默认值
+    if (LOAD_POINTS[i] === null) {
+      for (let j = 0; j < RPM_POINTS.length; j++) {
+        row.push(5.0);
+      }
+      data.push(row);
+      continue;
+    }
+    const loadVal = LOAD_POINTS[i];
+    const loadFactor = typeof loadVal === 'number' ? loadVal / 100 : 0; // null 行用0
     for (let j = 0; j < RPM_POINTS.length; j++) {
       const rpmFactor = RPM_POINTS[j] / 8000; // 0.1 to 1.0
       let ve = 5.0;
@@ -20,11 +28,9 @@ export const generateMapData = (randomize = false) => {
       const rpmCurve = Math.sin(rpmFactor * Math.PI);
       ve += rpmCurve * 2.5;
       ve += (j * 0.05) - (i * 0.02);
-      
       if (randomize) {
          ve += (Math.random() * 2) - 1; // Add random noise
       }
-      
       row.push(Math.max(2, Number(ve.toFixed(2))));
     }
     data.push(row);
@@ -39,6 +45,13 @@ export const generateIgnitionData = () => {
   const data: number[][] = [];
   for (let i = 0; i < LOAD_POINTS.length; i++) {
     const row: number[] = [];
+    if (LOAD_POINTS[i] === null) {
+      for (let j = 0; j < RPM_POINTS.length; j++) {
+        row.push(10);
+      }
+      data.push(row);
+      continue;
+    }
     for (let j = 0; j < RPM_POINTS.length; j++) {
       const baseAngle = 10 + (j * 0.5) - (i * 0.3);
       row.push(Number(Math.max(5, Math.min(40, baseAngle)).toFixed(1)));
@@ -53,6 +66,13 @@ export const generateFuelAdvanceData = () => {
   const data: number[][] = [];
   for (let i = 0; i < LOAD_POINTS.length; i++) {
     const row: number[] = [];
+    if (LOAD_POINTS[i] === null) {
+      for (let j = 0; j < RPM_POINTS.length; j++) {
+        row.push(1.0);
+      }
+      data.push(row);
+      continue;
+    }
     for (let j = 0; j < RPM_POINTS.length; j++) {
       row.push(Number((1.0 + Math.random() * 0.5).toFixed(2)));
     }
@@ -66,7 +86,15 @@ export const generateAfrData = () => {
   const data: number[][] = [];
   for (let i = 0; i < LOAD_POINTS.length; i++) {
     const row: number[] = [];
-    const loadFactor = LOAD_POINTS[i] / 100;
+    if (LOAD_POINTS[i] === null) {
+      for (let j = 0; j < RPM_POINTS.length; j++) {
+        row.push(14.7);
+      }
+      data.push(row);
+      continue;
+    }
+    const loadVal = LOAD_POINTS[i];
+    const loadFactor = typeof loadVal === 'number' ? loadVal / 100 : 0;
     for (let j = 0; j < RPM_POINTS.length; j++) {
       const afr = loadFactor > 0.7 ? 12.5 : loadFactor > 0.4 ? 13.8 : 14.7;
       row.push(Number((afr + (Math.random() - 0.5) * 0.3).toFixed(1)));
@@ -94,6 +122,13 @@ export const generateMapCompData = () => {
   const data: number[][] = [];
   for (let i = 0; i < LOAD_POINTS.length; i++) {
     const row: number[] = [];
+    if (LOAD_POINTS[i] === null) {
+      for (let j = 0; j < RPM_POINTS.length; j++) {
+        row.push(1.0);
+      }
+      data.push(row);
+      continue;
+    }
     for (let j = 0; j < RPM_POINTS.length; j++) {
       row.push(Number((1.0 + (Math.random() - 0.5) * 0.2).toFixed(2)));
     }
