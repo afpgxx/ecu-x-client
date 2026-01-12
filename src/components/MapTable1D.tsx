@@ -15,6 +15,7 @@ interface MapTable1DProps {
   recentToolbarUpdatesRef?: React.RefObject<Map<string, number>>;
   min?: number;      // 最小值
   max?: number;      // 最大值
+  maxInputLength?: number;
 }
 
 // Helper to map value to Heatmap Color (Blue -> Green -> Yellow -> Red)
@@ -42,6 +43,7 @@ export const MapTable1D: React.FC<MapTable1DProps> = ({
   recentToolbarUpdatesRef,
   min = 0,
   max = 999.99, // Default max to a large number
+  maxInputLength,
 }) => {
   const activeRef = useRef<HTMLDivElement>(null);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
@@ -61,6 +63,12 @@ export const MapTable1D: React.FC<MapTable1DProps> = ({
       return Math.abs(curr - activeValue) < Math.abs(prevVal - activeValue) ? i : prev;
     }, 0);
   }, [headers, activeValue]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    if (maxInputLength !== undefined && val.length > maxInputLength) return;
+    setInputValue(val);
+  };
 
   // Auto-scroll to active cell
   useEffect(() => {
@@ -269,7 +277,7 @@ export const MapTable1D: React.FC<MapTable1DProps> = ({
                         ref={inputRef}
                         type="text"
                         value={inputValue}
-                        onChange={e => setInputValue(e.target.value)}
+                        onChange={handleInputChange}
                         onBlur={() => handleCommit(i, parseFloat(inputValue))}
                         onKeyDown={e => {
                           if (e.key === 'Enter') {

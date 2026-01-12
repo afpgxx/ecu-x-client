@@ -62,7 +62,8 @@ const TopGridRow: React.FC<TopGridRowProps> = ({
       <input 
         ref={input1Ref}
         type="text" 
-        className="w-full h-full bg-white text-gray-600 text-center font-bold outline-none text-xs py-1"
+        maxLength={5}
+        className="w-full h-full bg-white text-gray-600 text-center font-bold outline-none text-xs py-1 cursor-pointer"
         value={val1}
         onChange={(e) => setVal1(e.target.value)}
         onBlur={() => handleBlur(field1, val1, setVal1)}
@@ -80,7 +81,8 @@ const TopGridRow: React.FC<TopGridRowProps> = ({
       <input 
         ref={input2Ref}
         type="text" 
-        className="w-full h-full bg-white text-gray-600 text-center font-bold outline-none text-xs py-1"
+        maxLength={5}
+        className="w-full h-full bg-white text-gray-600 text-center font-bold outline-none text-xs py-1 cursor-pointer"
         value={val2}
         onChange={(e) => setVal2(e.target.value)}
         onBlur={() => handleBlur(field2, val2, setVal2)}
@@ -172,6 +174,7 @@ export const IdleLimitView: React.FC<IdleLimitViewProps> = ({
             xLabel="Name"
             yLabel="Data"
             colorMode="dark"
+            maxInputLength={5}
             onCellChange={(_, col, val) => updateArray('autoClutchData', col, val)}
             onEditingChange={(cell) => onEditingChange?.(cell ? { ...cell, row: 1 } : null)}
             forceEditing={forceEditing && forceEditing.row === 1 ? forceEditing : null}
@@ -192,6 +195,7 @@ export const IdleLimitView: React.FC<IdleLimitViewProps> = ({
             xLabel="Name"
             yLabel="Dat"
             colorMode="dark"
+            maxInputLength={5}
             onCellChange={(_, col, val) => updateArray('spareData', col, val)}
             onEditingChange={(cell) => onEditingChange?.(cell ? { ...cell, row: 2 } : null)}
             forceEditing={forceEditing && forceEditing.row === 2 ? forceEditing : null}

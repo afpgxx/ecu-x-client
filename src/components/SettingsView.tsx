@@ -130,7 +130,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ data, onDataChange }
                             type="text"
                             className="w-full h-full bg-blue-600 text-white text-center outline-none font-bold"
                             value={inputValue}
-                            onChange={(e) => setInputValue(e.target.value)}
+                            onChange={(e) => {
+                                if (e.target.value.length <= 5) setInputValue(e.target.value);
+                            }}
                             onBlur={() => {
                               const parsed = parseFloat(inputValue);
                               if (!isNaN(parsed)) {
@@ -194,7 +196,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ data, onDataChange }
                             type="text"
                             className="w-full h-full bg-blue-600 text-white text-center outline-none font-bold"
                             value={inputValue}
-                            onChange={(e) => setInputValue(e.target.value)}
+                            onChange={(e) => {
+                                if (e.target.value.length <= 5) setInputValue(e.target.value);
+                            }}
                             onBlur={() => {
                               const parsed = parseFloat(inputValue);
                               if (!isNaN(parsed)) {

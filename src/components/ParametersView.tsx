@@ -189,6 +189,7 @@ export const ParametersView: React.FC<ParametersViewProps> = ({ data, onDataChan
                                             type="text"
                                             defaultValue={cellValue.toString()}
                                             autoFocus
+                                            maxLength={5}
                                             className="w-full h-full bg-orange-600 text-white text-center outline-none font-bold px-0.5"
                                             onBlur={(e) => {
                                                 const value = e.target.value;

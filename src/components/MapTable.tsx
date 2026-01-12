@@ -12,6 +12,8 @@ interface MapTableProps {
   value: number; // 默认为0
   min?: number;
   max?: number;
+  maxInputLength?: number;
+  enforceMaxOnInput?: boolean;
   onCellChange: (row: number, col: number, newValue: number) => void;
   onBulkChange?: (changes: {row: number, col: number, value: number}[]) => void;
   onEditingChange?: (cell: {row: number; col: number; value: number} | null) => void;
@@ -51,11 +53,14 @@ export const MapTable: React.FC<MapTableProps> = ({
   decimals = 1,
   value = 0,
   min = 0,
-  max = 16,
+  max, // Default removed (was 16)
+  maxInputLength,
+  enforceMaxOnInput = false,
   onCellChange,
   onBulkChange,
   onEditingChange,
   forceEditing,
+  suppressBlur,
   // @ts-ignore
   recentToolbarUpdatesRef,
 }) => {
@@ -99,7 +104,23 @@ export const MapTable: React.FC<MapTableProps> = ({
   }, [value, decimals]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setInputValue(e.target.value);
+    let newVal = e.target.value;
+    
+    // Check Max Input Length
+    if (maxInputLength !== undefined && newVal.length > maxInputLength) {
+      return; // Ignore input
+    }
+
+    // Check Max Value Constraint (Real-time)
+    if (max !== undefined && enforceMaxOnInput) {
+      const num = parseFloat(newVal);
+      if (!isNaN(num) && num > max) {
+         setInputValue(max.toString());
+         return;
+      }
+    }
+    
+    setInputValue(newVal);
   };
 
   const handleCellMouseDown = (rIdx: number, cIdx: number, e: React.MouseEvent) => {
@@ -109,6 +130,12 @@ export const MapTable: React.FC<MapTableProps> = ({
     if (editingCell?.row === rIdx && editingCell?.col === cIdx) return;
 
     e.stopPropagation(); // Prevent container click from clearing selection
+    
+    // 在清除编辑状态之前先保存当前编辑
+    if (editingCell && !suppressBlur) {
+      saveCurrentEdit();
+    }
+    
     setIsDragging(true);
     justFinishedDrag.current = false;
     dragStart.current = { row: rIdx, col: cIdx };
@@ -191,28 +218,15 @@ export const MapTable: React.FC<MapTableProps> = ({
   };
 
   const handleInputBlur = () => {
-    // 如果外部要求 suppress blur 写入，则直接退出编辑，不写回数据
-    // 该场景用于工具栏修改与 blur 的互斥情况
-    // @ts-ignore
-    if (typeof suppressBlur !== 'undefined' && suppressBlur) {
-      // 如果 suppressBlur 生效，跳过 blur 时的写回和退出编辑
+    // 只有当 suppressBlur 显式为 true 时才跳过保存（工具栏正在修改中）
+    if (suppressBlur === true) {
       return;
     }
-      // 如果最近 toolbar 已对该单元格进行了写入（避免 race），则跳过 blur 的写回
-      try {
-        if (editingCell && recentToolbarUpdatesRef && recentToolbarUpdatesRef.current) {
-          const key = `${editingCell.row},${editingCell.col}`;
-          const t = recentToolbarUpdatesRef.current.get(key);
-          if (t && (Date.now() - t) < 500) {
-              // 最近由 toolbar 更新，忽略 blur 写回并保持编辑（让 forceEditing 恢复）
-              return;
-            }
-        }
-      } catch (e) { /* ignore */ }
     
+    // 失焦时保留输入的值并退出编辑模式（无条件保存）
     saveCurrentEdit();
     setEditingCell(null);
-  };
+  }
 
   const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
@@ -378,21 +392,24 @@ export const MapTable: React.FC<MapTableProps> = ({
   // Handle Copy/Paste for Selection
   useEffect(() => {
     const handleKeyDown = async (e: KeyboardEvent) => {
-      if (!selection || editingCell) return;
+      // 复制时需要有选中区域且不在编辑模式下
+      if ((e.ctrlKey || e.metaKey) && e.key === 'c' && (!selection || editingCell)) {
+        return;
+      }
 
       // Copy: Ctrl+C
       if ((e.ctrlKey || e.metaKey) && e.key === 'c') {
         e.preventDefault();
         let text = '';
-        if (selection.type === 'row') {
-          text = data[selection.index].map(v => v.toFixed(decimals)).join('\t');
-        } else if (selection.type === 'col') {
-          text = data.map(row => row[selection.index].toFixed(decimals)).join('\n');
-        } else if (selection.type === 'range') {
-          const minR = Math.min(selection.startRow, selection.endRow);
-          const maxR = Math.max(selection.startRow, selection.endRow);
-          const minC = Math.min(selection.startCol, selection.endCol);
-          const maxC = Math.max(selection.startCol, selection.endCol);
+        if (selection?.type === 'row') {
+          text = data[(selection as any).index].map(v => v.toFixed(decimals)).join('\t');
+        } else if (selection?.type === 'col') {
+          text = data.map(row => row[(selection as any).index].toFixed(decimals)).join('\n');
+        } else if (selection?.type === 'range') {
+          const minR = Math.min((selection as any).startRow, (selection as any).endRow);
+          const maxR = Math.max((selection as any).startRow, (selection as any).endRow);
+          const minC = Math.min((selection as any).startCol, (selection as any).endCol);
+          const maxC = Math.max((selection as any).startCol, (selection as any).endCol);
           
           const rows = [];
           for (let r = minR; r <= maxR; r++) {
@@ -416,11 +433,22 @@ export const MapTable: React.FC<MapTableProps> = ({
           if (!text) return;
           
           const changes: {row: number, col: number, value: number}[] = [];
+          let isSingleValue = false;  // 标记是否为单个值粘贴
           
-          if (selection.type === 'row') {
-             // Try tab separated first
+          // 如果当前在编辑某个单元格，直接应用粘贴值到该单元格
+          if (editingCell) {
+            const val = parseFloat(text.trim());
+            if (!isNaN(val)) {
+              let finalVal = val;
+              if (min !== undefined) finalVal = Math.max(min, finalVal);
+              if (max !== undefined) finalVal = Math.min(max, finalVal);
+              changes.push({ row: editingCell.row, col: editingCell.col, value: finalVal });
+              isSingleValue = true;
+            }
+          } else if (selection && selection.type === 'row') {
+             // 行选中：尝试用制表符分隔
              let values = text.split('\t').map(s => parseFloat(s.trim()));
-             // Fallback to newline if single value found (maybe copied from column)
+             // 如果只有一个值但有换行，则用换行分隔（可能是从列复制的）
              if (values.length === 1 && text.includes('\n')) {
                  values = text.split(/\r?\n/).map(s => parseFloat(s.trim()));
              }
@@ -430,11 +458,11 @@ export const MapTable: React.FC<MapTableProps> = ({
                      let finalVal = val;
                      if (min !== undefined) finalVal = Math.max(min, finalVal);
                      if (max !== undefined) finalVal = Math.min(max, finalVal);
-                     changes.push({ row: selection.index, col: idx, value: finalVal });
+                     changes.push({ row: (selection as any).index, col: idx, value: finalVal });
                  }
              });
-          } else if (selection.type === 'col') {
-             // Column: expect newlines
+          } else if (selection && selection.type === 'col') {
+             // 列选中：期望换行分隔
              let values = text.split(/\r?\n/).map(s => parseFloat(s.trim()));
              if (values.length <= 1 && text.includes('\t')) {
                  values = text.split('\t').map(s => parseFloat(s.trim()));
@@ -445,12 +473,12 @@ export const MapTable: React.FC<MapTableProps> = ({
                      let finalVal = val;
                      if (min !== undefined) finalVal = Math.max(min, finalVal);
                      if (max !== undefined) finalVal = Math.min(max, finalVal);
-                     changes.push({ row: idx, col: selection.index, value: finalVal });
+                     changes.push({ row: idx, col: (selection as any).index, value: finalVal });
                  }
              });
-          } else if (selection.type === 'range') {
-             const minR = Math.min(selection.startRow, selection.endRow);
-             const minC = Math.min(selection.startCol, selection.endCol);
+          } else if (selection && selection.type === 'range') {
+             const minR = Math.min((selection as any).startRow, (selection as any).endRow);
+             const minC = Math.min((selection as any).startCol, (selection as any).endCol);
              
              const rows = text.split(/\r?\n/);
              rows.forEach((rowStr, rOffset) => {
@@ -470,8 +498,19 @@ export const MapTable: React.FC<MapTableProps> = ({
              });
           }
 
-          if (changes.length > 0 && onBulkChange) {
+          // 应用所有变更（优先使用 onBulkChange）
+          if (changes.length > 0) {
+            if (onBulkChange) {
               onBulkChange(changes);
+            } else if (changes.length === 1 && onCellChange) {
+              onCellChange(changes[0].row, changes[0].col, changes[0].value);
+            }
+            
+            // 粘贴单个值时，自动应用并退出编辑模式
+            if (isSingleValue) {
+              setEditingCell(null);
+              setSelection(null);
+            }
           }
         } catch (err) {
           console.error('Failed to paste', err);
@@ -533,11 +572,11 @@ export const MapTable: React.FC<MapTableProps> = ({
       if (e.key === 'Enter' && !editingCell) {
           e.preventDefault();
           let r: number | undefined, c: number | undefined;
-          if (selection.type === 'row') { r = selection.index; c = 0; }
-          else if (selection.type === 'col') { r = 0; c = selection.index; }
-          else if (selection.type === 'range') { 
-              r = Math.min(selection.startRow, selection.endRow); 
-              c = Math.min(selection.startCol, selection.endCol); 
+          if (selection?.type === 'row') { r = (selection as any).index; c = 0; }
+          else if (selection?.type === 'col') { r = 0; c = (selection as any).index; }
+          else if (selection?.type === 'range') { 
+              r = Math.min((selection as any).startRow, (selection as any).endRow); 
+              c = Math.min((selection as any).startCol, (selection as any).endCol); 
           }
           
           if (r !== undefined && c !== undefined) {
@@ -549,11 +588,11 @@ export const MapTable: React.FC<MapTableProps> = ({
       // Direct typing to edit (Numbers, minus, dot)
       if (!editingCell && !e.ctrlKey && !e.metaKey && !e.altKey && e.key.length === 1 && /^[0-9.-]$/.test(e.key)) {
           let r: number | undefined, c: number | undefined;
-          if (selection.type === 'row') { r = selection.index; c = 0; }
-          else if (selection.type === 'col') { r = 0; c = selection.index; }
-          else if (selection.type === 'range') { 
-              r = Math.min(selection.startRow, selection.endRow); 
-              c = Math.min(selection.startCol, selection.endCol); 
+          if (selection?.type === 'row') { r = (selection as any).index; c = 0; }
+          else if (selection?.type === 'col') { r = 0; c = (selection as any).index; }
+          else if (selection?.type === 'range') { 
+              r = Math.min((selection as any).startRow, (selection as any).endRow); 
+              c = Math.min((selection as any).startCol, (selection as any).endCol); 
           }
           
           if (r !== undefined && c !== undefined) {
@@ -675,7 +714,8 @@ export const MapTable: React.FC<MapTableProps> = ({
                         }
                     }
                     
-                    const bg = getHeatmapColor(cellValue, min, max);
+                    const displayMax = max !== undefined ? max : 100;
+                    const bg = getHeatmapColor(cellValue, min, displayMax);
                     const isEditing = editingCell && editingCell.row === rIdx && editingCell.col === cIdx;
                     
                     return (
@@ -689,10 +729,10 @@ export const MapTable: React.FC<MapTableProps> = ({
                             onMouseEnter={() => handleCellMouseEnter(rIdx, cIdx)}
                         >
                             {/* Active Selection Highlight Border */}
-                            {isActive && <div className="absolute inset-0 border-2 border-white pointer-events-none shadow-lg z-20"></div>}
+                            {isActive && !isEditing && <div className="absolute inset-0 border-2 border-white pointer-events-none shadow-lg z-20"></div>}
                             
-                            {/* Row/Col Selection Overlay */}
-                            {isSelected && !isActive && <div className="absolute inset-0 bg-blue-600/50 pointer-events-none border-2 border-blue-300/80 z-10"></div>}
+                            {/* Row/Col Selection Overlay - 编辑状态下隐藏 */}
+                            {isSelected && !isActive && !isEditing && <div className="absolute inset-0 bg-blue-600/50 pointer-events-none border-2 border-blue-300/80 z-10"></div>}
 
                             {editingCell && editingCell.row === rIdx && editingCell.col === cIdx ? (
                               <input
@@ -703,8 +743,8 @@ export const MapTable: React.FC<MapTableProps> = ({
                                 onBlur={handleInputBlur}
                                 onKeyDown={handleInputKeyDown}
                                 autoFocus
-                                className="w-full h-full font-bold px-0.5 py-0.5 rounded-md border-2 border-blue-500 focus:border-orange-500 text-right text-base font-mono text-blue-200 shadow-inner outline-none transition-all duration-150 select-all ring-0 focus:bg-[#23272e] focus:text-orange-300"
-                                style={{ fontSize: 14, color: 'black', minWidth: 42, textAlign: 'center', fontVariantNumeric: 'tabular-nums', backgroundColor: bg }}
+                                className="w-full h-full font-bold px-0.5 py-0.5 rounded-md border-0 focus:border-orange-500 text-right text-base font-mono text-gray-900 outline-none transition-all duration-150 select-all ring-0 focus:bg-[#ff8800] focus:text-white"
+                                style={{ fontSize: 14, color: 'black', minWidth: 42, textAlign: 'center', fontVariantNumeric: 'tabular-nums', backgroundColor: '#ff8800' }}
                               />
                           ) : (
                             <span 

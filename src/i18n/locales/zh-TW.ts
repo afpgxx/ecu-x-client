@@ -52,14 +52,14 @@ export default {
 
   // 怠速與限速
   idleLimit_idleRpmCold: '怠速轉速(冷車)',
-  idleLimit_idleReturnCold: '怠速回歸(冷車)',
-  idleLimit_idleRpmHot: '熱車怠速',
-  idleLimit_idleReturnHot: '熱車回歸',
+  idleLimit_idleReturnCold: '怠速回噴(冷車)',
+  idleLimit_idleRpmHot: '怠速轉速(熱車)',
+  idleLimit_idleReturnHot: '怠速回噴(熱車)',
   idleLimit_enterExitSensitivity: '進入(離開)怠速靈敏度',
   idleLimit_accelEnrichPercent: '加速加大噴油量百分比',
   idleLimit_maxRpm: '最大轉速',
   idleLimit_vvtOpenRpm: '可變氣門打開轉速',
-  idleLimit_autoClutch: '自動離合',
+  idleLimit_autoClutch: '自動離合器',
   idleLimit_spare: '備用',
   idleLimit_configBits: '配置位',
   idleLimit_spare1: '備用1',

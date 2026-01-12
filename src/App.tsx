@@ -175,6 +175,7 @@ const App: React.FC = () => {
   const isImporting = useRef(false);
 
   const simInterval = useRef<ReturnType<typeof setInterval> | null>(null);
+  const languageMenuRef = useRef<HTMLDivElement>(null);
 
   const showNotification = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
     setNotification({ message, type });
@@ -495,6 +496,24 @@ const App: React.FC = () => {
       setIsSweeping(false);
     }, 1000);
   };
+
+  // 处理语言菜单点击外部关闭
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (languageMenuRef.current && !languageMenuRef.current.contains(event.target as Node)) {
+        if (showLanguageMenu) {
+          setShowLanguageMenu(false);
+        }
+      }
+    };
+
+    if (showLanguageMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+      };
+    }
+  }, [showLanguageMenu]);
 
   // 独立处理窗口缩放逻辑，确保不受其他副作用影响
   useEffect(() => {
@@ -978,6 +997,55 @@ const App: React.FC = () => {
     recentToolbarUpdatesRef.current.clear();
   }, [activeTabIndex]);
 
+  const handleCopyData = (target: number | 'all') => {
+    const srcBankIdx = activeSubTable - 1;
+    const targets = target === 'all' ? [0, 1, 2, 3] : [target - 1];
+    const deepCopy = (data: any) => JSON.parse(JSON.stringify(data));
+
+    const copyLogic = <T,>(
+      setter: React.Dispatch<React.SetStateAction<T[]>>,
+      copier: (src: T) => T
+    ) => {
+      setter(prev => {
+        const newData = [...prev];
+        const srcData = newData[srcBankIdx];
+        if (!srcData) return prev;
+        
+        targets.forEach(tIdx => {
+          if (tIdx !== srcBankIdx && tIdx >= 0 && tIdx < newData.length) {
+            newData[tIdx] = copier(srcData);
+          }
+        });
+        return newData;
+      });
+      // 简单提示
+      const targetName = target === 'all' ? t.menu_copyToAll : `No.${target}`;
+      showNotification(`${t.menu_copyDataTo || 'Copy to'} ${targetName} - OK`, 'success');
+    };
+
+    switch (activeTabIndex) {
+      case 0: // Fuel Map
+        copyLogic(setFuelMapData, deepCopy); 
+        break;
+      case 1: // Fuel Advance
+        copyLogic(setFuelAdvanceData, deepCopy);
+        break;
+      case 2: // Ignition Angle
+        copyLogic(setIgnitionAngleData, deepCopy);
+        break;
+      case 3: // Dwell Time
+        copyLogic(setDwellTimeData, deepCopy);
+        break;
+      case 4: // AFR Target
+        copyLogic(setAfrTargetData, deepCopy);
+        break;
+      case 8: // Idle Limit
+        copyLogic(setIdleLimitData, deepCopy);
+        break;
+    }
+    setActiveMenu(null);
+  };
+
   const renderTabControls = () => {
     const mapTabs = [
       t.tabs_fuelMap,
@@ -1361,7 +1429,7 @@ const App: React.FC = () => {
           </div>
           <div className="flex items-center gap-4 text-gray-500">
             {/* Language Selector */}
-            <div className="relative">
+            <div className="relative" ref={languageMenuRef}>
               <button 
                 onClick={() => setShowLanguageMenu(!showLanguageMenu)}
                 className="flex items-center gap-1 hover:text-white cursor-pointer text-[10px] font-medium px-2 py-0.5 rounded hover:bg-gray-700"
@@ -1524,9 +1592,7 @@ const App: React.FC = () => {
                             ? 'text-gray-600 cursor-not-allowed' 
                             : 'text-gray-300 hover:bg-gray-700 hover:text-white'
                         }`}
-                        onClick={() => {
-                          setActiveMenu(null);
-                        }}
+                        onClick={() => handleCopyData(num)}
                       >
                         No.{num}
                       </button>
@@ -1534,9 +1600,7 @@ const App: React.FC = () => {
                     <div className="h-[1px] bg-gray-600 my-1 mx-2"></div>
                     <button 
                       className="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-700 transition-colors text-gray-300 hover:text-white"
-                      onClick={() => {
-                        setActiveMenu(null);
-                      }}
+                      onClick={() => handleCopyData('all')}
                     >
                       {t.menu_copyToAll}
                     </button>
@@ -1715,12 +1779,12 @@ const App: React.FC = () => {
                   <span className="text-blue-500">{t.sensors_realtime}</span>
                </div>
                <div className="flex-1 grid grid-cols-6 gap-1 sm:gap-2">
-                  <VerticalBar label={t.sensors_ect} value={engineState.ect} unit="°C" min={-14} max={126} warningThreshold={110} color="bg-yellow-500" />
-                  <VerticalBar label={t.sensors_iat} value={engineState.iat} unit="°C" min={-14} max={56} warningThreshold={60} color="bg-sky-400" />
-                  <VerticalBar label={t.sensors_map} value={engineState.map} unit="kPa" min={0} max={120} color="bg-emerald-500" />
-                  <VerticalBar label={t.sensors_ign} value={engineState.ign} unit="°" min={-10} max={60} color="bg-indigo-500" />
-                  <VerticalBar label={t.sensors_inj} value={engineState.inj} unit="ms" min={0} max={16} color="bg-rose-500" />
-                  <VerticalBar label={t.sensors_battery} value={engineState.battery} unit="V" min={0} max={16} color="bg-amber-500" />
+                  <VerticalBar label="ECT" value={engineState.ect} unit="°C" min={-14} max={126} warningThreshold={110} color="bg-yellow-500" />
+                  <VerticalBar label="IAT" value={engineState.iat} unit="°C" min={-14} max={56} warningThreshold={60} color="bg-sky-400" />
+                  <VerticalBar label="MAP" value={engineState.map} unit="kPa" min={0} max={120} color="bg-emerald-500" />
+                  <VerticalBar label="IGN" value={engineState.ign} unit="°" min={-10} max={60} color="bg-indigo-500" />
+                  <VerticalBar label="INJ" value={engineState.inj} unit="ms" min={0} max={16} color="bg-rose-500" />
+                  <VerticalBar label="Battery" value={engineState.battery} unit="V" min={0} max={16} color="bg-amber-500" />
                </div>
             </div>
 

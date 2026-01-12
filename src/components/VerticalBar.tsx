@@ -40,15 +40,16 @@ export const VerticalBar: React.FC<VerticalBarProps> = ({
   return (
     <div className="flex flex-col items-center w-full h-full">
       {/* Label Header */}
-      <div className="text-[10px] text-gray-400 font-bold uppercase mb-1 tracking-wider truncate w-full text-center">{label}</div>
+      {/* 标签不再强制大写，保持传入的原始大小写 */}
+      <div className="text-[10px] text-gray-400 font-bold ml-1.5 mb-1 tracking-wider truncate w-full text-center">{label}</div>
       
       {/* Numeric Value */}
-      <div className="text-sm font-mono font-bold text-white mb-1 tabular-nums">
-        {value.toFixed(unit ? 1 : 0)}<span className="text-[10px] text-gray-500 ml-0.5">{unit}</span>
+      <div className="text-sm font-mono font-bold text-white mb-1 tabular-nums ml-3">
+        {value.toFixed(unit === 'ms' || unit === 'V' ? 2 : (unit ? 1 : 0))}<span className="text-[12px] text-gray-500 ml-0.5">{unit}</span>
       </div>
       
       {/* Bar and Scale Container */}
-      <div className="relative flex-1 flex gap-0 w-full">
+      <div className="relative flex-1 flex gap-0 w-full -ml-4">
         {/* Scale markers with values - positioned outside on the left */}
         <div className="h-full flex flex-col justify-between py-1 pr-0.5">
            {[...Array(17)].map((_, i) => {
@@ -57,8 +58,8 @@ export const VerticalBar: React.FC<VerticalBarProps> = ({
                const majorIndex = i / 4;
                const markerValue = max - (majorIndex * (max - min) / 4);
                return (
-                 <div key={i} className="flex items-center justify-end gap-1 h-[1px]">
-                   <span className="text-[10px] font-mono text-gray-200 font-bold w-6 text-right leading-none">{markerValue.toFixed(0)}</span>
+                 <div key={i} className="flex items-center justify-end gap-1 h-[1.5px]">
+                   <span className="text-[12px] font-mono text-gray-200 font-bold w-6 text-right leading-none">{markerValue.toFixed(0)}</span>
                    <div className="w-1.5 h-[1px] bg-gray-400"></div>
                  </div>
                );

@@ -671,7 +671,11 @@ export const OtherOptionsView: React.FC<OtherOptionsViewProps> = ({ params, grid
                                       type="text"
                                       className="w-full h-full bg-orange-600 text-white text-center outline-none font-bold"
                                       value={inputValue}
-                                      onChange={(e) => setInputValue(e.target.value)}
+                                      onChange={(e) => {
+                                        if (e.target.value.length <= 5) {
+                                           setInputValue(e.target.value);
+                                        }
+                                      }}
                                       onBlur={handleInputBlur}
                                       onKeyDown={handleInputKeyDown}
                                     />

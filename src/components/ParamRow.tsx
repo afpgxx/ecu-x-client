@@ -56,6 +56,7 @@ export const ParamRow: React.FC<ParamRowProps> = ({
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
+    if (val.length > 5) return;
     setInputValue(val);
     // 实时验证
     const parsed = parseFloat(val);
